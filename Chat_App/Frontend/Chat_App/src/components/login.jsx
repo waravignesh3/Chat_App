@@ -1,61 +1,160 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
+import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
-import { Link } from "react-router-dom";
 import "../App.css";
 
 function Login({ user = null, setUser = () => {} }) {
-  const [showPopup, setShowPopup] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState({
+    visible: false,
+    variant: "success",
+    title: "",
+    message: "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const showSuccess = () => {
-    setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 2200);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!toast.visible) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 2600);
+
+    return () => window.clearTimeout(timer);
+  }, [toast.visible]);
+
+  const showToast = (variant, title, message) => {
+    setToast({
+      visible: true,
+      variant,
+      title,
+      message,
+    });
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!formData.firstName.trim()) nextErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) nextErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) {
+      nextErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      nextErrors.email = "Enter a valid email";
+    }
+    if (!formData.password) nextErrors.password = "Password is required";
+
+    return nextErrors;
   };
 
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
+      setIsSuccess(false);
+
       const result = await signInWithPopup(auth, provider);
-      setUser(result.user);
-      await fetch("http://localhost:5000/google-login", {
+      const response = await fetch("http://localhost:5000/google-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: result.user.displayName,
+          name: result.user.displayName || result.user.email?.split("@")[0] || "User",
           email: result.user.email,
           photo: result.user.photoURL,
         }),
       });
-      showSuccess();
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        throw new Error(data.error || "Google login failed");
+      }
+
+      setUser(data);
+      setIsSuccess(true);
+      showToast("success", "Welcome back", "Google login successful");
+
+      setTimeout(() => navigate("/chat"), 1000);
     } catch (error) {
-      alert(error.message || "Google login failed");
+      showToast("error", "Google login failed", error.message || "Unable to continue");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleManualLogin = async () => {
+  const handleManualLogin = async (event) => {
+    event.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showToast("error", "Check your details", "Please complete all required fields");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const res = await fetch("http://localhost:5000/login", {
+      setIsSuccess(false);
+
+      const response = await fetch("http://localhost:5000/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
-      const data = await res.json();
-      if (data.user) {
-        setUser(data.user);
-        showSuccess();
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        showToast("error", "Login failed", data.error || "Unable to sign in");
         return;
       }
-      alert(data.message || "Login failed");
+
+      setUser({
+        ...data.user,
+        name: data.user?.name || `${formData.firstName} ${formData.lastName}`.trim(),
+      });
+      setIsSuccess(true);
+      showToast(
+        "success",
+        `Hi ${formData.firstName.trim() || "there"}`,
+        "Login successful. Redirecting to chat..."
+      );
+
+      setTimeout(() => navigate("/chat"), 1000);
     } catch (error) {
-      alert(error.message || "Unable to login right now");
+      showToast("error", "Network error", error.message || "Unable to login");
     } finally {
       setIsSubmitting(false);
     }
@@ -70,18 +169,16 @@ function Login({ user = null, setUser = () => {} }) {
         <div className="auth-panel auth-intro">
           <span className="auth-badge">ChatApp</span>
           <h1>Welcome back to your conversations.</h1>
-          <p>
-            Log in to pick up where your messages, groups, and shared moments left off.
-          </p>
+          <p>Log in to continue chatting with your friends, teams, and private groups.</p>
 
           <div className="auth-metrics">
             <div className="metric-card">
-              <strong>Fast replies</strong>
-              <span>Stay synced across personal chats and team spaces.</span>
+              <strong>Quick access</strong>
+              <span>Pick up direct messages, groups, and shared moments instantly.</span>
             </div>
             <div className="metric-card">
-              <strong>Secure access</strong>
-              <span>Use your email login or continue instantly with Google.</span>
+              <strong>Secure sign-in</strong>
+              <span>Use your account credentials or jump in with Google.</span>
             </div>
           </div>
         </div>
@@ -90,37 +187,74 @@ function Login({ user = null, setUser = () => {} }) {
           <div className="auth-card-header">
             <span className="auth-eyebrow">Login</span>
             <h2>Sign in</h2>
-            <p>Access your account with the same look and feel as signup.</p>
+            <p>Now with the same first-name and last-name flow as signup for a unified experience.</p>
           </div>
 
-          <div className="auth-form">
+          <form className="auth-form" onSubmit={handleManualLogin}>
+            <div className="auth-grid-two">
+              <label className="auth-field">
+                <span>First Name</span>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  className={errors.firstName ? "error" : ""}
+                />
+                {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+              </label>
+
+              <label className="auth-field">
+                <span>Last Name</span>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  className={errors.lastName ? "error" : ""}
+                />
+                {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+              </label>
+            </div>
+
             <label className="auth-field">
-              <span>Email Address</span>
+              <span>Email</span>
               <input
                 type="email"
+                name="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className={errors.email ? "error" : ""}
               />
+              {errors.email && <span className="error-message">{errors.email}</span>}
             </label>
 
             <label className="auth-field">
               <span>Password</span>
               <input
                 type="password"
+                name="password"
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className={errors.password ? "error" : ""}
               />
+              {errors.password && <span className="error-message">{errors.password}</span>}
             </label>
 
             <button
-              type="button"
+              type="submit"
               className="auth-button auth-button-primary"
-              onClick={handleManualLogin}
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Signing in..." : "Login"}
+              {isSubmitting ? "Signing in..." : isSuccess ? "Success! Redirecting..." : "Login"}
             </button>
 
             <div className="auth-divider">
@@ -133,10 +267,12 @@ function Login({ user = null, setUser = () => {} }) {
               onClick={handleGoogleLogin}
               disabled={isSubmitting}
             >
-              <span className="google-mark" aria-hidden="true">G</span>
+              <span className="google-mark" aria-hidden="true">
+                G
+              </span>
               Google
             </button>
-          </div>
+          </form>
 
           <p className="auth-switch-text">
             Don&apos;t have an account? <Link to="/signup">Create one</Link>
@@ -144,11 +280,13 @@ function Login({ user = null, setUser = () => {} }) {
         </div>
       </section>
 
-      <div className={`auth-toast${showPopup && user ? " auth-toast-visible" : ""}`}>
-        <div className="toast-icon">OK</div>
+      <div
+        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
+      >
+        <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
         <div>
-          <strong>{user?.displayName || user?.email || "Welcome"}</strong>
-          <p>Login successful.</p>
+          <strong>{toast.title || user?.name || user?.email || "Welcome"}</strong>
+          <p>{toast.message || "Login successful"}</p>
         </div>
       </div>
     </div>

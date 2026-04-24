@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
-import { Link } from "react-router-dom";
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -10,12 +10,39 @@ function Signup() {
     password: "",
     confirmPassword: "",
   });
-
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState({
+    visible: false,
+    variant: "success",
+    title: "",
+    message: "",
+  });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!toast.visible) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 2600);
+
+    return () => window.clearTimeout(timer);
+  }, [toast.visible]);
+
+  const showToast = (variant, title, message) => {
+    setToast({
+      visible: true,
+      variant,
+      title,
+      message,
+    });
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -38,17 +65,17 @@ function Signup() {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Invalid email";
     }
 
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = "Minimum 6 characters required";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
+      newErrors.confirmPassword = "Confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
@@ -56,20 +83,46 @@ function Signup() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
+    const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      showToast("error", "Fix the highlighted fields", "Please complete the form correctly");
       return;
     }
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      alert("Signup successful!");
-      console.log("Form data:", formData);
+    try {
+      const response = await fetch("http://localhost:5000/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        showToast("error", "Signup failed", data.error || "Unable to create account");
+        return;
+      }
+
+      showToast(
+        "success",
+        `Welcome ${formData.firstName.trim()}`,
+        "Account created successfully"
+      );
+
       setFormData({
         firstName: "",
         lastName: "",
@@ -77,8 +130,14 @@ function Signup() {
         password: "",
         confirmPassword: "",
       });
+
+      setTimeout(() => navigate("/login"), 900);
+    } catch (error) {
+      console.error(error);
+      showToast("error", "Network error", "Server not running or network error");
+    } finally {
       setIsSubmitting(false);
-    }, 700);
+    }
   };
 
   return (
@@ -89,19 +148,17 @@ function Signup() {
       <section className="auth-layout auth-layout-signup">
         <div className="auth-panel auth-intro">
           <span className="auth-badge">ChatApp</span>
-          <h1>Create a profile that feels ready to chat.</h1>
-          <p>
-            Join with a polished signup flow designed to match the login page perfectly.
-          </p>
+          <h1>Create your account</h1>
+          <p>Join and start chatting instantly.</p>
 
           <div className="auth-metrics">
             <div className="metric-card">
-              <strong>Clean onboarding</strong>
-              <span>Simple form groups, smooth transitions, and focused validation.</span>
+              <strong>Fast onboarding</strong>
+              <span>Create your profile with a clean, guided form.</span>
             </div>
             <div className="metric-card">
-              <strong>Same visual system</strong>
-              <span>Shared colors, motion, spacing, and responsive layout across both pages.</span>
+              <strong>Shared experience</strong>
+              <span>Signup, login, and chat now feel part of one visual system.</span>
             </div>
           </div>
         </div>
@@ -110,7 +167,7 @@ function Signup() {
           <div className="auth-card-header">
             <span className="auth-eyebrow">Signup</span>
             <h2>Create account</h2>
-            <p>Start your ChatApp journey with a sleek, consistent experience.</p>
+            <p>Fill the form to get started</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -119,7 +176,6 @@ function Signup() {
                 <span>First Name</span>
                 <input
                   type="text"
-                  id="firstName"
                   name="firstName"
                   placeholder="John"
                   value={formData.firstName}
@@ -133,7 +189,6 @@ function Signup() {
                 <span>Last Name</span>
                 <input
                   type="text"
-                  id="lastName"
                   name="lastName"
                   placeholder="Doe"
                   value={formData.lastName}
@@ -145,10 +200,9 @@ function Signup() {
             </div>
 
             <label className="auth-field">
-              <span>Email Address</span>
+              <span>Email</span>
               <input
                 type="email"
-                id="email"
                 name="email"
                 placeholder="you@example.com"
                 value={formData.email}
@@ -163,7 +217,6 @@ function Signup() {
                 <span>Password</span>
                 <input
                   type="password"
-                  id="password"
                   name="password"
                   placeholder="Minimum 6 characters"
                   value={formData.password}
@@ -177,11 +230,10 @@ function Signup() {
                 <span>Confirm Password</span>
                 <input
                   type="password"
-                  id="confirmPassword"
                   name="confirmPassword"
+                  placeholder="Repeat password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  placeholder="Repeat password"
                   className={errors.confirmPassword ? "error" : ""}
                 />
                 {errors.confirmPassword && (
@@ -190,8 +242,12 @@ function Signup() {
               </label>
             </div>
 
-            <button type="submit" className="auth-button auth-button-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Sign Up"}
+            <button
+              type="submit"
+              className="auth-button auth-button-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating..." : "Sign Up"}
             </button>
 
             <p className="auth-switch-text">
@@ -200,6 +256,16 @@ function Signup() {
           </form>
         </div>
       </section>
+
+      <div
+        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
+      >
+        <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
+        <div>
+          <strong>{toast.title || "Signup"}</strong>
+          <p>{toast.message || "Account created"}</p>
+        </div>
+      </div>
     </div>
   );
 }
