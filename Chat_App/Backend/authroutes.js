@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import User from "./models/user.js";
+import pool from "./db.js";
 
 const router = express.Router();
 
@@ -19,8 +19,12 @@ router.post("/register", async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // ✅ Check existing user
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
+    const [existingUsers] = await pool.query(
+      "SELECT id FROM users WHERE LOWER(email) = ?",
+      [normalizedEmail]
+    );
+
+    if (existingUsers.length > 0) {
       return res.status(400).json({ error: "User already exists" });
     }
 
@@ -28,16 +32,10 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ✅ Create user
-    const newUser = new User({
-      name: `${firstName.trim()} ${lastName.trim()}`,
-      email: normalizedEmail,
-      password: hashedPassword,
-      provider: "local",
-      lastSeen: "Offline",
-      isOnline: false
-    });
-
-    await newUser.save();
+    await pool.query(
+      "INSERT INTO users (name, email, password, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'local', 'Offline', false)",
+      [`${firstName.trim()} ${lastName.trim()}`, normalizedEmail, hashedPassword]
+    );
 
     return res.json({
       success: true,
@@ -46,12 +44,6 @@ router.post("/register", async (req, res) => {
 
   } catch (error) {
     console.error("REGISTER ERROR:", error);
-
-    // ✅ Handle duplicate key error (MongoDB)
-    if (error.code === 11000) {
-      return res.status(400).json({ error: "Email already exists" });
-    }
-
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -71,7 +63,12 @@ router.post("/login", async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // ✅ Find user
-    const user = await User.findOne({ email: normalizedEmail });
+    const [users] = await pool.query(
+      "SELECT * FROM users WHERE LOWER(email) = ?",
+      [normalizedEmail]
+    );
+
+    const user = users[0];
 
     if (!user || !user.password) {
       return res.status(401).json({ error: "Invalid email or password" });
@@ -88,7 +85,7 @@ router.post("/login", async (req, res) => {
       success: true,
       message: "Login successful",
       user: {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         photo: user.photo,
