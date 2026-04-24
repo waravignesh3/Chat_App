@@ -8,22 +8,17 @@ import User from "./models/user.js";
 
 const app = express();
 const server = http.createServer(app);
-
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 const onlineUsers = {};
 
+// ✅ FIX: Allow all origins so LAN devices can connect
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-  })
-);
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 app.use("/api", authroutes);
@@ -147,6 +142,8 @@ io.on("connection", (socket) => {
 });
 
 const PORT = 5000;
-server.listen(PORT, () => {
+// ✅ FIX: Bind to 0.0.0.0 so LAN devices can reach the server
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`LAN access: http://<your-local-ip>:${PORT}`);
 });

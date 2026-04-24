@@ -3,11 +3,14 @@ import { signInWithPopup } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import "../App.css";
+import "../App.enhanced.css";
+
+// ✅ FIX: Use dynamic hostname so LAN users connect to the right server
+const SERVER_URL = `http://${window.location.hostname}:5000`;
 
 function Login({ user = null, setUser = () => {} }) {
+  // ✅ FIX: Login only needs email + password — removed firstName/lastName
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
     email: "",
     password: "",
   });
@@ -34,41 +37,32 @@ function Login({ user = null, setUser = () => {} }) {
   }, [toast.visible]);
 
   const showToast = (variant, title, message) => {
-    setToast({
-      visible: true,
-      variant,
-      title,
-      message,
-    });
+    setToast({ visible: true, variant, title, message });
   };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
+  // ✅ FIX: Only validate email + password (no firstName/lastName needed for login)
   const validateForm = () => {
     const nextErrors = {};
 
-    if (!formData.firstName.trim()) nextErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) nextErrors.lastName = "Last name is required";
     if (!formData.email.trim()) {
       nextErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       nextErrors.email = "Enter a valid email";
     }
-    if (!formData.password) nextErrors.password = "Password is required";
+
+    if (!formData.password) {
+      nextErrors.password = "Password is required";
+    }
 
     return nextErrors;
   };
@@ -79,7 +73,7 @@ function Login({ user = null, setUser = () => {} }) {
       setIsSuccess(false);
 
       const result = await signInWithPopup(auth, provider);
-      const response = await fetch("http://localhost:5000/google-login", {
+      const response = await fetch(`${SERVER_URL}/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,7 +93,6 @@ function Login({ user = null, setUser = () => {} }) {
       setUser(data);
       setIsSuccess(true);
       showToast("success", "Welcome back", "Google login successful");
-
       setTimeout(() => navigate("/chat"), 1000);
     } catch (error) {
       showToast("error", "Google login failed", error.message || "Unable to continue");
@@ -122,11 +115,9 @@ function Login({ user = null, setUser = () => {} }) {
       setIsSubmitting(true);
       setIsSuccess(false);
 
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -141,14 +132,11 @@ function Login({ user = null, setUser = () => {} }) {
         return;
       }
 
-      setUser({
-        ...data.user,
-        name: data.user?.name || `${formData.firstName} ${formData.lastName}`.trim(),
-      });
+      setUser(data.user);
       setIsSuccess(true);
       showToast(
         "success",
-        `Hi ${formData.firstName.trim() || "there"}`,
+        `Hi ${data.user?.name?.split(" ")[0] || "there"}`,
         "Login successful. Redirecting to chat..."
       );
 
@@ -187,40 +175,11 @@ function Login({ user = null, setUser = () => {} }) {
           <div className="auth-card-header">
             <span className="auth-eyebrow">Login</span>
             <h2>Sign in</h2>
-            <p>Now with the same first-name and last-name flow as signup for a unified experience.</p>
+            <p>Enter your email and password to continue.</p>
           </div>
 
+          {/* ✅ FIX: Only email + password fields for login */}
           <form className="auth-form" onSubmit={handleManualLogin}>
-            <div className="auth-grid-two">
-              <label className="auth-field">
-                <span>First Name</span>
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                  className={errors.firstName ? "error" : ""}
-                />
-                {errors.firstName && <span className="error-message">{errors.firstName}</span>}
-              </label>
-
-              <label className="auth-field">
-                <span>Last Name</span>
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                  className={errors.lastName ? "error" : ""}
-                />
-                {errors.lastName && <span className="error-message">{errors.lastName}</span>}
-              </label>
-            </div>
-
             <label className="auth-field">
               <span>Email</span>
               <input
@@ -267,9 +226,7 @@ function Login({ user = null, setUser = () => {} }) {
               onClick={handleGoogleLogin}
               disabled={isSubmitting}
             >
-              <span className="google-mark" aria-hidden="true">
-                G
-              </span>
+              <span className="google-mark" aria-hidden="true">G</span>
               Google
             </button>
           </form>
