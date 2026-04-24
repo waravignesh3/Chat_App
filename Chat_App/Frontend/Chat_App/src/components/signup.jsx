@@ -1,0 +1,273 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../App.css";
+
+function Signup() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState({
+    visible: false,
+    variant: "success",
+    title: "",
+    message: "",
+  });
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!toast.visible) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 2600);
+
+    return () => window.clearTimeout(timer);
+  }, [toast.visible]);
+
+  const showToast = (variant, title, message) => {
+    setToast({
+      visible: true,
+      variant,
+      title,
+      message,
+    });
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Invalid email";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Minimum 6 characters required";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showToast("error", "Fix the highlighted fields", "Please complete the form correctly");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        showToast("error", "Signup failed", data.error || "Unable to create account");
+        return;
+      }
+
+      showToast(
+        "success",
+        `Welcome ${formData.firstName.trim()}`,
+        "Account created successfully"
+      );
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+      setTimeout(() => navigate("/login"), 900);
+    } catch (error) {
+      console.error(error);
+      showToast("error", "Network error", "Server not running or network error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="auth-shell">
+      <div className="auth-backdrop auth-backdrop-left" />
+      <div className="auth-backdrop auth-backdrop-right" />
+
+      <section className="auth-layout auth-layout-signup">
+        <div className="auth-panel auth-intro">
+          <span className="auth-badge">ChatApp</span>
+          <h1>Create your account</h1>
+          <p>Join and start chatting instantly.</p>
+
+          <div className="auth-metrics">
+            <div className="metric-card">
+              <strong>Fast onboarding</strong>
+              <span>Create your profile with a clean, guided form.</span>
+            </div>
+            <div className="metric-card">
+              <strong>Shared experience</strong>
+              <span>Signup, login, and chat now feel part of one visual system.</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="auth-panel auth-card">
+          <div className="auth-card-header">
+            <span className="auth-eyebrow">Signup</span>
+            <h2>Create account</h2>
+            <p>Fill the form to get started</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-grid-two">
+              <label className="auth-field">
+                <span>First Name</span>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className={errors.firstName ? "error" : ""}
+                />
+                {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+              </label>
+
+              <label className="auth-field">
+                <span>Last Name</span>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className={errors.lastName ? "error" : ""}
+                />
+                {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+              </label>
+            </div>
+
+            <label className="auth-field">
+              <span>Email</span>
+              <input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                className={errors.email ? "error" : ""}
+              />
+              {errors.email && <span className="error-message">{errors.email}</span>}
+            </label>
+
+            <div className="auth-grid-two">
+              <label className="auth-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Minimum 6 characters"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={errors.password ? "error" : ""}
+                />
+                {errors.password && <span className="error-message">{errors.password}</span>}
+              </label>
+
+              <label className="auth-field">
+                <span>Confirm Password</span>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Repeat password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={errors.confirmPassword ? "error" : ""}
+                />
+                {errors.confirmPassword && (
+                  <span className="error-message">{errors.confirmPassword}</span>
+                )}
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="auth-button auth-button-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating..." : "Sign Up"}
+            </button>
+
+            <p className="auth-switch-text">
+              Already have an account? <Link to="/login">Login</Link>
+            </p>
+          </form>
+        </div>
+      </section>
+
+      <div
+        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
+      >
+        <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
+        <div>
+          <strong>{toast.title || "Signup"}</strong>
+          <p>{toast.message || "Account created"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Signup;

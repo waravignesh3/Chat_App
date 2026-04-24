@@ -1,0 +1,394 @@
+/*
+ * App.enhanced.css
+ * ─────────────────────────────────────────────────────────────
+ * Drop this file ALONGSIDE App.css.
+ * Import it AFTER App.css in your components.
+ * It does NOT override any existing rules — only adds new ones.
+ * ─────────────────────────────────────────────────────────────
+ */
+
+/* ──────────────────────────────────────
+   SCROLLBAR STYLING
+────────────────────────────────────── */
+.chat-user-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chat-user-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-user-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(110, 168, 254, 0.22);
+  border-radius: 999px;
+  transition: background 0.3s ease;
+}
+
+.chat-user-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 168, 254, 0.45);
+}
+
+/* ──────────────────────────────────────
+   ONLINE AVATAR PULSE RING
+────────────────────────────────────── */
+.chat-avatar-wrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+}
+
+.chat-avatar-wrap .chat-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.chat-online-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 20px;
+  border: 2px solid #5eead4;
+  animation: onlineRingPulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes onlineRingPulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(94, 234, 212, 0.5);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 5px rgba(94, 234, 212, 0);
+  }
+}
+
+/* ──────────────────────────────────────
+   TYPING INDICATOR (THREE DOTS)
+────────────────────────────────────── */
+.chat-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 18px;
+  width: fit-content;
+  border-radius: 24px 24px 24px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: bubbleIn 0.3s ease both;
+}
+
+.chat-typing-indicator span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--auth-primary, #6ea8fe);
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.chat-typing-indicator span:nth-child(2) {
+  animation-delay: 0.18s;
+  background: var(--auth-accent, #22d3ee);
+}
+
+.chat-typing-indicator span:nth-child(3) {
+  animation-delay: 0.36s;
+  background: #c084fc;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translateY(-7px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* ──────────────────────────────────────
+   CHAT BUBBLE HOVER GLOW
+────────────────────────────────────── */
+.chat-bubble {
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.chat-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px rgba(2, 10, 26, 0.28);
+}
+
+.chat-bubble.own:hover {
+  box-shadow: 0 16px 32px rgba(110, 168, 254, 0.18);
+}
+
+/* ──────────────────────────────────────
+   SHIMMER EFFECT ON OWN BUBBLE
+────────────────────────────────────── */
+.chat-bubble.own {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-bubble.own::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: bubbleShimmer 4s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+@keyframes bubbleShimmer {
+  0%   { background-position: -200% 0; opacity: 0; }
+  20%  { opacity: 1; }
+  60%  { background-position: 200% 0; opacity: 1; }
+  80%, 100% { opacity: 0; }
+}
+
+/* ──────────────────────────────────────
+   SEND BUTTON RIPPLE ON CLICK
+────────────────────────────────────── */
+.chat-send-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-send-button::after {
+  content: "";
+  position: absolute;
+  inset: 50% 50% auto auto;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+  transition: width 0s, height 0s, opacity 0.5s;
+  opacity: 0;
+}
+
+.chat-send-button:active:not(:disabled)::after {
+  width: 220px;
+  height: 220px;
+  opacity: 0;
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+}
+
+/* ──────────────────────────────────────
+   AUTH BUTTON SHIMMER
+────────────────────────────────────── */
+.auth-button-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-button-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: authBtnShimmer 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes authBtnShimmer {
+  0%   { left: -75%; opacity: 0; }
+  10%  { opacity: 1; }
+  55%  { left: 130%; opacity: 1; }
+  60%, 100% { left: 130%; opacity: 0; }
+}
+
+/* ──────────────────────────────────────
+   INPUT FOCUS GLOW PULSE
+────────────────────────────────────── */
+.auth-field input:focus,
+.chat-search input:focus,
+.chat-compose textarea:focus {
+  animation: inputGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes inputGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(110, 168, 254, 0.15); }
+  50%       { box-shadow: 0 0 0 6px rgba(110, 168, 254, 0.28); }
+}
+
+/* ──────────────────────────────────────
+   CHAT USER CARD — ACTIVE SHIMMER BORDER
+────────────────────────────────────── */
+.chat-user-card-active {
+  position: relative;
+  border-color: rgba(110, 168, 254, 0.5) !important;
+  box-shadow:
+    0 0 0 1px rgba(110, 168, 254, 0.2),
+    0 12px 28px rgba(2, 10, 26, 0.22);
+}
+
+.chat-user-card-active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.08),
+    rgba(110, 168, 254, 0.08),
+    rgba(192, 132, 252, 0.06)
+  );
+  pointer-events: none;
+  animation: activeCardGlow 3s ease-in-out infinite;
+}
+
+@keyframes activeCardGlow {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1; }
+}
+
+/* ──────────────────────────────────────
+   EMPTY STATE FLOAT ANIMATION
+────────────────────────────────────── */
+.chat-empty-state-large {
+  animation: emptyFloat 4s ease-in-out infinite;
+}
+
+@keyframes emptyFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ──────────────────────────────────────
+   SIDEBAR HEADER — NAME GRADIENT TEXT
+────────────────────────────────────── */
+.chat-sidebar-header h2 {
+  background: linear-gradient(
+    90deg,
+    #e8efff 0%,
+    #6ea8fe 50%,
+    #22d3ee 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: textGradientFlow 5s linear infinite;
+}
+
+@keyframes textGradientFlow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ──────────────────────────────────────
+   PANEL HEADER — SELECTED USER FADE-IN
+────────────────────────────────────── */
+.chat-panel-header h3 {
+  animation: fadeLiftFast 0.4s ease both;
+}
+
+@keyframes fadeLiftFast {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ──────────────────────────────────────
+   AUTH INTRO H1 — ANIMATED GRADIENT TEXT
+────────────────────────────────────── */
+.auth-intro h1 {
+  background: linear-gradient(
+    110deg,
+    #ffffff 0%,
+    #6ea8fe 40%,
+    #22d3ee 70%,
+    #c084fc 100%
+  );
+  background-size: 250% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: heroTextFlow 8s linear infinite;
+}
+
+@keyframes heroTextFlow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 250% center; }
+}
+
+/* ──────────────────────────────────────
+   TOAST ENTRY — SPRING BOUNCE
+────────────────────────────────────── */
+.auth-toast-visible {
+  animation: toastSpring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes toastSpring {
+  from { opacity: 0; transform: translateY(24px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ──────────────────────────────────────
+   METRIC CARD — GLOW BORDER ON HOVER
+────────────────────────────────────── */
+.metric-card:hover {
+  box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.25), 0 16px 36px rgba(2, 10, 26, 0.28);
+}
+
+/* ──────────────────────────────────────
+   CHAT CHIP — SUBTLE PULSE
+────────────────────────────────────── */
+.chat-chip,
+.auth-badge,
+.auth-eyebrow {
+  animation: chipGlow 4s ease-in-out infinite;
+}
+
+@keyframes chipGlow {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 12px rgba(110, 168, 254, 0.18); }
+}
+
+/* ──────────────────────────────────────
+   REDUCED MOTION — RESPECT PREFERENCE
+────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .chat-online-ring,
+  .chat-typing-indicator span,
+  .chat-bubble.own::after,
+  .chat-send-button::after,
+  .auth-button-primary::before,
+  .chat-empty-state-large,
+  .chat-sidebar-header h2,
+  .auth-intro h1,
+  .chat-user-card-active::before,
+  .chat-chip,
+  .auth-badge,
+  .auth-eyebrow {
+    animation: none !important;
+  }
+
+  .auth-field input:focus,
+  .chat-search input:focus,
+  .chat-compose textarea:focus {
+    animation: none !important;
+  }
+}
