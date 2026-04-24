@@ -5,6 +5,9 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import authroutes from "./authroutes.js";
 import User from "./models/user.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -23,10 +26,13 @@ app.use(express.json());
 
 app.use("/api", authroutes);
 
-mongoose
-  .connect("mongodb://127.0.0.1:27017/chatapp")
-  .then(() => console.log("Database connected"))
-  .catch((error) => console.log("DB error:", error));
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  family: 4
+})
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log("DB error:", err));
+
 
 const buildUsersPayload = async () => {
   const users = await User.find({}, "name email photo lastSeen isOnline").lean();
