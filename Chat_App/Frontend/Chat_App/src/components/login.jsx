@@ -6,7 +6,7 @@ import "../App.css";
 import "../App.enhanced.css";
 
 // ✅ FIX: Use dynamic hostname so LAN users connect to the right server
-const SERVER_URL = `http://${window.location.hostname}:5000`;
+const SERVER_URL = "https://Backend.onrender.com";
 
 function Login({ user = null, setUser = () => {} }) {
   // ✅ FIX: Login only needs email + password — removed firstName/lastName
