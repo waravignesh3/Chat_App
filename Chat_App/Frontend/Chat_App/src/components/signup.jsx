@@ -96,7 +96,7 @@ function Signup() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("https://Backend.onrender.com/api/register", {
+      const response = await fetch("https://chat-app-1-m9cw.onrender.com/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
