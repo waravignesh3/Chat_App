@@ -1,12 +1,15 @@
 import mysql from "mysql2/promise";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "9944779374", // Set your MySQL password here
-  database: "chatapp",
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "chatapp",
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10,
   queueLimit: 0,
 });
 

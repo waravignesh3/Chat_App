@@ -73,7 +73,10 @@ function App() {
         if (!active) return;
         setUser(data.user);
       } catch (error) {
-        console.error("Global auth sync failed:", error);
+        const isDev = import.meta.env.DEV;
+        if (isDev) {
+          console.error("Global auth sync failed:", error);
+        }
 
         if (active && auth.currentUser?.email) {
           setUser(buildFirebaseFallbackUser(auth.currentUser));

@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import pool from "./db.js";
+import logger from "./utils/logger.js";
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.post("/register", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
+    logger.error("User registration failed", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -96,7 +97,7 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    logger.error("User login failed", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

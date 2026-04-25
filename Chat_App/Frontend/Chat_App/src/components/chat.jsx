@@ -59,7 +59,9 @@ function Chat({ user, setUser }) {
 
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Users fetch error:", error);
+        if (import.meta.env.DEV) {
+          console.error("Users fetch error:", error);
+        }
         setUsers([]);
         setUsersError(error.message || "Unable to load users");
       } finally {
@@ -129,7 +131,9 @@ function Chat({ user, setUser }) {
     try {
       await signOut(auth);
     } catch (error) {
-      console.error("Logout error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Logout error:", error);
+      }
     } finally {
       setSelectedUser(null);
       setMessage("");

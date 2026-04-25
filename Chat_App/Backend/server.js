@@ -2,13 +2,20 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
 import pool from "./db.js";
 import authroutes from "./authroutes.js";
+import logger from "./utils/logger.js";
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
+const allowedOrigins = (process.env.CLIENT_URLS || "http://localhost:5173")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
 const onlineUsers = {};
 
 const io = new Server(server, {
@@ -18,23 +25,25 @@ const io = new Server(server, {
   },
 });
 
+app.use(express.json());
 app.use(
   cors({
     origin: allowedOrigins,
+    credentials: true,
   })
 );
-app.use(express.json());
 
 app.use("/api", authroutes);
 
 // Test MySQL connection
-pool.getConnection()
+pool
+  .getConnection()
   .then((connection) => {
     connection.release();
-    console.log("MySQL Database connected");
+    logger.info("MySQL Database connected successfully");
   })
   .catch((error) => {
-    console.log("DB error:", error.message);
+    logger.error("MySQL Database connection failed", error);
   });
 
 const buildUsersPayload = async () => {
@@ -100,8 +109,8 @@ app.post("/google-login", async (req, res) => {
       isOnline: Boolean(onlineUsers[user.email]),
     });
   } catch (error) {
-    console.error("Google login error:", error);
-    return res.status(500).json({ error: "Server error" });
+    logger.error("Google login error", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -110,13 +119,13 @@ app.get("/users", async (req, res) => {
     const users = await buildUsersPayload();
     return res.json(users);
   } catch (error) {
-    console.error("Fetch users error:", error);
-    return res.status(500).json({ error: "Server error" });
+    logger.error("Failed to fetch users", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  logger.debug("User connected", { socketId: socket.id });
 
   socket.on("register", async (email) => {
     if (!email) return;
@@ -159,7 +168,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });

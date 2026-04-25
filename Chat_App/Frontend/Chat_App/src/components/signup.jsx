@@ -136,7 +136,10 @@ function Signup() {
 
       setTimeout(() => navigate("/login"), 900);
     } catch (error) {
-      console.error(error);
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        console.error("Signup error:", error);
+      }
       showToast("error", "Network error", error.message || "Unable to reach the server");
     } finally {
       setIsSubmitting(false);
