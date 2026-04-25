@@ -1,33 +1,24 @@
 /**
- * utils/http.js
- * Shared fetch helpers used by App.jsx, login.jsx, and chat.jsx
+ * Parse a fetch Response as JSON, falling back gracefully on non-JSON bodies.
  */
-
-/**
- * Parses a fetch Response safely.
- * Returns parsed JSON or { error: rawText } if JSON parsing fails.
- */
-export const parseJsonResponse = async (response) => {
+export async function parseJsonResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
   const text = await response.text();
-  if (!text) return {};
   try {
     return JSON.parse(text);
   } catch {
-    return { error: text };
+    return { error: text || "Unknown error" };
   }
-};
+}
 
 /**
- * Convenience wrapper: fetch → parse JSON → throw if not ok.
- * Returns the parsed data object on success.
+ * Fetch a JSON endpoint and return the parsed body.
+ * Throws on network errors; callers handle non-2xx via response shape.
  */
-export const requestJson = async (url, options = {}) => {
+export async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
-  const data = await parseJsonResponse(response);
-
-  if (!response.ok) {
-    throw new Error(data?.error || `Request failed: ${response.status}`);
-  }
-
-  return data;
-};
+  return parseJsonResponse(response);
+}

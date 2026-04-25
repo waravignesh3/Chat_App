@@ -1,3 +1,11 @@
-# Never commit secrets
-.env
+# Dependencies
 node_modules/
+
+# Environment secrets — NEVER commit these
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
