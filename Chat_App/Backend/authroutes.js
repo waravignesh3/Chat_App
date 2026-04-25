@@ -11,43 +11,37 @@ router.post("/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
-    // ✅ Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // ✅ Check existing user
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
     const newUser = new User({
       name: `${firstName.trim()} ${lastName.trim()}`,
       email: normalizedEmail,
       password: hashedPassword,
       provider: "local",
       lastSeen: "Offline",
-      isOnline: false
+      isOnline: false,
     });
 
     await newUser.save();
 
     return res.json({
       success: true,
-      message: "User registered successfully"
+      message: "User registered successfully",
     });
-
   } catch (error) {
     console.error("REGISTER ERROR:", error);
 
-    // ✅ Handle duplicate key error (MongoDB)
     if (error.code === 11000) {
       return res.status(400).json({ error: "Email already exists" });
     }
@@ -63,21 +57,20 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // ✅ Find user
-    const user = await User.findOne({ email: normalizedEmail });
+    // .select("+password") ensures the password field is returned
+    // even if the User schema has { select: false } on the password field
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
     if (!user || !user.password) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // ✅ Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -97,7 +90,6 @@ router.post("/login", async (req, res) => {
         isOnline: user.isOnline,
       },
     });
-
   } catch (error) {
     console.error("LOGIN ERROR:", error);
     return res.status(500).json({ error: "Internal server error" });
