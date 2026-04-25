@@ -2,93 +2,44 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
+import pool from "./db.js";
 import authroutes from "./authroutes.js";
-import User from "./models/user.js";
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 const onlineUsers = {};
-
-const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-const corsOptions = {
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true,
-};
-
-app.disable("x-powered-by");
-app.set("trust proxy", 1);
-app.use((req, res, next) => {
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  next();
-});
-app.use(cors(corsOptions));
-app.use(express.json({ limit: "1mb" }));
-app.use("/api", authroutes);
-
-mongoose
-  .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 10000,
-  })
-  .then(() => console.log("MongoDB Connected"))
-  .catch((error) => console.log("DB error:", error));
 
 const io = new Server(server, {
   cors: {
-    ...corsOptions,
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
 
-const waitForDatabaseConnection = (timeoutMs = 12000) =>
-  new Promise((resolve, reject) => {
-    if (mongoose.connection.readyState === 1) {
-      resolve();
-      return;
-    }
+app.use(
+  cors({
+    origin: allowedOrigins,
+  })
+);
+app.use(express.json());
 
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error("Database connection timed out"));
-    }, timeoutMs);
+app.use("/api", authroutes);
 
-    const handleConnected = () => {
-      cleanup();
-      resolve();
-    };
-
-    const handleError = (error) => {
-      cleanup();
-      reject(error);
-    };
-
-    const cleanup = () => {
-      clearTimeout(timeout);
-      mongoose.connection.off("connected", handleConnected);
-      mongoose.connection.off("error", handleError);
-    };
-
-    mongoose.connection.on("connected", handleConnected);
-    mongoose.connection.on("error", handleError);
+// Test MySQL connection
+pool.getConnection()
+  .then(() => {
+    console.log("MySQL Database connected");
+  })
+  .catch((error) => {
+    console.log("DB error:", error.message);
   });
 
 const buildUsersPayload = async () => {
-  const users = await User.find({}, "name email photo lastSeen isOnline").lean();
+  const [users] = await pool.query(
+    "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
+  );
 
   return users.map((user) => ({
     ...user,
@@ -102,72 +53,56 @@ const broadcastUsers = async () => {
   io.emit("users_update", users);
 };
 
-const handleGoogleLogin = async (req, res) => {
+app.post("/google-login", async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      await waitForDatabaseConnection();
-    }
-
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const normalizedName = (name || normalizedEmail.split("@")[0] || "User").trim();
-    const normalizedPhoto = typeof photo === "string" && photo.trim() ? photo.trim() : undefined;
 
-    const user = await User.findOneAndUpdate(
-      { email: normalizedEmail },
-      {
-        $set: {
-          name: normalizedName,
-          provider: "google",
-          ...(normalizedPhoto ? { photo: normalizedPhoto } : {}),
-        },
-        $setOnInsert: {
-          email: normalizedEmail,
-          password: null,
-          lastSeen: "Offline",
-          isOnline: false,
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: true,
-        setDefaultsOnInsert: true,
-      }
+    // Check if user exists
+    const [users] = await pool.query(
+      "SELECT * FROM users WHERE LOWER(email) = ?",
+      [normalizedEmail]
     );
 
+    let user;
+    if (users.length === 0) {
+      // Create new user
+      const [result] = await pool.query(
+        "INSERT INTO users (name, email, photo, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'google', 'Offline', false)",
+        [name, normalizedEmail, photo]
+      );
+      user = { id: result.insertId, name, email: normalizedEmail, photo, provider: "google" };
+    } else {
+      // Update existing user
+      user = users[0];
+      await pool.query(
+        "UPDATE users SET name = ?, photo = ?, provider = 'google' WHERE LOWER(email) = ?",
+        [name, photo || user.photo, normalizedEmail]
+      );
+      user.name = name;
+      user.photo = photo || user.photo;
+      user.provider = "google";
+    }
+
     return res.json({
-      success: true,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        photo: user.photo,
-        provider: user.provider,
-        isOnline: Boolean(onlineUsers[user.email]),
-        lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
-      },
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      photo: user.photo,
+      provider: user.provider,
+      lastSeen: user.lastSeen,
+      isOnline: Boolean(onlineUsers[user.email]),
     });
   } catch (error) {
     console.error("Google login error:", error);
-
-    if (error.code === 11000) {
-      return res.status(409).json({ error: "An account with this email already exists." });
-    }
-
-    return res.status(500).json({
-      error: error.message || "Server error",
-    });
+    return res.status(500).json({ error: "Server error" });
   }
-};
-
-app.post("/google-login", handleGoogleLogin);
-app.post("/api/google-login", handleGoogleLogin);
+});
 
 app.get("/users", async (req, res) => {
   try {
@@ -179,29 +114,6 @@ app.get("/users", async (req, res) => {
   }
 });
 
-app.get("/api/users", async (req, res) => {
-  try {
-    const users = await buildUsersPayload();
-    return res.json(users);
-  } catch (error) {
-    console.error("Fetch users error:", error);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "Server is healthy",
-    database:
-      mongoose.connection.readyState === 1
-        ? "connected"
-        : mongoose.connection.readyState === 2
-          ? "connecting"
-          : "disconnected",
-  });
-});
-
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -211,47 +123,34 @@ io.on("connection", (socket) => {
     const normalizedEmail = email.toLowerCase().trim();
     onlineUsers[normalizedEmail] = socket.id;
 
-    await User.findOneAndUpdate(
-      { email: normalizedEmail },
-      { isOnline: true, lastSeen: "Online" }
+    await pool.query(
+      "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
+      [normalizedEmail]
     );
 
     await broadcastUsers();
   });
 
   socket.on("private_message", ({ to, message }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    const normalizedRecipient = to?.toLowerCase().trim();
+    const targetSocketId = onlineUsers[normalizedRecipient];
+
     if (targetSocketId) {
       io.to(targetSocketId).emit("private_message", message);
     }
   });
 
-  socket.on("typing", ({ to, from }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) {
-      io.to(targetSocketId).emit("typing", { from });
-    }
-  });
-
-  socket.on("stop_typing", ({ to, from }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) {
-      io.to(targetSocketId).emit("stop_typing", { from });
-    }
-  });
-
   socket.on("disconnect", async () => {
-    const email = Object.keys(onlineUsers).find((entry) => onlineUsers[entry] === socket.id);
+    const email = Object.keys(onlineUsers).find(
+      (email) => onlineUsers[email] === socket.id
+    );
 
     if (email) {
       delete onlineUsers[email];
 
-      await User.findOneAndUpdate(
-        { email },
-        {
-          isOnline: false,
-          lastSeen: new Date().toISOString(),
-        }
+      await pool.query(
+        "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
+        [new Date().toISOString(), email]
       );
 
       await broadcastUsers();
@@ -259,21 +158,7 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use((req, res) => {
-  res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
-});
-
-app.use((error, req, res, next) => {
-  if (res.headersSent) {
-    return next(error);
-  }
-
-  console.error("UNHANDLED SERVER ERROR:", error);
-  return res.status(500).json({ error: error.message || "Internal server error" });
-});
-
-const PORT = process.env.PORT || 5000;
-
+const PORT = 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

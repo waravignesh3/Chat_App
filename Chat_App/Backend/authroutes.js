@@ -1,88 +1,80 @@
 import express from "express";
-import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
-import User from "./models/user.js";
+import bcrypt from "bcrypt";
+import pool from "./db.js";
 
 const router = express.Router();
 
-const isDatabaseReady = () => mongoose.connection.readyState === 1;
-
+/* =========================
+   REGISTER
+========================= */
 router.post("/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
-    if (!isDatabaseReady()) {
-      return res.status(503).json({ error: "Database unavailable. Please try again shortly." });
-    }
-
+    // ✅ Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const normalizedFirstName = firstName.trim();
-    const normalizedLastName = lastName.trim();
     const normalizedEmail = email.toLowerCase().trim();
 
-    if (normalizedFirstName.length < 2 || normalizedLastName.length < 2) {
-      return res.status(400).json({ error: "Name must be at least 2 characters long" });
+    // ✅ Check existing user
+    const [existingUsers] = await pool.query(
+      "SELECT id FROM users WHERE LOWER(email) = ?",
+      [normalizedEmail]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters long" });
-    }
-
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      return res.status(409).json({ error: "User already exists" });
-    }
-
+    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
-      name: `${normalizedFirstName} ${normalizedLastName}`,
-      email: normalizedEmail,
-      password: hashedPassword,
-      provider: "local",
-      lastSeen: "Offline",
-      isOnline: false,
-    });
-
-    await newUser.save();
+    // ✅ Create user
+    await pool.query(
+      "INSERT INTO users (name, email, password, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'local', 'Offline', false)",
+      [`${firstName.trim()} ${lastName.trim()}`, normalizedEmail, hashedPassword]
+    );
 
     return res.json({
       success: true,
-      message: "User registered successfully",
+      message: "User registered successfully"
     });
+
   } catch (error) {
     console.error("REGISTER ERROR:", error);
-
-    if (error.code === 11000) {
-      return res.status(409).json({ error: "Email already exists" });
-    }
-
-    return res.status(500).json({ error: error.message || "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
+/* =========================
+   LOGIN
+========================= */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    if (!isDatabaseReady()) {
-      return res.status(503).json({ error: "Database unavailable. Please try again shortly." });
-    }
-
+    // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+
+    // ✅ Find user
+    const [users] = await pool.query(
+      "SELECT * FROM users WHERE LOWER(email) = ?",
+      [normalizedEmail]
+    );
+
+    const user = users[0];
 
     if (!user || !user.password) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    // ✅ Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -93,7 +85,7 @@ router.post("/login", async (req, res) => {
       success: true,
       message: "Login successful",
       user: {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         photo: user.photo,
@@ -102,9 +94,10 @@ router.post("/login", async (req, res) => {
         isOnline: user.isOnline,
       },
     });
+
   } catch (error) {
     console.error("LOGIN ERROR:", error);
-    return res.status(500).json({ error: error.message || "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
