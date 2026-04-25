@@ -4,8 +4,10 @@ import "../App.css";
 import "../App.enhanced.css";
 
 // ✅ FIX: Use dynamic hostname so LAN users connect to the right server
-const SERVER_URL = `http://${window.location.hostname}:5000`;
-const socket = io(SERVER_URL);
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+const socket = io(import.meta.env.VITE_SERVER_URL, {
+  transports: ["websocket"]
+});
 
 function Chat({ user }) {
   const [message, setMessage] = useState("");
