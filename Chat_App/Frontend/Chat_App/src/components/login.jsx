@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { signInWithPopup } from "firebase/auth";
+import { getRedirectResult, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import "../App.css";
@@ -37,6 +37,46 @@ function Login({ user = null, setUser = () => {} }) {
   const showToast = (variant, title, message) => {
     setToast({ visible: true, variant, title, message });
   };
+
+  useEffect(() => {
+    const completeRedirectLogin = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (!result?.user) return;
+
+        setIsSubmitting(true);
+
+        const response = await fetch(`${SERVER_URL}/api/google-login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: result.user.displayName || result.user.email?.split("@")[0] || "User",
+            email: result.user.email,
+            photo: result.user.photoURL,
+          }),
+        });
+
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (!response.ok) {
+          throw new Error(data.error || "Google login failed");
+        }
+
+        setUser(data.user);
+        setIsSuccess(true);
+        showToast("success", "Welcome back", "Google login successful");
+        setTimeout(() => navigate("/chat"), 900);
+      } catch (error) {
+        if (error?.code === "auth/no-auth-event") return;
+        showToast("error", "Google login failed", error?.message || "Unable to continue");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    completeRedirectLogin();
+  }, [navigate, setUser]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -92,6 +132,15 @@ function Login({ user = null, setUser = () => {} }) {
       showToast("success", "Welcome back", "Google login successful");
       setTimeout(() => navigate("/chat"), 1000);
     } catch (error) {
+      if (
+        error?.code === "auth/popup-blocked" ||
+        error?.code === "auth/popup-closed-by-user" ||
+        error?.code === "auth/cancelled-popup-request"
+      ) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+
       const message =
         error?.code === "auth/unauthorized-domain"
           ? "Authorize your frontend domain in Firebase Authentication settings."

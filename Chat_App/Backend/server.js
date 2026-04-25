@@ -64,27 +64,36 @@ const handleGoogleLogin = async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
-    if (!name || !email) {
-      return res.status(400).json({ error: "Name and email are required" });
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    let user = await User.findOne({ email: normalizedEmail });
+    const normalizedName = (name || normalizedEmail.split("@")[0] || "User").trim();
+    const normalizedPhoto = typeof photo === "string" && photo.trim() ? photo.trim() : undefined;
 
-    if (!user) {
-      user = new User({
-        name: name.trim(),
-        email: normalizedEmail,
-        photo,
-        provider: "google",
-      });
-    } else {
-      user.name = name.trim();
-      user.photo = photo || user.photo;
-      user.provider = "google";
-    }
-
-    await user.save();
+    const user = await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      {
+        $set: {
+          name: normalizedName,
+          provider: "google",
+          ...(normalizedPhoto ? { photo: normalizedPhoto } : {}),
+        },
+        $setOnInsert: {
+          email: normalizedEmail,
+          password: null,
+          lastSeen: "Offline",
+          isOnline: false,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      }
+    );
 
     return res.json({
       success: true,
@@ -100,7 +109,14 @@ const handleGoogleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Google login error:", error);
-    return res.status(500).json({ error: "Server error" });
+
+    if (error.code === 11000) {
+      return res.status(409).json({ error: "An account with this email already exists." });
+    }
+
+    return res.status(500).json({
+      error: error.message || "Server error",
+    });
   }
 };
 
