@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { signInWithPopup } from "firebase/auth";
+import {
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+} from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import "../App.css";
@@ -51,7 +56,6 @@ function Login({ user = null, setUser = () => {} }) {
 
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) navigate("/chat", { replace: true });
   }, [user, navigate]);
@@ -85,14 +89,23 @@ function Login({ user = null, setUser = () => {} }) {
     return nextErrors;
   };
 
-  /* ── Google Login (popup — works reliably on all deployed hosts) ── */
+  /* ── Google Login ── */
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
       setIsSuccess(false);
 
-      const result = await signInWithPopup(auth, provider);
+      // Firebase popup uses sessionStorage internally for OAuth state.
+      // Switching to browserLocalPersistence makes it use localStorage instead,
+      // which works in Safari, Firefox strict mode, and storage-partitioned envs.
+      // Falls back to inMemoryPersistence if localStorage is also blocked.
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch {
+        await setPersistence(auth, inMemoryPersistence);
+      }
 
+      const result = await signInWithPopup(auth, provider);
       const data = await syncGoogleUser(result.user);
 
       setUser(data.user);
@@ -100,7 +113,7 @@ function Login({ user = null, setUser = () => {} }) {
       showToast("success", "Welcome", "Google login successful");
       setTimeout(() => navigate("/chat"), 900);
     } catch (error) {
-      // User closed the popup — don't show an error
+      // User closed the popup — silent exit, no error toast
       if (
         error?.code === "auth/popup-closed-by-user" ||
         error?.code === "auth/cancelled-popup-request"
@@ -110,8 +123,8 @@ function Login({ user = null, setUser = () => {} }) {
 
       const message =
         error?.code === "auth/unauthorized-domain"
-          ? "Authorize your frontend domain in Firebase Authentication settings."
-          : error?.message || "Unable to continue";
+          ? "Add your frontend domain in Firebase → Authentication → Authorized Domains."
+          : error?.message || "Unable to continue with Google";
 
       showToast("error", "Google login failed", message);
     } finally {
