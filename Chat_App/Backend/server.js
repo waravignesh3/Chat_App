@@ -11,29 +11,41 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// 🔥 IMPORTANT: store online users
 const onlineUsers = {};
 
-// ✅ FIX: Allow all origins so LAN devices can connect
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
+// 🌍 FIX: allow frontend (Vercel) explicitly
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://chat-app-kappa-blush-85.vercel.app"
+];
 
-app.use(cors({ origin: "*" }));
+// ✅ FIXED CORS
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 app.use(express.json());
-
 app.use("/api", authroutes);
 
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 10000,
-  family: 4
-})
+// 🔥 FIX: MongoDB better production config
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log("DB error:", err));
 
+// ================= SOCKET.IO FIX =================
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
+// ================= HELPERS =================
 const buildUsersPayload = async () => {
   const users = await User.find({}, "name email photo lastSeen isOnline").lean();
 
@@ -49,6 +61,7 @@ const broadcastUsers = async () => {
   io.emit("users_update", users);
 };
 
+// ================= ROUTES =================
 app.post("/google-login", async (req, res) => {
   const { name, email, photo } = req.body;
 
@@ -70,7 +83,6 @@ app.post("/google-login", async (req, res) => {
     } else {
       user.name = name;
       user.photo = photo || user.photo;
-      user.provider = "google";
     }
 
     await user.save();
@@ -80,8 +92,6 @@ app.post("/google-login", async (req, res) => {
       name: user.name,
       email: user.email,
       photo: user.photo,
-      provider: user.provider,
-      lastSeen: user.lastSeen,
       isOnline: Boolean(onlineUsers[user.email]),
     });
   } catch (error) {
@@ -93,13 +103,14 @@ app.post("/google-login", async (req, res) => {
 app.get("/users", async (req, res) => {
   try {
     const users = await buildUsersPayload();
-    return res.json(users);
+    res.json(users);
   } catch (error) {
     console.error("Fetch users error:", error);
-    return res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
+// ================= SOCKET LOGIC =================
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -118,24 +129,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("private_message", ({ to, message }) => {
-    const normalizedRecipient = to?.toLowerCase().trim();
-    const targetSocketId = onlineUsers[normalizedRecipient];
-
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) {
       io.to(targetSocketId).emit("private_message", message);
     }
   });
 
   socket.on("disconnect", async () => {
-    const disconnectedEmail = Object.keys(onlineUsers).find(
-      (email) => onlineUsers[email] === socket.id
+    const email = Object.keys(onlineUsers).find(
+      (e) => onlineUsers[e] === socket.id
     );
 
-    if (disconnectedEmail) {
-      delete onlineUsers[disconnectedEmail];
+    if (email) {
+      delete onlineUsers[email];
 
       await User.findOneAndUpdate(
-        { email: disconnectedEmail },
+        { email },
         {
           isOnline: false,
           lastSeen: new Date().toLocaleString(),
@@ -147,9 +156,10 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = 5000;
-// ✅ FIX: Bind to 0.0.0.0 so LAN devices can reach the server
-server.listen(PORT, "0.0.0.0", () => {
+// ================= FIXED PORT (IMPORTANT FOR RENDER) =================
+const PORT = process.env.PORT || 5000;
+
+// ❌ DO NOT use 0.0.0.0 manually on Render
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`LAN access: http://<your-local-ip>:${PORT}`);
 });
