@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getRedirectResult, signInWithRedirect } from "firebase/auth";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getRedirectResult, onAuthStateChanged, signInWithRedirect } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
@@ -33,6 +33,7 @@ function Login({ user = null, setUser = () => {} }) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const syncInFlightRef = useRef(false);
 
   const navigate = useNavigate();
 
@@ -56,29 +57,57 @@ function Login({ user = null, setUser = () => {} }) {
     setToast({ visible: true, variant, title, message });
   };
 
+  const finalizeGoogleLogin = useCallback(async (firebaseUser, options = {}) => {
+    if (!firebaseUser?.email || syncInFlightRef.current) {
+      return;
+    }
+
+    syncInFlightRef.current = true;
+
+    try {
+      setIsSubmitting(true);
+      const data = await syncGoogleUser(firebaseUser);
+      setUser(data.user);
+      setIsSuccess(true);
+
+      if (!options.silent) {
+        showToast("success", "Welcome back", "Google login successful");
+      }
+
+      navigate("/chat", { replace: true });
+    } catch (error) {
+      showToast("error", "Google login failed", error?.message || "Unable to continue");
+    } finally {
+      syncInFlightRef.current = false;
+      setIsSubmitting(false);
+    }
+  }, [navigate, setUser]);
+
   useEffect(() => {
     const completeRedirectLogin = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (!result?.user) return;
-
-        setIsSubmitting(true);
-        const data = await syncGoogleUser(result.user);
-
-        setUser(data.user);
-        setIsSuccess(true);
-        showToast("success", "Welcome back", "Google login successful");
-        setTimeout(() => navigate("/chat"), 900);
+        await finalizeGoogleLogin(result.user);
       } catch (error) {
         if (error?.code === "auth/no-auth-event") return;
         showToast("error", "Google login failed", error?.message || "Unable to continue");
-      } finally {
-        setIsSubmitting(false);
       }
     };
 
     completeRedirectLogin();
-  }, [navigate, setUser]);
+  }, [finalizeGoogleLogin]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser?.email) return;
+      if (user?._id || user?.email) return;
+
+      await finalizeGoogleLogin(firebaseUser, { silent: true });
+    });
+
+    return unsubscribe;
+  }, [finalizeGoogleLogin, user]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
