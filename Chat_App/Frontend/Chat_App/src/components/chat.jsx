@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase";
 import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
@@ -107,9 +109,18 @@ function Chat({ user, setUser }) {
     clearTimeout(typingIndicatorTimeoutRef.current);
   }, []);
 
-  const handleLogout = () => {
-    setUser(null);
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setSelectedUser(null);
+      setMessage("");
+      setMessages([]);
+      setUser(null);
+      navigate("/login", { replace: true });
+    }
   };
 
   const activeSelectedUser = useMemo(
