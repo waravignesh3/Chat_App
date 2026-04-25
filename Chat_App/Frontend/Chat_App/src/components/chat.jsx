@@ -8,10 +8,6 @@ import "../App.css";
 import "../App.enhanced.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
-const socket = io(SERVER_URL, {
-  transports: ["websocket"],
-  withCredentials: true,
-});
 
 function Chat({ user, setUser }) {
   const [message, setMessage] = useState("");
@@ -22,17 +18,34 @@ function Chat({ user, setUser }) {
   const [isTyping, setIsTyping] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
+
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingIndicatorTimeoutRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user?.email) {
-      socket.emit("register", user.email);
-    }
-  }, [user]);
+  // ── Socket lives in a ref so it is created once and never recreated
+  //    on StrictMode double-mount, preventing duplicate event listeners.
+  const socketRef = useRef(null);
 
+  // Initialize socket connection
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SERVER_URL, {
+        transports: ["websocket"],
+        withCredentials: true,
+      });
+    }
+  }, []);
+
+  // Register online presence
+  useEffect(() => {
+    if (user?.email && socketRef.current) {
+      socketRef.current.emit("register", user.email);
+    }
+  }, [user?.email]);
+
+  // Initial user list fetch
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -42,9 +55,7 @@ function Chat({ user, setUser }) {
         const response = await fetch(`${SERVER_URL}/api/users`);
         const data = await parseJsonResponse(response);
 
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to load users");
-        }
+        if (!response.ok) throw new Error(data.error || "Unable to load users");
 
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -59,28 +70,27 @@ function Chat({ user, setUser }) {
     loadUsers();
   }, []);
 
+  // Real-time user list updates
   useEffect(() => {
     const handleUsersUpdate = (data) => setUsers(Array.isArray(data) ? data : []);
-    socket.on("users_update", handleUsersUpdate);
-
-    return () => socket.off("users_update", handleUsersUpdate);
+    socketRef.current?.on("users_update", handleUsersUpdate);
+    return () => socketRef.current?.off("users_update", handleUsersUpdate);
   }, []);
 
+  // Incoming private messages
   useEffect(() => {
     const handlePrivateMessage = (incomingMessage) => {
       setMessages((prev) => [...prev, incomingMessage]);
       setIsTyping(false);
     };
-
-    socket.on("private_message", handlePrivateMessage);
-
-    return () => socket.off("private_message", handlePrivateMessage);
+    socketRef.current?.on("private_message", handlePrivateMessage);
+    return () => socketRef.current?.off("private_message", handlePrivateMessage);
   }, []);
 
+  // Typing indicators
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
       if (!selectedUser || from !== selectedUser.email) return;
-
       setIsTyping(true);
       clearTimeout(typingIndicatorTimeoutRef.current);
       typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
@@ -91,22 +101,28 @@ function Chat({ user, setUser }) {
       setIsTyping(false);
     };
 
-    socket.on("typing", handleTypingStart);
-    socket.on("stop_typing", handleTypingStop);
+    socketRef.current?.on("typing", handleTypingStart);
+    socketRef.current?.on("stop_typing", handleTypingStop);
 
     return () => {
-      socket.off("typing", handleTypingStart);
-      socket.off("stop_typing", handleTypingStop);
+      socketRef.current?.off("typing", handleTypingStart);
+      socketRef.current?.off("stop_typing", handleTypingStop);
     };
   }, [selectedUser]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, selectedUser, isTyping]);
 
-  useEffect(() => () => {
-    clearTimeout(typingTimeoutRef.current);
-    clearTimeout(typingIndicatorTimeoutRef.current);
+  // Cleanup timers and disconnect socket on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingIndicatorTimeoutRef.current);
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -123,6 +139,7 @@ function Chat({ user, setUser }) {
     }
   };
 
+  // Always reflect latest online status from the users list
   const activeSelectedUser = useMemo(
     () =>
       selectedUser?.email
@@ -138,17 +155,11 @@ function Chat({ user, setUser }) {
       text: message.trim(),
       sender: user.email,
       receiver: activeSelectedUser.email,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    socket.emit("private_message", {
-      to: activeSelectedUser.email,
-      message: msgData,
-    });
-    socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+    socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
+    socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
 
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
@@ -159,7 +170,6 @@ function Chat({ user, setUser }) {
     () =>
       users.filter((entry) => {
         if (!entry?.email || entry.email === user?.email) return false;
-
         const query = search.toLowerCase();
         return (
           entry.email.toLowerCase().includes(query) ||
@@ -192,9 +202,9 @@ function Chat({ user, setUser }) {
 
     if (activeSelectedUser) {
       clearTimeout(typingTimeoutRef.current);
-      socket.emit("typing", { to: activeSelectedUser.email, from: user.email });
+      socketRef.current?.emit("typing", { to: activeSelectedUser.email, from: user.email });
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+        socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
       }, 1200);
     }
   };
@@ -241,7 +251,6 @@ function Chat({ user, setUser }) {
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((entry) => {
                 const isActive = activeSelectedUser?.email === entry.email;
-
                 return (
                   <button
                     key={entry.email}
@@ -281,7 +290,9 @@ function Chat({ user, setUser }) {
             <div>
               <span className="chat-chip">Direct Message</span>
               <h3>
-                {activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}
+                {activeSelectedUser
+                  ? activeSelectedUser.name || activeSelectedUser.email
+                  : "Select a user"}
               </h3>
               <p>
                 {activeSelectedUser
@@ -299,14 +310,15 @@ function Chat({ user, setUser }) {
                 <>
                   {conversationMessages.map((entry, index) => {
                     const isOwnMessage = entry.sender === user?.email;
-
                     return (
                       <article
                         key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
                         className={`chat-bubble${isOwnMessage ? " own" : ""}`}
                       >
                         <span className="chat-bubble-sender">
-                          {isOwnMessage ? "You" : activeSelectedUser.name || activeSelectedUser.email}
+                          {isOwnMessage
+                            ? "You"
+                            : activeSelectedUser.name || activeSelectedUser.email}
                         </span>
                         <p>{entry.text}</p>
                         <time>{entry.time}</time>
