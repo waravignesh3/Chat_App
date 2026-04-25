@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import pool, { hasDatabaseConfig } from "./db.js";
-import logger from "./utils/logger.js";
+import logger from "./utils/logger.js"; // FIX: was ./logger.js
 
 const router = express.Router();
 
@@ -13,17 +13,21 @@ router.post("/register", async (req, res) => {
 
   try {
     if (!hasDatabaseConfig) {
-      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
+      return res.status(503).json({
+        error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME.",
+      });
     }
 
-    // ✅ Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
-    // ✅ Check existing user
     const [existingUsers] = await pool.query(
       "SELECT id FROM users WHERE LOWER(email) = ?",
       [normalizedEmail]
@@ -33,20 +37,15 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
     await pool.query(
+      // FIX: lastSeen is VARCHAR — store 'Offline' string (not a DATETIME)
       "INSERT INTO users (name, email, password, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'local', 'Offline', false)",
       [`${firstName.trim()} ${lastName.trim()}`, normalizedEmail, hashedPassword]
     );
 
-    return res.json({
-      success: true,
-      message: "User registered successfully"
-    });
-
+    return res.json({ success: true, message: "User registered successfully" });
   } catch (error) {
     logger.error("User registration failed", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -61,17 +60,17 @@ router.post("/login", async (req, res) => {
 
   try {
     if (!hasDatabaseConfig) {
-      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
+      return res.status(503).json({
+        error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME.",
+      });
     }
 
-    // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // ✅ Find user
     const [users] = await pool.query(
       "SELECT * FROM users WHERE LOWER(email) = ?",
       [normalizedEmail]
@@ -83,7 +82,6 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // ✅ Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -100,10 +98,9 @@ router.post("/login", async (req, res) => {
         photo: user.photo,
         provider: user.provider,
         lastSeen: user.lastSeen,
-        isOnline: user.isOnline,
+        isOnline: Boolean(user.isOnline),
       },
     });
-
   } catch (error) {
     logger.error("User login failed", error);
     return res.status(500).json({ error: "Internal server error" });

@@ -10,37 +10,54 @@ import "../App.enhanced.css";
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 function Chat({ user, setUser }) {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState("");
+  const [message, setMessage]         = useState("");
+  const [messages, setMessages]       = useState([]);
+  const [users, setUsers]             = useState([]);
+  const [search, setSearch]           = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping]       = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState("");
+  const [usersError, setUsersError]   = useState("");
 
-  const bottomRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-  const typingIndicatorTimeoutRef = useRef(null);
-  const navigate = useNavigate();
+  const bottomRef                     = useRef(null);
+  const typingTimeoutRef              = useRef(null);
+  const typingIndicatorTimeoutRef     = useRef(null);
+  const navigate                      = useNavigate();
 
-  // ── Socket lives in a ref so it is created once and never recreated
-  //    on StrictMode double-mount, preventing duplicate event listeners.
+  // Socket lives in a ref so it is created once and never recreated on
+  // StrictMode double-mount, preventing duplicate event listeners.
   const socketRef = useRef(null);
 
-  // Initialize socket connection
+  // FIX: Create socket AND register in a single effect so there is no
+  // race condition between socket creation and the register emit.
   useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io(SERVER_URL, {
-        transports: ["websocket"],
-        withCredentials: true,
-      });
-    }
-  }, []);
+    if (socketRef.current) return; // already created
 
-  // Register online presence
+    const socket = io(SERVER_URL, {
+      transports:      ["websocket"],
+      withCredentials: true,
+    });
+
+    socketRef.current = socket;
+
+    // Register online presence as soon as connection is confirmed
+    socket.on("connect", () => {
+      if (user?.email) {
+        socket.emit("register", user.email);
+      }
+    });
+
+    return () => {
+      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingIndicatorTimeoutRef.current);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-register if user email changes after socket is already open
   useEffect(() => {
-    if (user?.email && socketRef.current) {
+    if (user?.email && socketRef.current?.connected) {
       socketRef.current.emit("register", user.email);
     }
   }, [user?.email]);
@@ -53,15 +70,12 @@ function Chat({ user, setUser }) {
         setUsersError("");
 
         const response = await fetch(`${SERVER_URL}/api/users`);
-        const data = await parseJsonResponse(response);
+        const data     = await parseJsonResponse(response);
 
         if (!response.ok) throw new Error(data.error || "Unable to load users");
-
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error("Users fetch error:", error);
-        }
+        if (import.meta.env.DEV) console.error("Users fetch error:", error);
         setUsers([]);
         setUsersError(error.message || "Unable to load users");
       } finally {
@@ -74,19 +88,19 @@ function Chat({ user, setUser }) {
 
   // Real-time user list updates
   useEffect(() => {
-    const handleUsersUpdate = (data) => setUsers(Array.isArray(data) ? data : []);
-    socketRef.current?.on("users_update", handleUsersUpdate);
-    return () => socketRef.current?.off("users_update", handleUsersUpdate);
+    const handler = (data) => setUsers(Array.isArray(data) ? data : []);
+    socketRef.current?.on("users_update", handler);
+    return () => socketRef.current?.off("users_update", handler);
   }, []);
 
   // Incoming private messages
   useEffect(() => {
-    const handlePrivateMessage = (incomingMessage) => {
+    const handler = (incomingMessage) => {
       setMessages((prev) => [...prev, incomingMessage]);
       setIsTyping(false);
     };
-    socketRef.current?.on("private_message", handlePrivateMessage);
-    return () => socketRef.current?.off("private_message", handlePrivateMessage);
+    socketRef.current?.on("private_message", handler);
+    return () => socketRef.current?.off("private_message", handler);
   }, []);
 
   // Typing indicators
@@ -103,11 +117,11 @@ function Chat({ user, setUser }) {
       setIsTyping(false);
     };
 
-    socketRef.current?.on("typing", handleTypingStart);
+    socketRef.current?.on("typing",      handleTypingStart);
     socketRef.current?.on("stop_typing", handleTypingStop);
 
     return () => {
-      socketRef.current?.off("typing", handleTypingStart);
+      socketRef.current?.off("typing",      handleTypingStart);
       socketRef.current?.off("stop_typing", handleTypingStop);
     };
   }, [selectedUser]);
@@ -117,23 +131,11 @@ function Chat({ user, setUser }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, selectedUser, isTyping]);
 
-  // Cleanup timers and disconnect socket on unmount
-  useEffect(() => {
-    return () => {
-      clearTimeout(typingTimeoutRef.current);
-      clearTimeout(typingIndicatorTimeoutRef.current);
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
-  }, []);
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("Logout error:", error);
-      }
+      if (import.meta.env.DEV) console.error("Logout error:", error);
     } finally {
       setSelectedUser(null);
       setMessage("");
@@ -143,11 +145,11 @@ function Chat({ user, setUser }) {
     }
   };
 
-  // Always reflect latest online status from the users list
+  // Always reflect latest online status from the live users list
   const activeSelectedUser = useMemo(
     () =>
       selectedUser?.email
-        ? users.find((entry) => entry.email === selectedUser.email) || selectedUser
+        ? users.find((u) => u.email === selectedUser.email) || selectedUser
         : null,
     [selectedUser, users]
   );
@@ -156,14 +158,14 @@ function Chat({ user, setUser }) {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
 
     const msgData = {
-      text: message.trim(),
-      sender: user.email,
+      text:     message.trim(),
+      sender:   user.email,
       receiver: activeSelectedUser.email,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time:     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
-    socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+    socketRef.current?.emit("stop_typing",     { to: activeSelectedUser.email, from: user.email });
 
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
@@ -172,13 +174,10 @@ function Chat({ user, setUser }) {
 
   const filteredUsers = useMemo(
     () =>
-      users.filter((entry) => {
-        if (!entry?.email || entry.email === user?.email) return false;
-        const query = search.toLowerCase();
-        return (
-          entry.email.toLowerCase().includes(query) ||
-          entry.name?.toLowerCase().includes(query)
-        );
+      users.filter((u) => {
+        if (!u?.email || u.email === user?.email) return false;
+        const q = search.toLowerCase();
+        return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
       }),
     [search, user?.email, users]
   );
@@ -186,10 +185,10 @@ function Chat({ user, setUser }) {
   const conversationMessages = useMemo(
     () =>
       messages.filter(
-        (entry) =>
+        (m) =>
           activeSelectedUser &&
-          ((entry.sender === user?.email && entry.receiver === activeSelectedUser.email) ||
-            (entry.sender === activeSelectedUser.email && entry.receiver === user?.email))
+          ((m.sender === user?.email && m.receiver === activeSelectedUser.email) ||
+            (m.sender === activeSelectedUser.email && m.receiver === user?.email))
       ),
     [activeSelectedUser, messages, user?.email]
   );
@@ -237,14 +236,14 @@ function Chat({ user, setUser }) {
               type="text"
               placeholder="Search by name or email"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </label>
 
           <div className="chat-user-list">
             {isLoadingUsers ? (
               <div className="chat-empty-state">
-                <strong>Loading users...</strong>
+                <strong>Loading users…</strong>
                 <p>Please wait while we sync your contacts.</p>
               </div>
             ) : usersError ? (
@@ -264,7 +263,7 @@ function Chat({ user, setUser }) {
                   >
                     <div className="chat-avatar-wrap">
                       <img
-                        src={entry.photo || "https://via.placeholder.com/48"}
+                        src={entry.photo || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(entry.name || entry.email)}
                         alt={entry.name || entry.email}
                         className="chat-avatar"
                       />
@@ -313,16 +312,14 @@ function Chat({ user, setUser }) {
               conversationMessages.length > 0 ? (
                 <>
                   {conversationMessages.map((entry, index) => {
-                    const isOwnMessage = entry.sender === user?.email;
+                    const isOwn = entry.sender === user?.email;
                     return (
                       <article
                         key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
-                        className={`chat-bubble${isOwnMessage ? " own" : ""}`}
+                        className={`chat-bubble${isOwn ? " own" : ""}`}
                       >
                         <span className="chat-bubble-sender">
-                          {isOwnMessage
-                            ? "You"
-                            : activeSelectedUser.name || activeSelectedUser.email}
+                          {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
                         </span>
                         <p>{entry.text}</p>
                         <time>{entry.time}</time>

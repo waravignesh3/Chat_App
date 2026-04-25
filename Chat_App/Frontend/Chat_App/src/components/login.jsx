@@ -14,22 +14,17 @@ import "../App.enhanced.css";
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 function Login({ user = null, setUser = () => {} }) {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
+  const [formData, setFormData]   = useState({ email: "", password: "" });
+  const [errors, setErrors]       = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [toast, setToast] = useState({
-    visible: false,
-    variant: "success",
-    title: "",
-    message: "",
-  });
+  const [toast, setToast]         = useState({ visible: false, variant: "success", title: "", message: "" });
 
   const navigate = useNavigate();
 
-  // Already logged in → go straight to chat
+  // FIX: check user.id (MySQL) not user._id (MongoDB)
   useEffect(() => {
-    if (user?._id || user?.email) {
+    if (user?.id || user?.email) {
       navigate("/chat", { replace: true });
     }
   }, [user, navigate]);
@@ -63,7 +58,7 @@ function Login({ user = null, setUser = () => {} }) {
     return nextErrors;
   };
 
-  /* ── Google Login ──────────────────────────────────────────────────── */
+  /* ── Google Login ──────────────────────────────────────────────── */
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
@@ -81,7 +76,7 @@ function Login({ user = null, setUser = () => {} }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: result.user.displayName || result.user.email?.split("@")[0] || "User",
+          name:  result.user.displayName || result.user.email?.split("@")[0] || "User",
           email: result.user.email,
           photo: result.user.photoURL,
         }),
@@ -89,11 +84,8 @@ function Login({ user = null, setUser = () => {} }) {
 
       const data = await parseJsonResponse(response);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Google login failed");
-      }
+      if (!response.ok) throw new Error(data.error || "Google login failed");
 
-      // FIX: server now returns { success, user: {...} } — was returning user object directly
       setUser(data.user);
       setIsSuccess(true);
       showToast("success", "Welcome", "Google login successful");
@@ -117,7 +109,7 @@ function Login({ user = null, setUser = () => {} }) {
     }
   };
 
-  /* ── Email / Password Login ────────────────────────────────────────── */
+  /* ── Email / Password Login ────────────────────────────────────── */
   const handleManualLogin = async (event) => {
     event.preventDefault();
 
@@ -150,7 +142,7 @@ function Login({ user = null, setUser = () => {} }) {
       showToast(
         "success",
         `Hi ${data.user?.name?.split(" ")[0] || "there"}`,
-        "Login successful. Redirecting..."
+        "Login successful. Redirecting…"
       );
       setTimeout(() => navigate("/chat", { replace: true }), 1000);
     } catch (error) {
@@ -224,12 +216,10 @@ function Login({ user = null, setUser = () => {} }) {
               className="auth-button auth-button-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Signing in..." : isSuccess ? "Success! Redirecting..." : "Login"}
+              {isSubmitting ? "Signing in…" : isSuccess ? "Success! Redirecting…" : "Login"}
             </button>
 
-            <div className="auth-divider">
-              <span>or continue with</span>
-            </div>
+            <div className="auth-divider"><span>or continue with</span></div>
 
             <button
               type="button"
@@ -249,9 +239,7 @@ function Login({ user = null, setUser = () => {} }) {
       </section>
 
       <div
-        className={`auth-toast auth-toast-${toast.variant}${
-          toast.visible ? " auth-toast-visible" : ""
-        }`}
+        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
       >
         <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
         <div>

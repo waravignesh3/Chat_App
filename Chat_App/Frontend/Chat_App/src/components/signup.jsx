@@ -8,18 +8,18 @@ const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").
 
 function Signup() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
+    firstName:       "",
+    lastName:        "",
+    email:           "",
+    password:        "",
     confirmPassword: "",
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]         = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({
+  const [toast, setToast]           = useState({
     visible: false,
     variant: "success",
-    title: "",
+    title:   "",
     message: "",
   });
 
@@ -27,44 +27,26 @@ function Signup() {
 
   useEffect(() => {
     if (!toast.visible) return undefined;
-
-    const timer = window.setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
-    }, 2600);
-
+    const timer = window.setTimeout(
+      () => setToast((prev) => ({ ...prev, visible: false })),
+      2600
+    );
     return () => window.clearTimeout(timer);
   }, [toast.visible]);
 
-  const showToast = (variant, title, message) => {
-    setToast({
-      visible: true,
-      variant,
-      title,
-      message,
-    });
-  };
+  const showToast = (variant, title, message) =>
+    setToast({ visible: true, variant, title, message });
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.lastName.trim())  newErrors.lastName  = "Last name is required";
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -98,18 +80,15 @@ function Signup() {
     }
 
     setIsSubmitting(true);
-
     try {
       const response = await fetch(`${SERVER_URL}/api/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
+          lastName:  formData.lastName,
+          email:     formData.email,
+          password:  formData.password,
         }),
       });
 
@@ -120,26 +99,12 @@ function Signup() {
         return;
       }
 
-      showToast(
-        "success",
-        `Welcome ${formData.firstName.trim()}`,
-        "Account created successfully"
-      );
+      showToast("success", `Welcome ${formData.firstName.trim()}`, "Account created successfully");
 
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-
+      setFormData({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
       setTimeout(() => navigate("/login"), 900);
     } catch (error) {
-      const isDev = import.meta.env.DEV;
-      if (isDev) {
-        console.error("Signup error:", error);
-      }
+      if (import.meta.env.DEV) console.error("Signup error:", error);
       showToast("error", "Network error", error.message || "Unable to reach the server");
     } finally {
       setIsSubmitting(false);
@@ -253,7 +218,7 @@ function Signup() {
               className="auth-button auth-button-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating..." : "Sign Up"}
+              {isSubmitting ? "Creating…" : "Sign Up"}
             </button>
 
             <p className="auth-switch-text">

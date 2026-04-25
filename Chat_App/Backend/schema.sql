@@ -7,10 +7,10 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255),
-  photo VARCHAR(500) DEFAULT 'https://via.placeholder.com/150',
+  photo VARCHAR(500) DEFAULT 'https://api.dicebear.com/7.x/initials/svg?seed=User',
   provider ENUM('local', 'google') DEFAULT 'local',
   isOnline BOOLEAN DEFAULT FALSE,
-  lastSeen DATETIME,
+  lastSeen VARCHAR(50) DEFAULT 'Offline',
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
