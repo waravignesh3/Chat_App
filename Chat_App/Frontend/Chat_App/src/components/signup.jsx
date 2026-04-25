@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
 
@@ -112,8 +113,7 @@ function Signup() {
         }),
       });
 
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
         showToast("error", "Signup failed", data.error || "Unable to create account");
@@ -137,7 +137,7 @@ function Signup() {
       setTimeout(() => navigate("/login"), 900);
     } catch (error) {
       console.error(error);
-      showToast("error", "Network error", "Server not running or network error");
+      showToast("error", "Network error", error.message || "Unable to reach the server");
     } finally {
       setIsSubmitting(false);
     }

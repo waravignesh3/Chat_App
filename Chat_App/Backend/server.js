@@ -29,6 +29,14 @@ const corsOptions = {
   credentials: true,
 };
 
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+});
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", authroutes);
@@ -182,7 +190,16 @@ app.get("/api/users", async (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "Server is healthy" });
+  res.json({
+    success: true,
+    message: "Server is healthy",
+    database:
+      mongoose.connection.readyState === 1
+        ? "connected"
+        : mongoose.connection.readyState === 2
+          ? "connecting"
+          : "disconnected",
+  });
 });
 
 io.on("connection", (socket) => {
@@ -233,13 +250,26 @@ io.on("connection", (socket) => {
         { email },
         {
           isOnline: false,
-          lastSeen: new Date().toLocaleString(),
+          lastSeen: new Date().toISOString(),
         }
       );
 
       await broadcastUsers();
     }
   });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  console.error("UNHANDLED SERVER ERROR:", error);
+  return res.status(500).json({ error: error.message || "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;

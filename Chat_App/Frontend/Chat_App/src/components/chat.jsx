@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
+import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
 
@@ -9,16 +11,19 @@ const socket = io(SERVER_URL, {
   withCredentials: true,
 });
 
-function Chat({ user }) {
+function Chat({ user, setUser }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState("");
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingIndicatorTimeoutRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.email) {
@@ -27,10 +32,29 @@ function Chat({ user }) {
   }, [user]);
 
   useEffect(() => {
-    fetch(`${SERVER_URL}/api/users`)
-      .then((response) => response.json())
-      .then((data) => setUsers(Array.isArray(data) ? data : []))
-      .catch((error) => console.error("Users fetch error:", error));
+    const loadUsers = async () => {
+      try {
+        setIsLoadingUsers(true);
+        setUsersError("");
+
+        const response = await fetch(`${SERVER_URL}/api/users`);
+        const data = await parseJsonResponse(response);
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load users");
+        }
+
+        setUsers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Users fetch error:", error);
+        setUsers([]);
+        setUsersError(error.message || "Unable to load users");
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
   }, []);
 
   useEffect(() => {
@@ -83,13 +107,26 @@ function Chat({ user }) {
     clearTimeout(typingIndicatorTimeoutRef.current);
   }, []);
 
+  const handleLogout = () => {
+    setUser(null);
+    navigate("/login", { replace: true });
+  };
+
+  const activeSelectedUser = useMemo(
+    () =>
+      selectedUser?.email
+        ? users.find((entry) => entry.email === selectedUser.email) || selectedUser
+        : null,
+    [selectedUser, users]
+  );
+
   const sendMessage = () => {
-    if (!message.trim() || !selectedUser || !user?.email) return;
+    if (!message.trim() || !activeSelectedUser || !user?.email) return;
 
     const msgData = {
       text: message.trim(),
       sender: user.email,
-      receiver: selectedUser.email,
+      receiver: activeSelectedUser.email,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -97,10 +134,10 @@ function Chat({ user }) {
     };
 
     socket.emit("private_message", {
-      to: selectedUser.email,
+      to: activeSelectedUser.email,
       message: msgData,
     });
-    socket.emit("stop_typing", { to: selectedUser.email, from: user.email });
+    socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
 
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
@@ -125,11 +162,11 @@ function Chat({ user }) {
     () =>
       messages.filter(
         (entry) =>
-          selectedUser &&
-          ((entry.sender === user?.email && entry.receiver === selectedUser.email) ||
-            (entry.sender === selectedUser.email && entry.receiver === user?.email))
+          activeSelectedUser &&
+          ((entry.sender === user?.email && entry.receiver === activeSelectedUser.email) ||
+            (entry.sender === activeSelectedUser.email && entry.receiver === user?.email))
       ),
-    [messages, selectedUser, user?.email]
+    [activeSelectedUser, messages, user?.email]
   );
 
   const handleMessageKeyDown = (event) => {
@@ -142,11 +179,11 @@ function Chat({ user }) {
   const handleTyping = (event) => {
     setMessage(event.target.value);
 
-    if (selectedUser) {
+    if (activeSelectedUser) {
       clearTimeout(typingTimeoutRef.current);
-      socket.emit("typing", { to: selectedUser.email, from: user.email });
+      socket.emit("typing", { to: activeSelectedUser.email, from: user.email });
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("stop_typing", { to: selectedUser.email, from: user.email });
+        socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
       }, 1200);
     }
   };
@@ -159,7 +196,12 @@ function Chat({ user }) {
       <section className="chat-layout">
         <aside className="chat-sidebar">
           <div className="chat-sidebar-header">
-            <span className="chat-chip">Inbox</span>
+            <div className="chat-sidebar-topline">
+              <span className="chat-chip">Inbox</span>
+              <button type="button" className="chat-logout-button" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
             <h2>Chats</h2>
             <p>{user?.name || user?.email}</p>
           </div>
@@ -175,9 +217,19 @@ function Chat({ user }) {
           </label>
 
           <div className="chat-user-list">
-            {filteredUsers.length > 0 ? (
+            {isLoadingUsers ? (
+              <div className="chat-empty-state">
+                <strong>Loading users...</strong>
+                <p>Please wait while we sync your contacts.</p>
+              </div>
+            ) : usersError ? (
+              <div className="chat-empty-state">
+                <strong>Unable to load users</strong>
+                <p>{usersError}</p>
+              </div>
+            ) : filteredUsers.length > 0 ? (
               filteredUsers.map((entry) => {
-                const isActive = selectedUser?.email === entry.email;
+                const isActive = activeSelectedUser?.email === entry.email;
 
                 return (
                   <button
@@ -218,20 +270,20 @@ function Chat({ user }) {
             <div>
               <span className="chat-chip">Direct Message</span>
               <h3>
-                {selectedUser ? selectedUser.name || selectedUser.email : "Select a user"}
+                {activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}
               </h3>
               <p>
-                {selectedUser
-                  ? selectedUser.isOnline
+                {activeSelectedUser
+                  ? activeSelectedUser.isOnline
                     ? "Available now"
-                    : selectedUser.lastSeen || "Offline"
+                    : activeSelectedUser.lastSeen || "Offline"
                   : "Choose someone from the list to start chatting."}
               </p>
             </div>
           </div>
 
           <div className="chat-messages">
-            {selectedUser ? (
+            {activeSelectedUser ? (
               conversationMessages.length > 0 ? (
                 <>
                   {conversationMessages.map((entry, index) => {
@@ -243,7 +295,7 @@ function Chat({ user }) {
                         className={`chat-bubble${isOwnMessage ? " own" : ""}`}
                       >
                         <span className="chat-bubble-sender">
-                          {isOwnMessage ? "You" : selectedUser.name || selectedUser.email}
+                          {isOwnMessage ? "You" : activeSelectedUser.name || activeSelectedUser.email}
                         </span>
                         <p>{entry.text}</p>
                         <time>{entry.time}</time>
@@ -277,16 +329,18 @@ function Chat({ user }) {
               onChange={handleTyping}
               onKeyDown={handleMessageKeyDown}
               placeholder={
-                selectedUser ? `Message ${selectedUser.name || selectedUser.email}` : "Pick a user to start typing"
+                activeSelectedUser
+                  ? `Message ${activeSelectedUser.name || activeSelectedUser.email}`
+                  : "Pick a user to start typing"
               }
-              disabled={!selectedUser}
+              disabled={!activeSelectedUser}
               rows="1"
             />
             <button
               type="button"
               className="chat-send-button"
               onClick={sendMessage}
-              disabled={!selectedUser || !message.trim()}
+              disabled={!activeSelectedUser || !message.trim()}
             >
               Send
             </button>

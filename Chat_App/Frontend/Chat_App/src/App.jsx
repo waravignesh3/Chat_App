@@ -7,8 +7,13 @@ import Chat from "./components/chat";
 
 function App() {
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("chatapp-user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem("chatapp-user");
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      localStorage.removeItem("chatapp-user");
+      return null;
+    }
   });
 
   useEffect(() => {
@@ -27,8 +32,9 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route
           path="/chat"
-          element={user ? <Chat user={user} /> : <Navigate to="/login" replace />}
+          element={user ? <Chat user={user} setUser={setUser} /> : <Navigate to="/login" replace />}
         />
+        <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
       </Routes>
     </BrowserRouter>
   );
