@@ -1,125 +1,107 @@
-import { useEffect, useState } from "react";
-import { getRedirectResult, signInWithRedirect } from "firebase/auth";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+} from "firebase/auth";
+import { Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
-import { parseJsonResponse, requestJson } from "../utils/http";
+import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
-const syncGoogleUser = async (firebaseUser) =>
-  requestJson(`${SERVER_URL}/api/google-login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-      email: firebaseUser.email,
-      photo: firebaseUser.photoURL,
-    }),
-  });
-
-function Login({ user = null, setUser = () => {} }) {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState({});
-  const [toast, setToast] = useState({
-    visible: false,
-    variant: "success",
-    title: "",
-    message: "",
-  });
+function Login({ setUser = () => {} }) {
+  const [formData, setFormData]   = useState({ email: "", password: "" });
+  const [errors, setErrors]       = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [toast, setToast]         = useState({ visible: false, variant: "success", title: "", message: "" });
 
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!toast.visible) return undefined;
-
-    const timer = window.setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
-    }, 2600);
-
+    const timer = window.setTimeout(
+      () => setToast((prev) => ({ ...prev, visible: false })),
+      2600
+    );
     return () => window.clearTimeout(timer);
   }, [toast.visible]);
 
-  const showToast = (variant, title, message) => {
+  const showToast = (variant, title, message) =>
     setToast({ visible: true, variant, title, message });
-  };
-
-  useEffect(() => {
-    const completeRedirectLogin = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (!result?.user) return;
-
-        setIsSubmitting(true);
-        const data = await syncGoogleUser(result.user);
-
-        setUser(data.user);
-        setIsSuccess(true);
-        showToast("success", "Welcome back", "Google login successful");
-        setTimeout(() => navigate("/chat"), 900);
-      } catch (error) {
-        if (error?.code === "auth/no-auth-event") return;
-        showToast("error", "Google login failed", error?.message || "Unable to continue");
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    completeRedirectLogin();
-  }, [navigate, setUser]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const nextErrors = {};
-
     if (!formData.email.trim()) {
       nextErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       nextErrors.email = "Enter a valid email";
     }
-
-    if (!formData.password) {
-      nextErrors.password = "Password is required";
-    }
-
+    if (!formData.password) nextErrors.password = "Password is required";
     return nextErrors;
   };
 
+  /* ── Google Login ──────────────────────────────────────────────── */
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
       setIsSuccess(false);
-      await signInWithRedirect(auth, provider);
-      return;
+
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch {
+        await setPersistence(auth, inMemoryPersistence);
+      }
+
+      const result = await signInWithPopup(auth, provider);
+
+      const response = await fetch(`${SERVER_URL}/api/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:  result.user.displayName || result.user.email?.split("@")[0] || "User",
+          email: result.user.email,
+          photo: result.user.photoURL,
+        }),
+      });
+
+      const data = await parseJsonResponse(response);
+
+      if (!response.ok) throw new Error(data.error || "Google login failed");
+
+      setUser(data.user);
+      setIsSuccess(true);
+      showToast("success", "Welcome", "Signed in! Taking you to chat…");
+      // App.jsx route guard re-renders automatically when user state updates
     } catch (error) {
+      if (
+        error?.code === "auth/popup-closed-by-user" ||
+        error?.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
+
       const message =
         error?.code === "auth/unauthorized-domain"
-          ? "Authorize your frontend domain in Firebase Authentication settings."
-          : error?.message || "Unable to continue";
+          ? "Add your frontend domain in Firebase → Authentication → Authorized Domains."
+          : error?.message || "Unable to continue with Google";
 
       showToast("error", "Google login failed", message);
     } finally {
-      if (!document.hidden) {
-        setIsSubmitting(false);
-      }
+      setIsSubmitting(false);
     }
   };
 
+  /* ── Email / Password Login ────────────────────────────────────── */
   const handleManualLogin = async (event) => {
     event.preventDefault();
 
@@ -137,10 +119,7 @@ function Login({ user = null, setUser = () => {} }) {
       const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
       });
 
       const data = await parseJsonResponse(response);
@@ -155,10 +134,9 @@ function Login({ user = null, setUser = () => {} }) {
       showToast(
         "success",
         `Hi ${data.user?.name?.split(" ")[0] || "there"}`,
-        "Login successful. Redirecting to chat..."
+        "Login successful!"
       );
-
-      setTimeout(() => navigate("/chat"), 1000);
+      // App.jsx route guard re-renders automatically when user state updates
     } catch (error) {
       showToast("error", "Network error", error.message || "Unable to login");
     } finally {
@@ -230,12 +208,10 @@ function Login({ user = null, setUser = () => {} }) {
               className="auth-button auth-button-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Signing in..." : isSuccess ? "Success! Redirecting..." : "Login"}
+              {isSubmitting ? "Signing in…" : isSuccess ? "Success! Redirecting…" : "Login"}
             </button>
 
-            <div className="auth-divider">
-              <span>or continue with</span>
-            </div>
+            <div className="auth-divider"><span>or continue with</span></div>
 
             <button
               type="button"
@@ -259,8 +235,8 @@ function Login({ user = null, setUser = () => {} }) {
       >
         <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
         <div>
-          <strong>{toast.title || user?.name || user?.email || "Welcome"}</strong>
-          <p>{toast.message || "Login successful"}</p>
+          <strong>{toast.title}</strong>
+          <p>{toast.message}</p>
         </div>
       </div>
     </div>
