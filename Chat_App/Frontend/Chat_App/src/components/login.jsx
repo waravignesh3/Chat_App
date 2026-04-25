@@ -37,6 +37,12 @@ function Login({ user = null, setUser = () => {} }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (user?._id || user?.email) {
+      navigate("/chat", { replace: true });
+    }
+  }, [navigate, user]);
+
+  useEffect(() => {
     if (!toast.visible) return undefined;
 
     const timer = window.setTimeout(() => {
