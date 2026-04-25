@@ -69,20 +69,14 @@ function Login({ user = null, setUser = () => {} }) {
       setIsSubmitting(true);
       setIsSuccess(false);
 
-      // Switch Firebase to localStorage so the popup OAuth state
-      // survives in Safari / Firefox strict mode / storage-partitioned envs.
-      // Falls back to inMemory if localStorage is also blocked.
       try {
         await setPersistence(auth, browserLocalPersistence);
       } catch {
         await setPersistence(auth, inMemoryPersistence);
       }
 
-      // signInWithPopup — does NOT redirect away from the page,
-      // so App.jsx onAuthStateChanged fires immediately and sets the user.
       const result = await signInWithPopup(auth, provider);
 
-      // Sync the Firebase user to our MongoDB backend
       const response = await fetch(`${SERVER_URL}/api/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,13 +93,12 @@ function Login({ user = null, setUser = () => {} }) {
         throw new Error(data.error || "Google login failed");
       }
 
-      // Set user in App state → triggers the useEffect above → navigate to /chat
+      // FIX: server now returns { success, user: {...} } — was returning user object directly
       setUser(data.user);
       setIsSuccess(true);
       showToast("success", "Welcome", "Google login successful");
       setTimeout(() => navigate("/chat", { replace: true }), 800);
     } catch (error) {
-      // User dismissed the popup — no error toast needed
       if (
         error?.code === "auth/popup-closed-by-user" ||
         error?.code === "auth/cancelled-popup-request"

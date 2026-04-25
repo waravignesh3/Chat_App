@@ -1,34 +1,11 @@
-/**
- * Production-level logger utility
- * Respects NODE_ENV to control output verbosity
- */
+// utils/logger.js — simple levelled logger
 const isDev = process.env.NODE_ENV !== "production";
 
 const logger = {
-  info: (message, data = null) => {
-    if (isDev) {
-      console.log(`[INFO] ${message}`, data || "");
-    }
-  },
-
-  error: (message, error = null) => {
-    console.error(`[ERROR] ${message}`, error?.message || error || "");
-    if (isDev && error?.stack) {
-      console.error(error.stack);
-    }
-  },
-
-  warn: (message, data = null) => {
-    if (isDev) {
-      console.warn(`[WARN] ${message}`, data || "");
-    }
-  },
-
-  debug: (message, data = null) => {
-    if (isDev) {
-      console.debug(`[DEBUG] ${message}`, data || "");
-    }
-  },
+  info: (msg, ...args) => console.log(`[INFO]  ${msg}`, ...args),
+  warn: (msg, ...args) => console.warn(`[WARN]  ${msg}`, ...args),
+  error: (msg, ...args) => console.error(`[ERROR] ${msg}`, ...args),
+  debug: (msg, ...args) => { if (isDev) console.debug(`[DEBUG] ${msg}`, ...args); },
 };
 
 export default logger;

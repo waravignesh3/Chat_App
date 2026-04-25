@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcryptjs";
-import pool from "./db.js";
+import pool, { hasDatabaseConfig } from "./db.js";
 import logger from "./utils/logger.js";
 
 const router = express.Router();
@@ -12,6 +12,10 @@ router.post("/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
+    if (!hasDatabaseConfig) {
+      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
+    }
+
     // ✅ Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
@@ -56,6 +60,10 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    if (!hasDatabaseConfig) {
+      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
+    }
+
     // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });

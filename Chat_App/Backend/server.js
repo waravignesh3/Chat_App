@@ -3,7 +3,7 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import pool from "./db.js";
+import pool, { hasDatabaseConfig } from "./db.js";
 import authroutes from "./authroutes.js";
 import logger from "./utils/logger.js";
 
@@ -33,29 +33,62 @@ app.use(
   })
 );
 
+// All auth + user routes mounted under /api
 app.use("/api", authroutes);
 
-// Test MySQL connection
-pool
-  .getConnection()
-  .then((connection) => {
+// Database connection state
+let dbHealthy = false;
+
+const testDatabaseConnection = async () => {
+  try {
+    const connection = await pool.getConnection();
     connection.release();
+    dbHealthy = true;
     logger.info("MySQL Database connected successfully");
-  })
-  .catch((error) => {
+  } catch (error) {
+    dbHealthy = false;
     logger.error("MySQL Database connection failed", error);
+    if (hasDatabaseConfig) {
+      setTimeout(testDatabaseConnection, 5000);
+    }
+  }
+};
+
+if (hasDatabaseConfig) {
+  testDatabaseConnection();
+} else {
+  logger.warn("No database configuration found. Running in degraded mode.");
+}
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: dbHealthy ? "healthy" : "degraded",
+    database: dbHealthy ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
   });
+});
 
 const buildUsersPayload = async () => {
-  const [users] = await pool.query(
-    "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
-  );
+  if (!dbHealthy) {
+    logger.error("Database not available");
+    return [];
+  }
 
-  return users.map((user) => ({
-    ...user,
-    isOnline: Boolean(onlineUsers[user.email]),
-    lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
-  }));
+  try {
+    const [users] = await pool.query(
+      "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
+    );
+
+    return users.map((user) => ({
+      ...user,
+      isOnline: Boolean(onlineUsers[user.email]),
+      lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+    }));
+  } catch (error) {
+    logger.error("Failed to build users payload", error);
+    return [];
+  }
 };
 
 const broadcastUsers = async () => {
@@ -63,17 +96,21 @@ const broadcastUsers = async () => {
   io.emit("users_update", users);
 };
 
-app.post("/google-login", async (req, res) => {
+// FIX: moved under /api prefix to match frontend fetch calls
+app.post("/api/google-login", async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
+    if (!dbHealthy) {
+      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    }
+
     if (!name || !email) {
       return res.status(400).json({ error: "Name and email are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user exists
     const [users] = await pool.query(
       "SELECT * FROM users WHERE LOWER(email) = ?",
       [normalizedEmail]
@@ -81,14 +118,12 @@ app.post("/google-login", async (req, res) => {
 
     let user;
     if (users.length === 0) {
-      // Create new user
       const [result] = await pool.query(
         "INSERT INTO users (name, email, photo, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'google', 'Offline', false)",
         [name, normalizedEmail, photo]
       );
       user = { id: result.insertId, name, email: normalizedEmail, photo, provider: "google" };
     } else {
-      // Update existing user
       user = users[0];
       await pool.query(
         "UPDATE users SET name = ?, photo = ?, provider = 'google' WHERE LOWER(email) = ?",
@@ -99,14 +134,18 @@ app.post("/google-login", async (req, res) => {
       user.provider = "google";
     }
 
+    // FIX: return under `user` key to match login.jsx → setUser(data.user)
     return res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      photo: user.photo,
-      provider: user.provider,
-      lastSeen: user.lastSeen || "Offline",
-      isOnline: Boolean(onlineUsers[user.email]),
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        photo: user.photo,
+        provider: user.provider,
+        lastSeen: user.lastSeen || "Offline",
+        isOnline: Boolean(onlineUsers[user.email]),
+      },
     });
   } catch (error) {
     logger.error("Google login error", error);
@@ -114,7 +153,8 @@ app.post("/google-login", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+// FIX: moved under /api prefix to match chat.jsx fetch(`${SERVER_URL}/api/users`)
+app.get("/api/users", async (req, res) => {
   try {
     const users = await buildUsersPayload();
     return res.json(users);
@@ -133,10 +173,12 @@ io.on("connection", (socket) => {
     const normalizedEmail = email.toLowerCase().trim();
     onlineUsers[normalizedEmail] = socket.id;
 
-    await pool.query(
-      "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
-      [normalizedEmail]
-    );
+    if (dbHealthy) {
+      await pool.query(
+        "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
+        [normalizedEmail]
+      );
+    }
 
     await broadcastUsers();
   });
@@ -158,10 +200,12 @@ io.on("connection", (socket) => {
     if (email) {
       delete onlineUsers[email];
 
-      await pool.query(
-        "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
-        [new Date().toISOString(), email]
-      );
+      if (dbHealthy) {
+        await pool.query(
+          "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
+          [new Date().toISOString(), email]
+        );
+      }
 
       await broadcastUsers();
     }
