@@ -16,15 +16,10 @@ const server = http.createServer(app);
 const onlineUsers = {};
 
 // 🌍 FIX: allow frontend (Vercel) explicitly
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://chat-app-kappa-blush-85.vercel.app"
-];
 
 // ✅ FIXED CORS
 app.use(cors({
-  origin: allowedOrigins,
+  origin: "https://chat-app-kappa-blush-85.vercel.app",
   credentials: true
 }));
 
@@ -39,7 +34,7 @@ mongoose.connect(process.env.MONGO_URI)
 // ================= SOCKET.IO FIX =================
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: "https://chat-app-kappa-blush-85.vercel.app",
     methods: ["GET", "POST"],
     credentials: true
   }
