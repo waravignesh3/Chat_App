@@ -29,7 +29,8 @@ app.use("/api", authroutes);
 
 // Test MySQL connection
 pool.getConnection()
-  .then(() => {
+  .then((connection) => {
+    connection.release();
     console.log("MySQL Database connected");
   })
   .catch((error) => {
@@ -95,7 +96,7 @@ app.post("/google-login", async (req, res) => {
       email: user.email,
       photo: user.photo,
       provider: user.provider,
-      lastSeen: user.lastSeen,
+      lastSeen: user.lastSeen || "Offline",
       isOnline: Boolean(onlineUsers[user.email]),
     });
   } catch (error) {
