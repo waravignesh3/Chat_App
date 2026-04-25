@@ -47,7 +47,10 @@ const testDatabaseConnection = async () => {
     dbHealthy = true;
   } catch (error) {
     dbHealthy = false;
-    logger.error("MySQL Database connection failed:", error.message);
+    // Log full error so we can actually see what's wrong
+    logger.error(
+      `MySQL Database connection failed: code=${error.code} errno=${error.errno} msg=${error.message} host=${error.address || process.env.DB_HOST || "from DATABASE_URL"}`
+    );
     if (hasDatabaseConfig) {
       setTimeout(testDatabaseConnection, 5000);
     }
@@ -67,6 +70,12 @@ app.get("/health", (req, res) => {
     status: dbHealthy ? "healthy" : "degraded",
     database: dbHealthy ? "connected" : "disconnected",
     hasDatabaseConfig,
+    // Safe debug info — shows config shape without exposing passwords
+    configSource: process.env.DATABASE_URL
+      ? "DATABASE_URL"
+      : process.env.DB_HOST
+      ? `DB_HOST=${process.env.DB_HOST} DB_NAME=${process.env.DB_NAME} DB_USER=${process.env.DB_USER}`
+      : "none",
     timestamp: new Date().toISOString(),
   });
 });
