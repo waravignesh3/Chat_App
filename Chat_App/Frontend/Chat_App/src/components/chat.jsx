@@ -1,84 +1,127 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase";
 import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
+import "../chat.profile.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
-const socket = io(SERVER_URL, {
-  transports: ["websocket"],
-  withCredentials: true,
-});
 
 function Chat({ user, setUser }) {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState("");
+  const [message, setMessage]         = useState("");
+  const [messages, setMessages]       = useState([]);
+  const [users, setUsers]             = useState([]);
+  const [search, setSearch]           = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping]       = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState("");
-  const bottomRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-  const typingIndicatorTimeoutRef = useRef(null);
-  const navigate = useNavigate();
+  const [usersError, setUsersError]   = useState("");
 
+  const bottomRef                     = useRef(null);
+  const typingTimeoutRef              = useRef(null);
+  const typingIndicatorTimeoutRef     = useRef(null);
+  const navigate                      = useNavigate();
+
+  // Socket lives in a ref so it is created once and never recreated on
+  // StrictMode double-mount, preventing duplicate event listeners.
+  const socketRef = useRef(null);
+
+  // FIX: Create socket AND register in a single effect so there is no
+  // race condition between socket creation and the register emit.
   useEffect(() => {
-    if (user?.email) {
-      socket.emit("register", user.email);
+    if (socketRef.current) return; // already created
+
+    const socket = io(SERVER_URL, {
+      transports:      ["websocket"],
+      withCredentials: true,
+    });
+
+    socketRef.current = socket;
+
+    // Register online presence as soon as connection is confirmed
+    socket.on("connect", () => {
+      if (user?.email) {
+        socket.emit("register", user.email);
+      }
+    });
+
+    return () => {
+      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingIndicatorTimeoutRef.current);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-register if user email changes after socket is already open
+  useEffect(() => {
+    if (user?.email && socketRef.current?.connected) {
+      socketRef.current.emit("register", user.email);
     }
-  }, [user]);
+  }, [user?.email]);
 
+  // Initial user list fetch — retries on 503 to handle backend cold starts
   useEffect(() => {
-    const loadUsers = async () => {
+    let cancelled = false;
+
+    const loadUsers = async (attempt = 1) => {
       try {
         setIsLoadingUsers(true);
         setUsersError("");
 
         const response = await fetch(`${SERVER_URL}/api/users`);
-        const data = await parseJsonResponse(response);
+        const data     = await parseJsonResponse(response);
+
+        if (cancelled) return;
 
         if (!response.ok) {
+          // Retry up to 3 times on 503 (DB cold start on Render free tier)
+          if (response.status === 503 && attempt < 4) {
+            setTimeout(() => { if (!cancelled) loadUsers(attempt + 1); }, 2000 * attempt);
+            return;
+          }
           throw new Error(data.error || "Unable to load users");
         }
 
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Users fetch error:", error);
+        if (cancelled) return;
+        if (import.meta.env.DEV) console.error("Users fetch error:", error);
         setUsers([]);
         setUsersError(error.message || "Unable to load users");
       } finally {
-        setIsLoadingUsers(false);
+        if (!cancelled) setIsLoadingUsers(false);
       }
     };
 
     loadUsers();
+    return () => { cancelled = true; };
   }, []);
 
+  // Real-time user list updates
   useEffect(() => {
-    const handleUsersUpdate = (data) => setUsers(Array.isArray(data) ? data : []);
-    socket.on("users_update", handleUsersUpdate);
-
-    return () => socket.off("users_update", handleUsersUpdate);
+    const handler = (data) => setUsers(Array.isArray(data) ? data : []);
+    socketRef.current?.on("users_update", handler);
+    return () => socketRef.current?.off("users_update", handler);
   }, []);
 
+  // Incoming private messages
   useEffect(() => {
-    const handlePrivateMessage = (incomingMessage) => {
+    const handler = (incomingMessage) => {
       setMessages((prev) => [...prev, incomingMessage]);
       setIsTyping(false);
     };
-
-    socket.on("private_message", handlePrivateMessage);
-
-    return () => socket.off("private_message", handlePrivateMessage);
+    socketRef.current?.on("private_message", handler);
+    return () => socketRef.current?.off("private_message", handler);
   }, []);
 
+  // Typing indicators
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
       if (!selectedUser || from !== selectedUser.email) return;
-
       setIsTyping(true);
       clearTimeout(typingIndicatorTimeoutRef.current);
       typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
@@ -89,33 +132,39 @@ function Chat({ user, setUser }) {
       setIsTyping(false);
     };
 
-    socket.on("typing", handleTypingStart);
-    socket.on("stop_typing", handleTypingStop);
+    socketRef.current?.on("typing",      handleTypingStart);
+    socketRef.current?.on("stop_typing", handleTypingStop);
 
     return () => {
-      socket.off("typing", handleTypingStart);
-      socket.off("stop_typing", handleTypingStop);
+      socketRef.current?.off("typing",      handleTypingStart);
+      socketRef.current?.off("stop_typing", handleTypingStop);
     };
   }, [selectedUser]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, selectedUser, isTyping]);
 
-  useEffect(() => () => {
-    clearTimeout(typingTimeoutRef.current);
-    clearTimeout(typingIndicatorTimeoutRef.current);
-  }, []);
-
-  const handleLogout = () => {
-    setUser(null);
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Logout error:", error);
+    } finally {
+      setSelectedUser(null);
+      setMessage("");
+      setMessages([]);
+      setUser(null);
+      navigate("/login", { replace: true });
+    }
   };
 
+  // Always reflect latest online status from the live users list
   const activeSelectedUser = useMemo(
     () =>
       selectedUser?.email
-        ? users.find((entry) => entry.email === selectedUser.email) || selectedUser
+        ? users.find((u) => u.email === selectedUser.email) || selectedUser
         : null,
     [selectedUser, users]
   );
@@ -124,20 +173,14 @@ function Chat({ user, setUser }) {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
 
     const msgData = {
-      text: message.trim(),
-      sender: user.email,
+      text:     message.trim(),
+      sender:   user.email,
       receiver: activeSelectedUser.email,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time:     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    socket.emit("private_message", {
-      to: activeSelectedUser.email,
-      message: msgData,
-    });
-    socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+    socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
+    socketRef.current?.emit("stop_typing",     { to: activeSelectedUser.email, from: user.email });
 
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
@@ -146,14 +189,10 @@ function Chat({ user, setUser }) {
 
   const filteredUsers = useMemo(
     () =>
-      users.filter((entry) => {
-        if (!entry?.email || entry.email === user?.email) return false;
-
-        const query = search.toLowerCase();
-        return (
-          entry.email.toLowerCase().includes(query) ||
-          entry.name?.toLowerCase().includes(query)
-        );
+      users.filter((u) => {
+        if (!u?.email || u.email === user?.email) return false;
+        const q = search.toLowerCase();
+        return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
       }),
     [search, user?.email, users]
   );
@@ -161,10 +200,10 @@ function Chat({ user, setUser }) {
   const conversationMessages = useMemo(
     () =>
       messages.filter(
-        (entry) =>
+        (m) =>
           activeSelectedUser &&
-          ((entry.sender === user?.email && entry.receiver === activeSelectedUser.email) ||
-            (entry.sender === activeSelectedUser.email && entry.receiver === user?.email))
+          ((m.sender === user?.email && m.receiver === activeSelectedUser.email) ||
+            (m.sender === activeSelectedUser.email && m.receiver === user?.email))
       ),
     [activeSelectedUser, messages, user?.email]
   );
@@ -181,9 +220,9 @@ function Chat({ user, setUser }) {
 
     if (activeSelectedUser) {
       clearTimeout(typingTimeoutRef.current);
-      socket.emit("typing", { to: activeSelectedUser.email, from: user.email });
+      socketRef.current?.emit("typing", { to: activeSelectedUser.email, from: user.email });
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+        socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
       }, 1200);
     }
   };
@@ -202,8 +241,27 @@ function Chat({ user, setUser }) {
                 Logout
               </button>
             </div>
-            <h2>Chats</h2>
-            <p>{user?.name || user?.email}</p>
+
+            <div className="chat-self-profile">
+              <div className="chat-self-avatar-wrap">
+                <img
+                  src={
+                    user?.photo ||
+                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || user?.email || "U")}`
+                  }
+                  alt={user?.name || user?.email}
+                  className="chat-self-avatar"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || "U")}`;
+                  }}
+                />
+                <span className="chat-online-ring" />
+              </div>
+              <div className="chat-self-info">
+                <strong>{user?.name || "You"}</strong>
+                <span>{user?.email}</span>
+              </div>
+            </div>
           </div>
 
           <label className="chat-search">
@@ -212,14 +270,14 @@ function Chat({ user, setUser }) {
               type="text"
               placeholder="Search by name or email"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </label>
 
           <div className="chat-user-list">
             {isLoadingUsers ? (
               <div className="chat-empty-state">
-                <strong>Loading users...</strong>
+                <strong>Loading users…</strong>
                 <p>Please wait while we sync your contacts.</p>
               </div>
             ) : usersError ? (
@@ -230,7 +288,6 @@ function Chat({ user, setUser }) {
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((entry) => {
                 const isActive = activeSelectedUser?.email === entry.email;
-
                 return (
                   <button
                     key={entry.email}
@@ -240,7 +297,7 @@ function Chat({ user, setUser }) {
                   >
                     <div className="chat-avatar-wrap">
                       <img
-                        src={entry.photo || "https://via.placeholder.com/48"}
+                        src={entry.photo || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(entry.name || entry.email)}
                         alt={entry.name || entry.email}
                         className="chat-avatar"
                       />
@@ -270,7 +327,9 @@ function Chat({ user, setUser }) {
             <div>
               <span className="chat-chip">Direct Message</span>
               <h3>
-                {activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}
+                {activeSelectedUser
+                  ? activeSelectedUser.name || activeSelectedUser.email
+                  : "Select a user"}
               </h3>
               <p>
                 {activeSelectedUser
@@ -287,15 +346,14 @@ function Chat({ user, setUser }) {
               conversationMessages.length > 0 ? (
                 <>
                   {conversationMessages.map((entry, index) => {
-                    const isOwnMessage = entry.sender === user?.email;
-
+                    const isOwn = entry.sender === user?.email;
                     return (
                       <article
                         key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
-                        className={`chat-bubble${isOwnMessage ? " own" : ""}`}
+                        className={`chat-bubble${isOwn ? " own" : ""}`}
                       >
                         <span className="chat-bubble-sender">
-                          {isOwnMessage ? "You" : activeSelectedUser.name || activeSelectedUser.email}
+                          {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
                         </span>
                         <p>{entry.text}</p>
                         <time>{entry.time}</time>
