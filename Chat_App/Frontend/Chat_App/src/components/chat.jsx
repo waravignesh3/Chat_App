@@ -10,6 +10,61 @@ import "../chat.profile.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
+// Palette of background colours — picked by a simple hash of the name/email
+// so the same person always gets the same colour.
+const AVATAR_COLORS = [
+  "#4f46e5", "#0891b2", "#059669", "#d97706",
+  "#dc2626", "#7c3aed", "#db2777", "#0284c7",
+];
+
+function hashColor(str = "") {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+/**
+ * Shows the user's photo if available, otherwise renders a coloured circle
+ * with the first letter of their name (or email) — no external requests.
+ */
+function Avatar({ name, email, photo, size = 44, className = "" }) {
+  const initial = (name || email || "?")[0].toUpperCase();
+  const bg      = hashColor(name || email);
+
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt={name || email}
+        className={className}
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block" }}
+        onError={(e) => {
+          // Photo URL broken — swap to initials div
+          e.currentTarget.style.display = "none";
+          const sibling = e.currentTarget.nextSibling;
+          if (sibling) sibling.style.display = "flex";
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={className}
+      style={{
+        width: size, height: size, borderRadius: "50%",
+        background: bg, color: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 700, fontSize: size * 0.4,
+        flexShrink: 0, userSelect: "none",
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
+
+
 function Chat({ user, setUser }) {
   const [message, setMessage]         = useState("");
   const [messages, setMessages]       = useState([]);
@@ -244,16 +299,12 @@ function Chat({ user, setUser }) {
 
             <div className="chat-self-profile">
               <div className="chat-self-avatar-wrap">
-                <img
-                  src={
-                    user?.photo ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || user?.email || "U")}`
-                  }
-                  alt={user?.name || user?.email}
+                <Avatar
+                  name={user?.name}
+                  email={user?.email}
+                  photo={user?.photo}
+                  size={44}
                   className="chat-self-avatar"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || "U")}`;
-                  }}
                 />
                 <span className="chat-online-ring" />
               </div>
@@ -296,9 +347,11 @@ function Chat({ user, setUser }) {
                     onClick={() => setSelectedUser(entry)}
                   >
                     <div className="chat-avatar-wrap">
-                      <img
-                        src={entry.photo || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(entry.name || entry.email)}
-                        alt={entry.name || entry.email}
+                      <Avatar
+                        name={entry.name}
+                        email={entry.email}
+                        photo={entry.photo}
+                        size={44}
                         className="chat-avatar"
                       />
                       {entry.isOnline && <span className="chat-online-ring" />}
