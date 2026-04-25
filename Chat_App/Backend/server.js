@@ -35,27 +35,55 @@ app.use(
 
 app.use("/api", authroutes);
 
-// Test MySQL connection
-pool
-  .getConnection()
-  .then((connection) => {
+// Database connection state
+let dbHealthy = false;
+
+const testDatabaseConnection = async () => {
+  try {
+    const connection = await pool.getConnection();
     connection.release();
+    dbHealthy = true;
     logger.info("MySQL Database connected successfully");
-  })
-  .catch((error) => {
+  } catch (error) {
+    dbHealthy = false;
     logger.error("MySQL Database connection failed", error);
+    // Retry after 5 seconds
+    setTimeout(testDatabaseConnection, 5000);
+  }
+};
+
+// Test connection on startup
+testDatabaseConnection();
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: dbHealthy ? "healthy" : "degraded",
+    database: dbHealthy ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
   });
+});
 
 const buildUsersPayload = async () => {
-  const [users] = await pool.query(
-    "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
-  );
+  if (!dbHealthy) {
+    logger.error("Database not available");
+    return [];
+  }
+  
+  try {
+    const [users] = await pool.query(
+      "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
+    );
 
-  return users.map((user) => ({
-    ...user,
-    isOnline: Boolean(onlineUsers[user.email]),
-    lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
-  }));
+    return users.map((user) => ({
+      ...user,
+      isOnline: Boolean(onlineUsers[user.email]),
+      lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+    }));
+  } catch (error) {
+    logger.error("Failed to build users payload", error);
+    return [];
+  }
 };
 
 const broadcastUsers = async () => {
@@ -67,6 +95,10 @@ app.post("/google-login", async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
+    if (!dbHealthy) {
+      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    }
+
     if (!name || !email) {
       return res.status(400).json({ error: "Name and email are required" });
     }

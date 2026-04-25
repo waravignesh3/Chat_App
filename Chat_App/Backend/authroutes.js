@@ -5,6 +5,19 @@ import logger from "./utils/logger.js";
 
 const router = express.Router();
 
+let dbHealthy = false;
+
+// Import and maintain database health status
+setTimeout(async () => {
+  try {
+    const connection = await pool.getConnection();
+    connection.release();
+    dbHealthy = true;
+  } catch (error) {
+    dbHealthy = false;
+  }
+}, 1000);
+
 /* =========================
    REGISTER
 ========================= */
@@ -12,6 +25,10 @@ router.post("/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
+    if (!dbHealthy) {
+      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    }
+
     // ✅ Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
@@ -56,6 +73,10 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    if (!dbHealthy) {
+      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    }
+
     // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
