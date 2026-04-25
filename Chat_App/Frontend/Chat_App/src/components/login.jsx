@@ -5,11 +5,9 @@ import { auth, provider } from "../firebase";
 import "../App.css";
 import "../App.enhanced.css";
 
-// ✅ FIX: Use dynamic hostname so LAN users connect to the right server
-const SERVER_URL = "https://chat-app-1-m9cw.onrender.com";
+const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 function Login({ user = null, setUser = () => {} }) {
-  // ✅ FIX: Login only needs email + password — removed firstName/lastName
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -50,7 +48,6 @@ function Login({ user = null, setUser = () => {} }) {
     }
   };
 
-  // ✅ FIX: Only validate email + password (no firstName/lastName needed for login)
   const validateForm = () => {
     const nextErrors = {};
 
@@ -73,7 +70,7 @@ function Login({ user = null, setUser = () => {} }) {
       setIsSuccess(false);
 
       const result = await signInWithPopup(auth, provider);
-      const response = await fetch(`${SERVER_URL}/google-login`, {
+      const response = await fetch(`${SERVER_URL}/api/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,12 +87,17 @@ function Login({ user = null, setUser = () => {} }) {
         throw new Error(data.error || "Google login failed");
       }
 
-      setUser(data);
+      setUser(data.user);
       setIsSuccess(true);
       showToast("success", "Welcome back", "Google login successful");
       setTimeout(() => navigate("/chat"), 1000);
     } catch (error) {
-      showToast("error", "Google login failed", error.message || "Unable to continue");
+      const message =
+        error?.code === "auth/unauthorized-domain"
+          ? "Authorize your frontend domain in Firebase Authentication settings."
+          : error?.message || "Unable to continue";
+
+      showToast("error", "Google login failed", message);
     } finally {
       setIsSubmitting(false);
     }
@@ -178,7 +180,6 @@ function Login({ user = null, setUser = () => {} }) {
             <p>Enter your email and password to continue.</p>
           </div>
 
-          {/* ✅ FIX: Only email + password fields for login */}
           <form className="auth-form" onSubmit={handleManualLogin}>
             <label className="auth-field">
               <span>Email</span>

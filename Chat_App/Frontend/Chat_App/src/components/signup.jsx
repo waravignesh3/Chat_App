@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
+import "../App.enhanced.css";
+
+const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -96,7 +99,7 @@ function Signup() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("https://chat-app-1-m9cw.onrender.com/api/register", {
+      const response = await fetch(`${SERVER_URL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

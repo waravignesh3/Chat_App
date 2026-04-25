@@ -3,44 +3,48 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 import authroutes from "./authroutes.js";
 import User from "./models/user.js";
-import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-
-// 🔥 IMPORTANT: store online users
 const onlineUsers = {};
 
-// 🌍 FIX: allow frontend (Vercel) explicitly
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-// ✅ FIXED CORS
-app.use(cors({
-  origin: "https://chat-app-kappa-blush-85.vercel.app",
-  credentials: true
-}));
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-app.use(express.json());
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
 app.use("/api", authroutes);
 
-// 🔥 FIX: MongoDB better production config
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log("DB error:", err));
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch((error) => console.log("DB error:", error));
 
-// ================= SOCKET.IO FIX =================
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-app-kappa-blush-85.vercel.app",
+    ...corsOptions,
     methods: ["GET", "POST"],
-    credentials: true
-  }
+  },
 });
 
-// ================= HELPERS =================
 const buildUsersPayload = async () => {
   const users = await User.find({}, "name email photo lastSeen isOnline").lean();
 
@@ -56,8 +60,7 @@ const broadcastUsers = async () => {
   io.emit("users_update", users);
 };
 
-// ================= ROUTES =================
-app.post("/google-login", async (req, res) => {
+const handleGoogleLogin = async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
@@ -70,42 +73,64 @@ app.post("/google-login", async (req, res) => {
 
     if (!user) {
       user = new User({
-        name,
+        name: name.trim(),
         email: normalizedEmail,
         photo,
         provider: "google",
       });
     } else {
-      user.name = name;
+      user.name = name.trim();
       user.photo = photo || user.photo;
+      user.provider = "google";
     }
 
     await user.save();
 
     return res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      photo: user.photo,
-      isOnline: Boolean(onlineUsers[user.email]),
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        photo: user.photo,
+        provider: user.provider,
+        isOnline: Boolean(onlineUsers[user.email]),
+        lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+      },
     });
   } catch (error) {
     console.error("Google login error:", error);
     return res.status(500).json({ error: "Server error" });
   }
-});
+};
+
+app.post("/google-login", handleGoogleLogin);
+app.post("/api/google-login", handleGoogleLogin);
 
 app.get("/users", async (req, res) => {
   try {
     const users = await buildUsersPayload();
-    res.json(users);
+    return res.json(users);
   } catch (error) {
     console.error("Fetch users error:", error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ================= SOCKET LOGIC =================
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await buildUsersPayload();
+    return res.json(users);
+  } catch (error) {
+    console.error("Fetch users error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ success: true, message: "Server is healthy" });
+});
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -130,10 +155,22 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("typing", ({ to, from }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("typing", { from });
+    }
+  });
+
+  socket.on("stop_typing", ({ to, from }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("stop_typing", { from });
+    }
+  });
+
   socket.on("disconnect", async () => {
-    const email = Object.keys(onlineUsers).find(
-      (e) => onlineUsers[e] === socket.id
-    );
+    const email = Object.keys(onlineUsers).find((entry) => onlineUsers[entry] === socket.id);
 
     if (email) {
       delete onlineUsers[email];
@@ -151,10 +188,8 @@ io.on("connection", (socket) => {
   });
 });
 
-// ================= FIXED PORT (IMPORTANT FOR RENDER) =================
 const PORT = process.env.PORT || 5000;
 
-// ❌ DO NOT use 0.0.0.0 manually on Render
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

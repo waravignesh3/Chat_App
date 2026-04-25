@@ -392,3 +392,51 @@
     animation: none !important;
   }
 }
+
+/* Production polish additions */
+.auth-panel,
+.chat-sidebar,
+.chat-panel {
+  transition: transform 0.3s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.auth-panel:hover,
+.chat-sidebar:hover,
+.chat-panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(110, 168, 254, 0.24);
+  box-shadow: 0 26px 54px rgba(2, 10, 26, 0.3);
+}
+
+.auth-form,
+.chat-panel,
+.chat-sidebar {
+  animation: sectionReveal 0.7s ease both;
+}
+
+.chat-compose textarea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 168, 254, 0.4) transparent;
+}
+
+.auth-button-secondary:hover .google-mark {
+  transform: scale(1.08) rotate(-6deg);
+  transition: transform 0.25s ease;
+}
+
+.chat-user-card strong,
+.chat-panel-header h3,
+.auth-card h2 {
+  text-wrap: balance;
+}
+
+@keyframes sectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

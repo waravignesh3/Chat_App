@@ -3,10 +3,10 @@ import { io } from "socket.io-client";
 import "../App.css";
 import "../App.enhanced.css";
 
-// ✅ FIX: Use dynamic hostname so LAN users connect to the right server
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-const socket = io(import.meta.env.VITE_SERVER_URL, {
-  transports: ["websocket"]
+const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
+const socket = io(SERVER_URL, {
+  transports: ["websocket"],
+  withCredentials: true,
 });
 
 function Chat({ user }) {
@@ -18,6 +18,7 @@ function Chat({ user }) {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const typingIndicatorTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (user?.email) {
@@ -26,9 +27,9 @@ function Chat({ user }) {
   }, [user]);
 
   useEffect(() => {
-    fetch(`${SERVER_URL}/users`)
+    fetch(`${SERVER_URL}/api/users`)
       .then((response) => response.json())
-      .then((data) => setUsers(data))
+      .then((data) => setUsers(Array.isArray(data) ? data : []))
       .catch((error) => console.error("Users fetch error:", error));
   }, []);
 
@@ -42,9 +43,7 @@ function Chat({ user }) {
   useEffect(() => {
     const handlePrivateMessage = (incomingMessage) => {
       setMessages((prev) => [...prev, incomingMessage]);
-      // ✅ Show typing indicator briefly when a message arrives
-      setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 800);
+      setIsTyping(false);
     };
 
     socket.on("private_message", handlePrivateMessage);
@@ -53,8 +52,36 @@ function Chat({ user }) {
   }, []);
 
   useEffect(() => {
+    const handleTypingStart = ({ from }) => {
+      if (!selectedUser || from !== selectedUser.email) return;
+
+      setIsTyping(true);
+      clearTimeout(typingIndicatorTimeoutRef.current);
+      typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
+    };
+
+    const handleTypingStop = ({ from }) => {
+      if (!selectedUser || from !== selectedUser.email) return;
+      setIsTyping(false);
+    };
+
+    socket.on("typing", handleTypingStart);
+    socket.on("stop_typing", handleTypingStop);
+
+    return () => {
+      socket.off("typing", handleTypingStart);
+      socket.off("stop_typing", handleTypingStop);
+    };
+  }, [selectedUser]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, selectedUser]);
+  }, [messages, selectedUser, isTyping]);
+
+  useEffect(() => () => {
+    clearTimeout(typingTimeoutRef.current);
+    clearTimeout(typingIndicatorTimeoutRef.current);
+  }, []);
 
   const sendMessage = () => {
     if (!message.trim() || !selectedUser || !user?.email) return;
@@ -73,9 +100,11 @@ function Chat({ user }) {
       to: selectedUser.email,
       message: msgData,
     });
+    socket.emit("stop_typing", { to: selectedUser.email, from: user.email });
 
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
+    setIsTyping(false);
   };
 
   const filteredUsers = useMemo(
@@ -110,14 +139,14 @@ function Chat({ user }) {
     }
   };
 
-  // ✅ Typing indicator emit on keystroke
   const handleTyping = (event) => {
     setMessage(event.target.value);
+
     if (selectedUser) {
       clearTimeout(typingTimeoutRef.current);
       socket.emit("typing", { to: selectedUser.email, from: user.email });
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("stop_typing", { to: selectedUser.email });
+        socket.emit("stop_typing", { to: selectedUser.email, from: user.email });
       }, 1200);
     }
   };
@@ -157,7 +186,6 @@ function Chat({ user }) {
                     className={`chat-user-card${isActive ? " chat-user-card-active" : ""}`}
                     onClick={() => setSelectedUser(entry)}
                   >
-                    {/* ✅ Online pulse ring */}
                     <div className="chat-avatar-wrap">
                       <img
                         src={entry.photo || "https://via.placeholder.com/48"}
@@ -222,7 +250,6 @@ function Chat({ user }) {
                       </article>
                     );
                   })}
-                  {/* ✅ Typing indicator */}
                   {isTyping && (
                     <div className="chat-typing-indicator">
                       <span /><span /><span />
