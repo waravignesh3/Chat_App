@@ -34,7 +34,9 @@ app.use(express.json({ limit: "1mb" }));
 app.use("/api", authroutes);
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+  })
   .then(() => console.log("MongoDB Connected"))
   .catch((error) => console.log("DB error:", error));
 
@@ -64,6 +66,10 @@ const handleGoogleLogin = async (req, res) => {
   const { name, email, photo } = req.body;
 
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ error: "Database is not connected yet. Please try again." });
+    }
+
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }

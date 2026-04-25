@@ -1,11 +1,45 @@
 import { useEffect, useState } from "react";
-import { getRedirectResult, signInWithPopup, signInWithRedirect } from "firebase/auth";
+import { getRedirectResult, signInWithRedirect } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import "../App.css";
 import "../App.enhanced.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
+
+const parseResponse = async (response) => {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+};
+
+const syncGoogleUser = async (firebaseUser) => {
+  const response = await fetch(`${SERVER_URL}/api/google-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+      email: firebaseUser.email,
+      photo: firebaseUser.photoURL,
+    }),
+  });
+
+  const data = await parseResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.error || "Google login failed");
+  }
+
+  return data;
+};
 
 function Login({ user = null, setUser = () => {} }) {
   const [formData, setFormData] = useState({
@@ -45,23 +79,7 @@ function Login({ user = null, setUser = () => {} }) {
         if (!result?.user) return;
 
         setIsSubmitting(true);
-
-        const response = await fetch(`${SERVER_URL}/api/google-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: result.user.displayName || result.user.email?.split("@")[0] || "User",
-            email: result.user.email,
-            photo: result.user.photoURL,
-          }),
-        });
-
-        const text = await response.text();
-        const data = text ? JSON.parse(text) : {};
-
-        if (!response.ok) {
-          throw new Error(data.error || "Google login failed");
-        }
+        const data = await syncGoogleUser(result.user);
 
         setUser(data.user);
         setIsSuccess(true);
@@ -108,39 +126,9 @@ function Login({ user = null, setUser = () => {} }) {
     try {
       setIsSubmitting(true);
       setIsSuccess(false);
-
-      const result = await signInWithPopup(auth, provider);
-      const response = await fetch(`${SERVER_URL}/api/google-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: result.user.displayName || result.user.email?.split("@")[0] || "User",
-          email: result.user.email,
-          photo: result.user.photoURL,
-        }),
-      });
-
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (!response.ok) {
-        throw new Error(data.error || "Google login failed");
-      }
-
-      setUser(data.user);
-      setIsSuccess(true);
-      showToast("success", "Welcome back", "Google login successful");
-      setTimeout(() => navigate("/chat"), 1000);
+      await signInWithRedirect(auth, provider);
+      return;
     } catch (error) {
-      if (
-        error?.code === "auth/popup-blocked" ||
-        error?.code === "auth/popup-closed-by-user" ||
-        error?.code === "auth/cancelled-popup-request"
-      ) {
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-
       const message =
         error?.code === "auth/unauthorized-domain"
           ? "Authorize your frontend domain in Firebase Authentication settings."
@@ -148,7 +136,9 @@ function Login({ user = null, setUser = () => {} }) {
 
       showToast("error", "Google login failed", message);
     } finally {
-      setIsSubmitting(false);
+      if (!document.hidden) {
+        setIsSubmitting(false);
+      }
     }
   };
 
