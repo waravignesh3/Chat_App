@@ -27,9 +27,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login user={user} setUser={setUser} />} />
-        <Route path="/login" element={<Login user={user} setUser={setUser} />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/"
+          element={user ? <Navigate to="/chat" replace /> : <Login user={user} setUser={setUser} />}
+        />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/chat" replace /> : <Login user={user} setUser={setUser} />}
+        />
+        <Route path="/signup" element={user ? <Navigate to="/chat" replace /> : <Signup />} />
         <Route
           path="/chat"
           element={user ? <Chat user={user} setUser={setUser} /> : <Navigate to="/login" replace />}
