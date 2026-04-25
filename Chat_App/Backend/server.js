@@ -47,6 +47,38 @@ const io = new Server(server, {
   },
 });
 
+const waitForDatabaseConnection = (timeoutMs = 12000) =>
+  new Promise((resolve, reject) => {
+    if (mongoose.connection.readyState === 1) {
+      resolve();
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Database connection timed out"));
+    }, timeoutMs);
+
+    const handleConnected = () => {
+      cleanup();
+      resolve();
+    };
+
+    const handleError = (error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      mongoose.connection.off("connected", handleConnected);
+      mongoose.connection.off("error", handleError);
+    };
+
+    mongoose.connection.on("connected", handleConnected);
+    mongoose.connection.on("error", handleError);
+  });
+
 const buildUsersPayload = async () => {
   const users = await User.find({}, "name email photo lastSeen isOnline").lean();
 
@@ -67,7 +99,7 @@ const handleGoogleLogin = async (req, res) => {
 
   try {
     if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ error: "Database is not connected yet. Please try again." });
+      await waitForDatabaseConnection();
     }
 
     if (!email) {
