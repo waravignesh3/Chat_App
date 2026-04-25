@@ -10,6 +10,16 @@ import { requestJson } from "./utils/http";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
+const buildFirebaseFallbackUser = (firebaseUser) => ({
+  _id: firebaseUser.uid,
+  name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+  email: firebaseUser.email,
+  photo: firebaseUser.photoURL,
+  provider: "google",
+  isOnline: true,
+  lastSeen: "Online",
+});
+
 const syncGoogleUser = async (firebaseUser) =>
   requestJson(`${SERVER_URL}/api/google-login`, {
     method: "POST",
@@ -53,17 +63,21 @@ function App() {
           return;
         }
 
-        if (user?.email === firebaseUser.email) {
+        const sameUser = user?.email && user.email === firebaseUser.email;
+        if (sameUser) {
           setAuthReady(true);
           return;
         }
 
         const data = await syncGoogleUser(firebaseUser);
         if (!active) return;
-
         setUser(data.user);
       } catch (error) {
         console.error("Global auth sync failed:", error);
+
+        if (active && auth.currentUser?.email) {
+          setUser(buildFirebaseFallbackUser(auth.currentUser));
+        }
       } finally {
         if (active) {
           setAuthReady(true);
@@ -78,7 +92,7 @@ function App() {
   }, [user?.email]);
 
   if (!authReady) {
-    return null;
+    return <div className="auth-bootstrap">Loading your session...</div>;
   }
 
   return (

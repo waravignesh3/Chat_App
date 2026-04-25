@@ -1,23 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getRedirectResult, onAuthStateChanged, signInWithRedirect } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { signInWithRedirect } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
-import { parseJsonResponse, requestJson } from "../utils/http";
+import { parseJsonResponse } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
-
-const syncGoogleUser = async (firebaseUser) =>
-  requestJson(`${SERVER_URL}/api/google-login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-      email: firebaseUser.email,
-      photo: firebaseUser.photoURL,
-    }),
-  });
 
 function Login({ user = null, setUser = () => {} }) {
   const [formData, setFormData] = useState({
@@ -33,7 +22,6 @@ function Login({ user = null, setUser = () => {} }) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const syncInFlightRef = useRef(false);
 
   const navigate = useNavigate();
 
@@ -56,58 +44,6 @@ function Login({ user = null, setUser = () => {} }) {
   const showToast = (variant, title, message) => {
     setToast({ visible: true, variant, title, message });
   };
-
-  const finalizeGoogleLogin = useCallback(async (firebaseUser, options = {}) => {
-    if (!firebaseUser?.email || syncInFlightRef.current) {
-      return;
-    }
-
-    syncInFlightRef.current = true;
-
-    try {
-      setIsSubmitting(true);
-      const data = await syncGoogleUser(firebaseUser);
-      setUser(data.user);
-      setIsSuccess(true);
-
-      if (!options.silent) {
-        showToast("success", "Welcome back", "Google login successful");
-      }
-
-      navigate("/chat", { replace: true });
-    } catch (error) {
-      showToast("error", "Google login failed", error?.message || "Unable to continue");
-    } finally {
-      syncInFlightRef.current = false;
-      setIsSubmitting(false);
-    }
-  }, [navigate, setUser]);
-
-  useEffect(() => {
-    const completeRedirectLogin = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (!result?.user) return;
-        await finalizeGoogleLogin(result.user);
-      } catch (error) {
-        if (error?.code === "auth/no-auth-event") return;
-        showToast("error", "Google login failed", error?.message || "Unable to continue");
-      }
-    };
-
-    completeRedirectLogin();
-  }, [finalizeGoogleLogin]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser?.email) return;
-      if (user?._id || user?.email) return;
-
-      await finalizeGoogleLogin(firebaseUser, { silent: true });
-    });
-
-    return unsubscribe;
-  }, [finalizeGoogleLogin, user]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -140,7 +76,6 @@ function Login({ user = null, setUser = () => {} }) {
       setIsSubmitting(true);
       setIsSuccess(false);
       await signInWithRedirect(auth, provider);
-      return;
     } catch (error) {
       const message =
         error?.code === "auth/unauthorized-domain"
