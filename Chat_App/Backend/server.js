@@ -33,21 +33,21 @@ app.use(
   })
 );
 
-// All auth + user routes mounted under /api
 app.use("/api", authroutes);
 
-// Database connection state
 let dbHealthy = false;
 
 const testDatabaseConnection = async () => {
   try {
     const connection = await pool.getConnection();
     connection.release();
+    if (!dbHealthy) {
+      logger.info("MySQL Database connected successfully");
+    }
     dbHealthy = true;
-    logger.info("MySQL Database connected successfully");
   } catch (error) {
     dbHealthy = false;
-    logger.error("MySQL Database connection failed", error);
+    logger.error("MySQL Database connection failed:", error.message);
     if (hasDatabaseConfig) {
       setTimeout(testDatabaseConnection, 5000);
     }
@@ -57,36 +57,34 @@ const testDatabaseConnection = async () => {
 if (hasDatabaseConfig) {
   testDatabaseConnection();
 } else {
-  logger.warn("No database configuration found. Running in degraded mode.");
+  logger.warn(
+    "No database configuration found. Set DATABASE_URL or DB_HOST/DB_USER/DB_NAME/DB_PASSWORD. Running in degraded mode."
+  );
 }
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.json({
     status: dbHealthy ? "healthy" : "degraded",
     database: dbHealthy ? "connected" : "disconnected",
+    hasDatabaseConfig,
     timestamp: new Date().toISOString(),
   });
 });
 
 const buildUsersPayload = async () => {
-  if (!dbHealthy) {
-    logger.error("Database not available");
-    return [];
-  }
+  if (!dbHealthy) return [];
 
   try {
     const [users] = await pool.query(
       "SELECT id, name, email, photo, lastSeen, isOnline FROM users"
     );
-
     return users.map((user) => ({
       ...user,
       isOnline: Boolean(onlineUsers[user.email]),
       lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
     }));
   } catch (error) {
-    logger.error("Failed to build users payload", error);
+    logger.error("Failed to build users payload:", error.message);
     return [];
   }
 };
@@ -96,7 +94,6 @@ const broadcastUsers = async () => {
   io.emit("users_update", users);
 };
 
-// FIX: moved under /api prefix to match frontend fetch calls
 app.post("/api/google-login", async (req, res) => {
   const { name, email, photo } = req.body;
 
@@ -104,13 +101,11 @@ app.post("/api/google-login", async (req, res) => {
     if (!dbHealthy) {
       return res.status(503).json({ error: "Database service unavailable. Please try again later." });
     }
-
     if (!name || !email) {
       return res.status(400).json({ error: "Name and email are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-
     const [users] = await pool.query(
       "SELECT * FROM users WHERE LOWER(email) = ?",
       [normalizedEmail]
@@ -122,7 +117,7 @@ app.post("/api/google-login", async (req, res) => {
         "INSERT INTO users (name, email, photo, provider, lastSeen, isOnline) VALUES (?, ?, ?, 'google', 'Offline', false)",
         [name, normalizedEmail, photo]
       );
-      user = { id: result.insertId, name, email: normalizedEmail, photo, provider: "google" };
+      user = { id: result.insertId, name, email: normalizedEmail, photo, provider: "google", lastSeen: "Offline" };
     } else {
       user = users[0];
       await pool.query(
@@ -134,7 +129,6 @@ app.post("/api/google-login", async (req, res) => {
       user.provider = "google";
     }
 
-    // FIX: return under `user` key to match login.jsx → setUser(data.user)
     return res.json({
       success: true,
       user: {
@@ -148,18 +142,20 @@ app.post("/api/google-login", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error("Google login error", error);
+    logger.error("Google login error:", error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// FIX: moved under /api prefix to match chat.jsx fetch(`${SERVER_URL}/api/users`)
 app.get("/api/users", async (req, res) => {
+  if (!dbHealthy) {
+    return res.status(503).json({ error: "Database service unavailable." });
+  }
   try {
     const users = await buildUsersPayload();
     return res.json(users);
   } catch (error) {
-    logger.error("Failed to fetch users", error);
+    logger.error("Failed to fetch users:", error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -169,51 +165,50 @@ io.on("connection", (socket) => {
 
   socket.on("register", async (email) => {
     if (!email) return;
-
     const normalizedEmail = email.toLowerCase().trim();
     onlineUsers[normalizedEmail] = socket.id;
 
     if (dbHealthy) {
-      await pool.query(
-        "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
-        [normalizedEmail]
-      );
+      try {
+        await pool.query(
+          "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
+          [normalizedEmail]
+        );
+      } catch (error) {
+        logger.error("Failed to update online status:", error.message);
+      }
     }
-
     await broadcastUsers();
   });
 
   socket.on("private_message", ({ to, message }) => {
     const normalizedRecipient = to?.toLowerCase().trim();
     const targetSocketId = onlineUsers[normalizedRecipient];
-
     if (targetSocketId) {
       io.to(targetSocketId).emit("private_message", message);
     }
   });
 
   socket.on("disconnect", async () => {
-    const email = Object.keys(onlineUsers).find(
-      (email) => onlineUsers[email] === socket.id
-    );
-
+    const email = Object.keys(onlineUsers).find((key) => onlineUsers[key] === socket.id);
     if (email) {
       delete onlineUsers[email];
-
       if (dbHealthy) {
-        await pool.query(
-          "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
-          [new Date().toISOString(), email]
-        );
+        try {
+          await pool.query(
+            "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
+            [new Date().toISOString(), email]
+          );
+        } catch (error) {
+          logger.error("Failed to update offline status:", error.message);
+        }
       }
-
       await broadcastUsers();
     }
   });
 });
 
 const PORT = process.env.PORT || 5000;
-
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
