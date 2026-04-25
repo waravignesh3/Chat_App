@@ -3,7 +3,7 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import pool from "./db.js";
+import pool, { hasDatabaseConfig } from "./db.js";
 import authroutes from "./authroutes.js";
 import logger from "./utils/logger.js";
 
@@ -47,13 +47,18 @@ const testDatabaseConnection = async () => {
   } catch (error) {
     dbHealthy = false;
     logger.error("MySQL Database connection failed", error);
-    // Retry after 5 seconds
-    setTimeout(testDatabaseConnection, 5000);
+    if (hasDatabaseConfig) {
+      // Retry after 5 seconds only when config exists
+      setTimeout(testDatabaseConnection, 5000);
+    }
   }
 };
 
-// Test connection on startup
-testDatabaseConnection();
+if (hasDatabaseConfig) {
+  testDatabaseConnection();
+} else {
+  logger.warn("No database configuration found. Running in degraded mode.");
+}
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -165,10 +170,12 @@ io.on("connection", (socket) => {
     const normalizedEmail = email.toLowerCase().trim();
     onlineUsers[normalizedEmail] = socket.id;
 
-    await pool.query(
-      "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
-      [normalizedEmail]
-    );
+    if (dbHealthy) {
+      await pool.query(
+        "UPDATE users SET isOnline = true, lastSeen = 'Online' WHERE LOWER(email) = ?",
+        [normalizedEmail]
+      );
+    }
 
     await broadcastUsers();
   });
@@ -190,10 +197,12 @@ io.on("connection", (socket) => {
     if (email) {
       delete onlineUsers[email];
 
-      await pool.query(
-        "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
-        [new Date().toISOString(), email]
-      );
+      if (dbHealthy) {
+        await pool.query(
+          "UPDATE users SET isOnline = false, lastSeen = ? WHERE LOWER(email) = ?",
+          [new Date().toISOString(), email]
+        );
+      }
 
       await broadcastUsers();
     }

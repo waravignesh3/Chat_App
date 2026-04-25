@@ -1,22 +1,9 @@
 import express from "express";
 import bcrypt from "bcryptjs";
-import pool from "./db.js";
+import pool, { hasDatabaseConfig } from "./db.js";
 import logger from "./utils/logger.js";
 
 const router = express.Router();
-
-let dbHealthy = false;
-
-// Import and maintain database health status
-setTimeout(async () => {
-  try {
-    const connection = await pool.getConnection();
-    connection.release();
-    dbHealthy = true;
-  } catch (error) {
-    dbHealthy = false;
-  }
-}, 1000);
 
 /* =========================
    REGISTER
@@ -25,8 +12,8 @@ router.post("/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
-    if (!dbHealthy) {
-      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    if (!hasDatabaseConfig) {
+      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
     }
 
     // ✅ Validation
@@ -73,8 +60,8 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    if (!dbHealthy) {
-      return res.status(503).json({ error: "Database service unavailable. Please try again later." });
+    if (!hasDatabaseConfig) {
+      return res.status(503).json({ error: "Database service unavailable. Please configure DATABASE_URL or DB_HOST/DB_USER/DB_NAME." });
     }
 
     // ✅ Validation
