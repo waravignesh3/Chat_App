@@ -189,6 +189,10 @@ function Chat({ user, setUser }) {
   const [showEmojiPicker, setShowEmojiPicker]   = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [mediaUploading, setMediaUploading]     = useState(false);
+  // unreadMap: { [senderEmail]: { count, lastText, lastTime } }
+  const [unreadMap, setUnreadMap]         = useState({});
+  // recentOrder: email[] sorted by last-message timestamp
+  const [recentOrder, setRecentOrder]     = useState([]);
 
   const bottomRef                 = useRef(null);
   const typingTimeoutRef          = useRef(null);
@@ -298,6 +302,28 @@ function Chat({ user, setUser }) {
         return isDuplicate ? prev : [...prev, incomingMessage];
       });
       setIsTyping(false);
+
+      // Track unread messages from others
+      const senderEmail = incomingMessage.sender;
+      if (senderEmail && senderEmail !== userRef.current?.email) {
+        const isViewingConversation =
+          activeSelectedUserRef.current?.email === senderEmail;
+        if (!isViewingConversation) {
+          setUnreadMap((prev) => ({
+            ...prev,
+            [senderEmail]: {
+              count:    (prev[senderEmail]?.count || 0) + 1,
+              lastText: incomingMessage.text || (incomingMessage.mediaUrl ? "📎 Media" : ""),
+              lastTime: incomingMessage.time,
+            },
+          }));
+        }
+        // Bubble sender to top of recency list
+        setRecentOrder((prev) => [
+          senderEmail,
+          ...prev.filter((e) => e !== senderEmail),
+        ]);
+      }
     };
     socketRef.current?.on("private_message", handler);
     return () => socketRef.current?.off("private_message", handler);
@@ -349,14 +375,22 @@ function Chat({ user, setUser }) {
   // Keep ref in sync so media/upload callbacks can read it without stale closure
   useEffect(() => { activeSelectedUserRef.current = activeSelectedUser; }, [activeSelectedUser]);
 
-  const filteredUsers = useMemo(
-    () => users.filter((u) => {
+  const filteredUsers = useMemo(() => {
+    const base = users.filter((u) => {
       if (!u?.email || u.email === user?.email) return false;
       const q = search.toLowerCase();
       return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
-    }),
-    [search, user?.email, users]
-  );
+    });
+    // Sort by recentOrder (most recently messaged first), then alphabetical
+    return [...base].sort((a, b) => {
+      const ai = recentOrder.indexOf(a.email);
+      const bi = recentOrder.indexOf(b.email);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return (a.name || a.email).localeCompare(b.name || b.email);
+    });
+  }, [search, user?.email, users, recentOrder]);
 
   const conversationMessages = useMemo(
     () => messages.filter((m) =>
@@ -375,8 +409,22 @@ function Chat({ user, setUser }) {
       setSelectedUser(null);
       setMessage("");
       setMessages([]);
+      setUnreadMap({});
+      setRecentOrder([]);
       setUser(null);
       navigate("/login", { replace: true });
+    }
+  };
+
+  // Clear unread badge when a conversation is opened
+  const handleSelectUser = (entry) => {
+    setSelectedUser(entry);
+    if (unreadMap[entry.email]) {
+      setUnreadMap((prev) => {
+        const next = { ...prev };
+        delete next[entry.email];
+        return next;
+      });
     }
   };
 
@@ -538,23 +586,32 @@ function Chat({ user, setUser }) {
               </div>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((entry) => {
-                const isActive = activeSelectedUser?.email === entry.email;
+                const isActive  = activeSelectedUser?.email === entry.email;
+                const unread    = unreadMap[entry.email];
+                const hasUnread = !isActive && unread?.count > 0;
                 return (
                   <button
                     key={entry.email}
                     type="button"
-                    className={`chat-user-card${isActive ? " chat-user-card-active" : ""}`}
-                    onClick={() => setSelectedUser(entry)}
+                    className={`chat-user-card${isActive ? " chat-user-card-active" : ""}${hasUnread ? " chat-user-card-unread" : ""}`}
+                    onClick={() => handleSelectUser(entry)}
                   >
                     <div className="chat-avatar-wrap">
                       <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
                       {entry.isOnline && <span className="chat-online-ring" />}
+                      {hasUnread && <span className="chat-unread-dot" aria-label={`${unread.count} unread`}>{unread.count}</span>}
                     </div>
                     <span className="chat-user-copy">
                       <strong>{entry.name || entry.email}</strong>
-                      <span>{entry.email}</span>
+                      {hasUnread
+                        ? <span className="chat-unread-preview">{unread.lastText}</span>
+                        : <span>{entry.email}</span>
+                      }
                       <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
-                        {entry.isOnline ? "Online" : `Last seen: ${entry.lastSeen || "Offline"}`}
+                        {hasUnread
+                          ? <span className="chat-unread-time">{unread.lastTime}</span>
+                          : entry.isOnline ? "Online" : `Last seen: ${entry.lastSeen || "Offline"}`
+                        }
                       </span>
                     </span>
                   </button>

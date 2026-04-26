@@ -526,12 +526,15 @@ button {
 }
 
 .chat-shell {
-  position: relative;
+  position: fixed;
+  inset: 0;
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
   padding: clamp(12px, 2vw, 24px);
   overflow: hidden;
   isolation: isolate;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-shell::before {
@@ -582,8 +585,8 @@ button {
 
 .chat-layout {
   position: relative;
-  width: 100%;
-  min-height: calc(100vh - clamp(24px, 4vw, 48px));
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 18px;
@@ -606,6 +609,8 @@ button {
   grid-template-rows: auto auto minmax(0, 1fr);
   padding: 22px;
   animation: slideUp 0.75s ease both;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .chat-sidebar::before,
@@ -623,6 +628,7 @@ button {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
+  min-height: 0;
   animation: slideUp 0.85s ease both;
 }
 
@@ -700,8 +706,10 @@ button {
   display: grid;
   gap: 12px;
   align-content: start;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 4px;
+  min-height: 0;
 }
 
 .chat-user-card {
@@ -787,7 +795,8 @@ button {
   align-content: start;
   gap: 14px;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 22px 24px;
 }
 
@@ -898,6 +907,52 @@ button {
 .chat-send-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ─── Unread badge & preview ─────────────────────────────────────────────── */
+.chat-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-unread-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 10px rgba(34, 197, 94, 0.6);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+  z-index: 2;
+}
+
+.chat-user-card-unread {
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  background: rgba(34, 197, 94, 0.07) !important;
+}
+
+.chat-unread-preview {
+  color: #e2f5e8 !important;
+  font-size: 0.84rem !important;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-unread-time {
+  color: #4ade80 !important;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 @keyframes floatBlob {
@@ -1045,8 +1100,12 @@ button {
   }
 
   .chat-layout {
-    min-height: auto;
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .chat-sidebar {
+    max-height: 45vh;
   }
 
   .chat-sidebar,
@@ -1055,7 +1114,7 @@ button {
   }
 
   .chat-user-list {
-    max-height: 360px;
+    max-height: 260px;
   }
 }
 
