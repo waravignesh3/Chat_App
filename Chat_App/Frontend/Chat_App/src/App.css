@@ -712,6 +712,21 @@ button {
   min-height: 0;
 }
 
+.chat-user-list::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-user-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-user-list::-webkit-scrollbar-thumb {
+  background: rgba(110, 168, 254, 0.2);
+  border-radius: 999px;
+}
+.chat-user-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 168, 254, 0.45);
+}
+
+
 .chat-user-card {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
@@ -788,17 +803,77 @@ button {
   font-size: clamp(1.5rem, 2vw, 2.2rem);
 }
 
+/* Wrapper occupies the middle grid row and clips overflow */
+.chat-messages-wrap {
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .chat-messages {
   position: relative;
   z-index: 1;
   display: grid;
   align-content: start;
   gap: 14px;
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 22px 24px;
+  scroll-behavior: smooth;
 }
+
+/* ── Custom scrollbar (webkit) ──────────────────────────────────────────── */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(110, 168, 254, 0.25);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 168, 254, 0.55);
+}
+
+/* ── Scroll-to-bottom button ────────────────────────────────────────────── */
+.chat-scroll-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--auth-accent), var(--auth-primary));
+  color: #08111f;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(78, 144, 255, 0.45);
+  cursor: pointer;
+  animation: fadeInUp 0.22s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.chat-scroll-btn:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 10px 26px rgba(78, 144, 255, 0.55);
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 
 .chat-bubble {
   justify-self: start;

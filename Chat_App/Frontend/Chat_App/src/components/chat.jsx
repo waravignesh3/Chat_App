@@ -193,14 +193,17 @@ function Chat({ user, setUser }) {
   const [unreadMap, setUnreadMap]         = useState({});
   // recentOrder: email[] sorted by last-message timestamp
   const [recentOrder, setRecentOrder]     = useState([]);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const bottomRef                 = useRef(null);
+  const messagesContainerRef      = useRef(null);
   const typingTimeoutRef          = useRef(null);
   const typingIndicatorTimeoutRef = useRef(null);
   const socketRef                 = useRef(null);
   const mediaInputRef             = useRef(null);
   const emojiPickerRef            = useRef(null);
   const textareaRef               = useRef(null);
+  const shouldScrollRef           = useRef(true); // true = scroll to bottom on next render
   const navigate                  = useNavigate();
 
   // Keep latest values in refs so callbacks never go stale — eliminates
@@ -348,8 +351,17 @@ function Chat({ user, setUser }) {
     };
   }, [selectedUser]);
 
+  // Smart scroll: only jump to bottom if the user is already near it,
+  // or if shouldScrollRef says so (set true right before sending).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const nearBottom     = distFromBottom < 120;
+    if (shouldScrollRef.current || nearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+    shouldScrollRef.current = false;
   }, [messages, selectedUser, isTyping]);
 
   // ── Close emoji picker on outside click ───────────────────────────────────
@@ -418,6 +430,7 @@ function Chat({ user, setUser }) {
 
   // Clear unread badge when a conversation is opened
   const handleSelectUser = (entry) => {
+    shouldScrollRef.current = true; // jump to bottom when opening a chat
     setSelectedUser(entry);
     if (unreadMap[entry.email]) {
       setUnreadMap((prev) => {
@@ -430,6 +443,7 @@ function Chat({ user, setUser }) {
 
   const sendMessage = () => {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
+    shouldScrollRef.current = true; // always scroll to bottom on own send
     const msgData = {
       text:     message.trim(),
       sender:   user.email,
@@ -639,43 +653,68 @@ function Chat({ user, setUser }) {
             </div>
           </div>
 
-          <div className="chat-messages">
-            {activeSelectedUser ? (
-              conversationMessages.length > 0 ? (
-                <>
-                  {conversationMessages.map((entry, index) => {
-                    const isOwn = entry.sender === user?.email;
-                    return (
-                      <article
-                        key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
-                        className={`chat-bubble${isOwn ? " own" : ""}`}
-                      >
-                        <span className="chat-bubble-sender">
-                          {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
-                        </span>
-                        {entry.text && <p>{entry.text}</p>}
-                        {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
-                        <time>{entry.time}</time>
-                      </article>
-                    );
-                  })}
-                  {isTyping && (
-                    <div className="chat-typing-indicator"><span /><span /><span /></div>
-                  )}
-                </>
+          <div className="chat-messages-wrap">
+            <div
+              className="chat-messages"
+              ref={messagesContainerRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+                setShowScrollBtn(dist > 200);
+              }}
+            >
+              {activeSelectedUser ? (
+                conversationMessages.length > 0 ? (
+                  <>
+                    {conversationMessages.map((entry, index) => {
+                      const isOwn = entry.sender === user?.email;
+                      return (
+                        <article
+                          key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
+                          className={`chat-bubble${isOwn ? " own" : ""}`}
+                        >
+                          <span className="chat-bubble-sender">
+                            {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
+                          </span>
+                          {entry.text && <p>{entry.text}</p>}
+                          {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
+                          <time>{entry.time}</time>
+                        </article>
+                      );
+                    })}
+                    {isTyping && (
+                      <div className="chat-typing-indicator"><span /><span /><span /></div>
+                    )}
+                  </>
+                ) : (
+                  <div className="chat-empty-state chat-empty-state-large">
+                    <strong>No messages yet</strong>
+                    <p>Send the first message to begin this conversation.</p>
+                  </div>
+                )
               ) : (
                 <div className="chat-empty-state chat-empty-state-large">
-                  <strong>No messages yet</strong>
-                  <p>Send the first message to begin this conversation.</p>
+                  <strong>Your conversation will appear here</strong>
+                  <p>Select a user from the sidebar to open a private chat.</p>
                 </div>
-              )
-            ) : (
-              <div className="chat-empty-state chat-empty-state-large">
-                <strong>Your conversation will appear here</strong>
-                <p>Select a user from the sidebar to open a private chat.</p>
-              </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {showScrollBtn && (
+              <button
+                type="button"
+                className="chat-scroll-btn"
+                aria-label="Scroll to latest message"
+                onClick={() => {
+                  shouldScrollRef.current = true;
+                  bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+                  setShowScrollBtn(false);
+                }}
+              >
+                ↓
+              </button>
             )}
-            <div ref={bottomRef} />
           </div>
 
           <div className="chat-compose">
