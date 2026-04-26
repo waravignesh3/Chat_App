@@ -1,0 +1,270 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   chat.media.css  — styles for emoji picker, media sharing, profile modal
+   All new selectors — zero collision with existing CSS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Emoji picker toggle button ─────────────────────────────────────────── */
+.chat-emoji-toggle,
+.chat-media-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.chat-emoji-toggle:hover:not(:disabled),
+.chat-media-toggle:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.chat-emoji-toggle:disabled,
+.chat-media-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Compose extras wrapper (positions emoji popover) ───────────────────── */
+.chat-compose-extras {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Emoji picker popover ────────────────────────────────────────────────── */
+.emoji-picker-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 200;
+  background: var(--color-surface, #1e1e2e);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  width: 270px;
+}
+
+.emoji-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+
+.emoji-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  padding: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s;
+  line-height: 1.2;
+}
+
+.emoji-btn:hover {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+/* ── Media messages in bubbles ───────────────────────────────────────────── */
+.chat-media-image {
+  max-width: 240px;
+  max-height: 200px;
+  border-radius: 10px;
+  display: block;
+  object-fit: cover;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.chat-media-image:hover {
+  opacity: 0.88;
+}
+
+.chat-media-video {
+  max-width: 280px;
+  max-height: 200px;
+  border-radius: 10px;
+  display: block;
+  background: #000;
+}
+
+/* ── Profile photo update modal ─────────────────────────────────────────── */
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.profile-modal {
+  background: var(--color-surface, #1e1e2e);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.profile-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text, #e2e8f0);
+}
+
+.profile-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--color-muted, #94a3b8);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.profile-modal-close:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.profile-modal-body {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-preview-wrap {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(99,102,241,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-pick-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(99,102,241,0.5);
+  background: transparent;
+  color: var(--color-text, #e2e8f0);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.profile-pick-btn:hover {
+  background: rgba(99,102,241,0.12);
+  border-color: #6366f1;
+}
+
+.profile-error {
+  color: #f87171;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+
+.profile-modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  justify-content: flex-end;
+}
+
+.profile-cancel-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--color-muted, #94a3b8);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.profile-cancel-btn:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.profile-upload-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.profile-upload-btn:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.profile-upload-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Own avatar clickable (hover hint) ───────────────────────────────────── */
+.chat-self-avatar-clickable {
+  position: relative;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.chat-self-avatar-clickable:hover .chat-avatar-edit-hint {
+  opacity: 1;
+}
+
+.chat-avatar-edit-hint {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}

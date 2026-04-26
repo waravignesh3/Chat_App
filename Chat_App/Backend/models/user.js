@@ -19,9 +19,12 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    // NEW: default null so the frontend Avatar component renders the
+    // first-letter coloured circle for new / manual-login users.
+    // Google users get their photoURL stored here automatically.
     photo: {
       type: String,
-      default: "https://via.placeholder.com/150",
+      default: null,
     },
     provider: {
       type: String,
