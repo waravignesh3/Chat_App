@@ -877,6 +877,7 @@ button {
 
 
 .chat-bubble {
+  flex-shrink: 0;
   align-self: flex-start;
   max-width: min(75%, 720px);
   padding: 16px 18px;
@@ -888,6 +889,7 @@ button {
 }
 
 .chat-bubble.own {
+  flex-shrink: 0;
   align-self: flex-end;
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(110, 168, 254, 0.22), rgba(192, 132, 252, 0.22));
   border-radius: 24px 24px 8px 24px;
