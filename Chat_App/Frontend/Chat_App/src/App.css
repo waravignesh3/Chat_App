@@ -815,8 +815,9 @@ button {
 .chat-messages {
   position: relative;
   z-index: 1;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   gap: 14px;
   flex: 1;
   min-height: 0;
@@ -876,9 +877,8 @@ button {
 
 
 .chat-bubble {
-  justify-self: start;
-  width: fit-content;
-  max-width: min(100%, 720px);
+  align-self: flex-start;
+  max-width: min(75%, 720px);
   padding: 16px 18px;
   border-radius: 24px 24px 24px 8px;
   background: rgba(255, 255, 255, 0.06);
@@ -888,8 +888,7 @@ button {
 }
 
 .chat-bubble.own {
-  justify-self: end;
-  margin-left: auto;
+  align-self: flex-end;
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(110, 168, 254, 0.22), rgba(192, 132, 252, 0.22));
   border-radius: 24px 24px 8px 24px;
   border-color: rgba(110, 168, 254, 0.28);
@@ -1284,7 +1283,7 @@ button {
   }
 
   .chat-bubble {
-    max-width: 100%;
+    max-width: 88%;
   }
 }
 
