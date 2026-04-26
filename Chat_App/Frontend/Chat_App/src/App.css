@@ -877,6 +877,7 @@ button {
 
 .chat-bubble {
   justify-self: start;
+  width: fit-content;
   max-width: min(100%, 720px);
   padding: 16px 18px;
   border-radius: 24px 24px 24px 8px;
@@ -888,6 +889,7 @@ button {
 
 .chat-bubble.own {
   justify-self: end;
+  margin-left: auto;
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(110, 168, 254, 0.22), rgba(192, 132, 252, 0.22));
   border-radius: 24px 24px 8px 24px;
   border-color: rgba(110, 168, 254, 0.28);
@@ -944,15 +946,17 @@ button {
 .chat-compose {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: end;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
   padding: 18px 24px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .chat-compose textarea {
+  flex: 1;
+  min-width: 0;
   min-height: 58px;
   max-height: 180px;
   padding: 16px 18px;
@@ -1264,7 +1268,7 @@ button {
   }
 
   .chat-compose {
-    grid-template-columns: 1fr;
+    gap: 8px;
     padding-top: 14px;
     padding-bottom: 16px;
   }
