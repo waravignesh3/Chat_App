@@ -42,17 +42,35 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", authroutes);
 
-// ─── GridFS buckets (initialised after DB connects) ──────────────────────────
-let mediaBucket;
-let avatarBucket;
+// ─── GridFS buckets (lazy — created on first use after DB connects) ───────────
+let _mediaBucket;
+let _avatarBucket;
+
+function getMediaBucket() {
+  if (!_mediaBucket) {
+    if (mongoose.connection.readyState !== 1)
+      throw new Error("Database not ready — please try again in a moment");
+    _mediaBucket = new GridFSBucket(mongoose.connection.db, { bucketName: "media" });
+  }
+  return _mediaBucket;
+}
+
+function getAvatarBucket() {
+  if (!_avatarBucket) {
+    if (mongoose.connection.readyState !== 1)
+      throw new Error("Database not ready — please try again in a moment");
+    _avatarBucket = new GridFSBucket(mongoose.connection.db, { bucketName: "avatars" });
+  }
+  return _avatarBucket;
+}
 
 mongoose
   .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 })
   .then(() => {
     console.log("MongoDB Connected");
-    const db = mongoose.connection.db;
-    mediaBucket  = new GridFSBucket(db, { bucketName: "media" });
-    avatarBucket = new GridFSBucket(db, { bucketName: "avatars" });
+    // Pre-warm the buckets so they are ready immediately after connection
+    _mediaBucket  = new GridFSBucket(mongoose.connection.db, { bucketName: "media" });
+    _avatarBucket = new GridFSBucket(mongoose.connection.db, { bucketName: "avatars" });
   })
   .catch((err) => console.log("DB error:", err));
 
@@ -178,6 +196,9 @@ app.post("/api/profile/photo", avatarUpload.single("photo"), async (req, res) =>
     if (!req.file)        return res.status(400).json({ error: "No file uploaded" });
     if (!req.body.email)  return res.status(400).json({ error: "Email is required" });
 
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+    const avatarBucket = getAvatarBucket();
+
     const normalizedEmail = req.body.email.toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -218,7 +239,8 @@ app.get("/api/avatar/:id", async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid id" });
-    const objectId = new mongoose.Types.ObjectId(id);
+    const objectId     = new mongoose.Types.ObjectId(id);
+    const avatarBucket = getAvatarBucket();
     const files = await avatarBucket.find({ _id: objectId }).toArray();
     if (!files.length) return res.status(404).json({ error: "Avatar not found" });
     res.set("Content-Type", files[0].contentType || "image/jpeg");
@@ -237,12 +259,16 @@ app.post("/api/media/upload", upload.single("file"), async (req, res) => {
     if (!req.body.sender)       return res.status(400).json({ error: "sender is required" });
     if (!req.body.receiver)     return res.status(400).json({ error: "receiver is required" });
 
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+    const mediaBucket = getMediaBucket();
+
     const { sender, receiver } = req.body;
-    const filename = `media_${Date.now()}_${req.file.originalname}`;
+    const safeOriginalName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
+    const filename = `media_${Date.now()}_${safeOriginalName}`;
 
     const uploadStream = mediaBucket.openUploadStream(filename, {
       contentType: req.file.mimetype,
-      metadata: { sender, receiver, originalName: req.file.originalname },
+      metadata: { sender, receiver, originalName: safeOriginalName },
     });
 
     await new Promise((resolve, reject) => {
@@ -273,8 +299,9 @@ app.get("/api/media/:id", async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid id" });
 
-    const objectId = new mongoose.Types.ObjectId(id);
-    const files    = await mediaBucket.find({ _id: objectId }).toArray();
+    const objectId    = new mongoose.Types.ObjectId(id);
+    const mediaBucket = getMediaBucket();
+    const files       = await mediaBucket.find({ _id: objectId }).toArray();
     if (!files.length) return res.status(404).json({ error: "Media not found" });
 
     const file        = files[0];
