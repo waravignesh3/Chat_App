@@ -258,6 +258,25 @@ function Chat({ user, setUser }) {
     return () => { cancelled = true; };
   }, []);
 
+  // ── Load message history ─────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.email) return;
+    let cancelled = false;
+    const loadMessages = async () => {
+      try {
+        const res  = await fetch(`${SERVER_URL}/api/messages/${encodeURIComponent(user.email)}`);
+        const data = await res.json();
+        if (!cancelled && res.ok && Array.isArray(data)) {
+          setMessages(data);
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) console.error("Message history fetch error:", err);
+      }
+    };
+    loadMessages();
+    return () => { cancelled = true; };
+  }, [user?.email]);
+
   useEffect(() => {
     const handler = (data) => setUsers(Array.isArray(data) ? data : []);
     socketRef.current?.on("users_update", handler);
@@ -266,7 +285,18 @@ function Chat({ user, setUser }) {
 
   useEffect(() => {
     const handler = (incomingMessage) => {
-      setMessages((prev) => [...prev, incomingMessage]);
+      // Avoid duplicating a message the sender already added optimistically
+      setMessages((prev) => {
+        const isDuplicate = prev.some(
+          (m) =>
+            m.sender   === incomingMessage.sender &&
+            m.receiver === incomingMessage.receiver &&
+            m.time     === incomingMessage.time &&
+            m.text     === incomingMessage.text &&
+            m.mediaUrl === incomingMessage.mediaUrl
+        );
+        return isDuplicate ? prev : [...prev, incomingMessage];
+      });
       setIsTyping(false);
     };
     socketRef.current?.on("private_message", handler);

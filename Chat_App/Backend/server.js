@@ -8,6 +8,7 @@ import multer from "multer";
 import { GridFSBucket } from "mongodb";
 import authroutes from "./authroutes.js";
 import User from "./models/user.js";
+import Message from "./models/message.js";
 
 dotenv.config();
 
@@ -346,9 +347,23 @@ io.on("connection", (socket) => {
     await broadcastUsers();
   });
 
-  socket.on("private_message", ({ to, message }) => {
+  socket.on("private_message", async ({ to, message }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) io.to(targetSocketId).emit("private_message", message);
+    // Persist the message to MongoDB
+    try {
+      await Message.create({
+        sender:    message.sender?.toLowerCase().trim(),
+        receiver:  message.receiver?.toLowerCase().trim(),
+        text:      message.text    || null,
+        mediaUrl:  message.mediaUrl  || null,
+        mediaType: message.mediaType || null,
+        filename:  message.filename  || null,
+        time:      message.time,
+      });
+    } catch (err) {
+      console.error("Failed to save message:", err.message);
+    }
   });
 
   socket.on("typing", ({ to, from }) => {
@@ -369,6 +384,24 @@ io.on("connection", (socket) => {
       await broadcastUsers();
     }
   });
+});
+
+// ─── Messages history ────────────────────────────────────────────────────────
+app.get("/api/messages/:email", async (req, res) => {
+  try {
+    const email = req.params.email?.toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+    const msgs = await Message.find({
+      $or: [{ sender: email }, { receiver: email }],
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+    return res.json(msgs);
+  } catch (err) {
+    console.error("Fetch messages error:", err);
+    return res.status(500).json({ error: "Unable to fetch messages" });
+  }
 });
 
 // ─── 404 / error handlers ─────────────────────────────────────────────────────
