@@ -517,6 +517,7 @@ io.on("connection", (socket) => {
         time:      message.time,
         replyTo:   message.replyTo
           ? {
+              messageId:  message.replyTo.messageId || null,
               senderName: message.replyTo.senderName || null,
               text:       message.replyTo.text       || null,
               mediaUrl:   message.replyTo.mediaUrl   || null,
@@ -524,7 +525,14 @@ io.on("connection", (socket) => {
             }
           : undefined,
       });
-      savedMsg = { ...message, _id: doc._id.toString(), reactions: {}, isPinned: false };
+      savedMsg = {
+        ...message,
+        _id: doc._id.toString(),
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        reactions: {},
+        isPinned: false,
+      };
     } catch (err) {
       console.error("Failed to save message:", err.message);
       savedMsg = message; // fallback: send without DB id

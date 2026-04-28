@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
-import { parseJsonResponse } from "../utils/http";
+import { parseJsonResponse, requestJson } from "../utils/http";
 import "../App.css";
 import "../App.enhanced.css";
 import "../chat.profile.css";
@@ -223,6 +223,27 @@ function MediaMessage({ mediaUrl, mediaType }) {
   );
 }
 
+function normalizeMessage(message) {
+  const reactions = message?.reactions && typeof message.reactions === "object" ? message.reactions : {};
+  return {
+    ...message,
+    reactions,
+    deliveryState: message?.deliveryState || "sent",
+  };
+}
+
+function getMessageId(message, fallbackIndex = null) {
+  return message?._id || message?.clientTempId || `${message?.sender}:${message?.receiver}:${message?.time}:${fallbackIndex ?? "x"}`;
+}
+
+function getReactionCountMap(reactions = {}) {
+  return Object.fromEntries(
+    Object.entries(reactions)
+      .map(([emoji, users]) => [emoji, Array.isArray(users) ? users.length : 0])
+      .filter(([, count]) => count > 0)
+  );
+}
+
 // ─── Message Search Modal ─────────────────────────────────────────────────────
 function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
   const [query, setQuery] = useState("");
@@ -296,9 +317,7 @@ function Chat({ user, setUser }) {
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
-  // reactions: { [msgKey]: { [emoji]: count } }
-  const [reactions, setReactions] = useState({});
-  const [reactionPickerFor, setReactionPickerFor] = useState(null); // msgKey
+  const [reactionPickerFor, setReactionPickerFor] = useState(null);
   // read receipts: Set of msgKeys seen by remote
   const [readBy, setReadBy] = useState(new Set());
   const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting | online | offline
@@ -312,6 +331,8 @@ function Chat({ user, setUser }) {
   const [recentOrder, setRecentOrder] = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
+  const [freshMessageId, setFreshMessageId] = useState(null);
 
   const bottomRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -325,6 +346,7 @@ function Chat({ user, setUser }) {
   const navigate = useNavigate();
   const activeSelectedUserRef = useRef(null);
   const userRef = useRef(user);
+  const freshMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Persist unreadMap ────────────────────────────────────────────────────────
@@ -335,6 +357,14 @@ function Chat({ user, setUser }) {
       else localStorage.setItem(key, JSON.stringify(unreadMap));
     } catch { /* ignore */ }
   }, [unreadMap, user?.email]);
+
+  useEffect(() => {
+    if (!composerNotice.text) return undefined;
+    const timer = window.setTimeout(() => {
+      setComposerNotice({ type: "", text: "" });
+    }, 2800);
+    return () => window.clearTimeout(timer);
+  }, [composerNotice]);
 
   // ── Socket ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -361,16 +391,22 @@ function Chat({ user, setUser }) {
 
     socket.on("private_message", (incomingMessage) => {
       setMessages((prev) => {
+        const normalizedIncoming = normalizeMessage(incomingMessage);
         const isDuplicate = prev.some(
           (m) =>
-            m.sender === incomingMessage.sender &&
-            m.receiver === incomingMessage.receiver &&
-            m.time === incomingMessage.time &&
-            m.text === incomingMessage.text &&
-            m.mediaUrl === incomingMessage.mediaUrl
+            (m._id && normalizedIncoming._id && m._id === normalizedIncoming._id) ||
+            (m.clientTempId && normalizedIncoming.clientTempId && m.clientTempId === normalizedIncoming.clientTempId) ||
+            (
+              m.sender === normalizedIncoming.sender &&
+              m.receiver === normalizedIncoming.receiver &&
+              m.time === normalizedIncoming.time &&
+              m.text === normalizedIncoming.text &&
+              m.mediaUrl === normalizedIncoming.mediaUrl
+            )
         );
-        return isDuplicate ? prev : [...prev, incomingMessage];
+        return isDuplicate ? prev : [...prev, normalizedIncoming];
       });
+      setFreshMessageId(getMessageId(incomingMessage));
       setIsTyping(false);
 
       const senderEmail = incomingMessage.sender;
@@ -395,23 +431,51 @@ function Chat({ user, setUser }) {
       }
     });
 
+    socket.on("message_saved", (savedMessage) => {
+      const normalizedSaved = normalizeMessage(savedMessage);
+      setFreshMessageId(getMessageId(normalizedSaved));
+      setMessages((prev) => {
+        const existingIndex = prev.findIndex(
+          (m) =>
+            (normalizedSaved.clientTempId && m.clientTempId === normalizedSaved.clientTempId) ||
+            (normalizedSaved._id && m._id === normalizedSaved._id)
+        );
+
+        if (existingIndex === -1) {
+          return [...prev, normalizedSaved];
+        }
+
+        const next = [...prev];
+        next[existingIndex] = {
+          ...next[existingIndex],
+          ...normalizedSaved,
+          deliveryState: "sent",
+        };
+        return next;
+      });
+    });
+
     // Read receipt received — mark our messages as seen
     socket.on("read_receipt", ({ from }) => {
       setReadBy((prev) => new Set([...prev, from]));
     });
 
     // Reaction received
-    socket.on("message_reaction", ({ msgKey, emoji }) => {
-      setReactions((prev) => {
-        const existing = prev[msgKey] || {};
-        const emojiMap = { ...(existing[emoji] ? existing : {}), [emoji]: (existing[emoji] || 0) + 1 };
-        return { ...prev, [msgKey]: { ...(prev[msgKey] || {}), ...emojiMap } };
-      });
+    socket.on("message_reaction", ({ messageId, reactions: nextReactions }) => {
+      if (!messageId) return;
+      setMessages((prev) =>
+        prev.map((entry) =>
+          entry._id === messageId
+            ? { ...entry, reactions: nextReactions || {}, deliveryState: entry.deliveryState || "sent" }
+            : entry
+        )
+      );
     });
 
     return () => {
       clearTimeout(typingTimeoutRef.current);
       clearTimeout(typingIndicatorTimeoutRef.current);
+      clearTimeout(freshMessageTimerRef.current);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -453,14 +517,14 @@ function Chat({ user, setUser }) {
     let cancelled = false;
     const loadMessages = async () => {
       try {
-        const res = await fetch(`${SERVER_URL}/api/messages/${encodeURIComponent(user.email)}`);
-        const data = await res.json();
-        if (!cancelled && res.ok && Array.isArray(data)) {
-          setMessages(data);
+        const data = await requestJson(`${SERVER_URL}/api/messages/${encodeURIComponent(user.email)}`);
+        if (!cancelled && Array.isArray(data)) {
+          const normalizedMessages = data.map((entry) => normalizeMessage(entry));
+          setMessages(normalizedMessages);
           const seen = new Set();
           const order = [];
-          for (let i = data.length - 1; i >= 0; i--) {
-            const m = data[i];
+          for (let i = normalizedMessages.length - 1; i >= 0; i--) {
+            const m = normalizedMessages[i];
             const other = m.sender === user.email ? m.receiver : m.sender;
             if (!seen.has(other)) { seen.add(other); order.unshift(other); }
           }
@@ -506,6 +570,22 @@ function Chat({ user, setUser }) {
     shouldScrollRef.current = false;
   }, [messages, selectedUser, isTyping]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "0px";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+  }, [message]);
+
+  useEffect(() => {
+    if (!freshMessageId) return undefined;
+    clearTimeout(freshMessageTimerRef.current);
+    freshMessageTimerRef.current = window.setTimeout(() => {
+      setFreshMessageId(null);
+    }, 1600);
+    return () => window.clearTimeout(freshMessageTimerRef.current);
+  }, [freshMessageId]);
+
   // ── Close emoji picker on outside click ──────────────────────────────────────
   useEffect(() => {
     if (!showEmojiPicker) return undefined;
@@ -540,6 +620,20 @@ function Chat({ user, setUser }) {
     }
   }, [selectedUser?.email, user?.email]);
 
+  useEffect(() => {
+    const syncReadReceipt = () => {
+      if (!selectedUser?.email || !socketRef.current || document.visibilityState !== "visible") return;
+      socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
+    };
+
+    window.addEventListener("focus", syncReadReceipt);
+    document.addEventListener("visibilitychange", syncReadReceipt);
+    return () => {
+      window.removeEventListener("focus", syncReadReceipt);
+      document.removeEventListener("visibilitychange", syncReadReceipt);
+    };
+  }, [selectedUser?.email, user?.email]);
+
   // ── Derived values ─────────────────────────────────────────────────────────────
   const activeSelectedUser = useMemo(
     () => selectedUser?.email
@@ -549,6 +643,17 @@ function Chat({ user, setUser }) {
   );
 
   useEffect(() => { activeSelectedUserRef.current = activeSelectedUser; }, [activeSelectedUser]);
+
+  useEffect(() => {
+    if (!user?.email || !activeSelectedUser?.email) return;
+    const draftKey = `chatapp-draft||${user.email}||${activeSelectedUser.email}`;
+    try {
+      if (message.trim()) localStorage.setItem(draftKey, message);
+      else localStorage.removeItem(draftKey);
+    } catch {
+      // ignore draft persist failures
+    }
+  }, [activeSelectedUser?.email, message, user?.email]);
 
   const filteredUsers = useMemo(() => {
     const base = users.filter((u) => {
@@ -566,6 +671,18 @@ function Chat({ user, setUser }) {
     });
   }, [search, user?.email, users, recentOrder]);
 
+  const onlineUsersCount = useMemo(
+    () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
+    [user?.email, users]
+  );
+
+  const panelStatusText = useMemo(() => {
+    if (!activeSelectedUser) return "Choose someone from the list to start chatting.";
+    if (isTyping) return `${activeSelectedUser.name || activeSelectedUser.email} is typing…`;
+    if (activeSelectedUser.isOnline) return "Online now";
+    return `Last seen: ${formatLastSeen(activeSelectedUser.lastSeen)}`;
+  }, [activeSelectedUser, isTyping]);
+
   const conversationMessages = useMemo(
     () => messages.filter((m) =>
       activeSelectedUser &&
@@ -576,7 +693,6 @@ function Chat({ user, setUser }) {
   );
 
   // Build message key for reactions/read receipts
-  const msgKey = useCallback((m, idx) => `${m.sender}:${m.receiver}:${m.time}:${idx}`, []);
 
   // ── Handlers ────────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
@@ -595,7 +711,17 @@ function Chat({ user, setUser }) {
 
   const handleSelectUser = (entry) => {
     shouldScrollRef.current = true;
+    let nextDraft = "";
+    if (user?.email && entry?.email) {
+      const draftKey = `chatapp-draft||${user.email}||${entry.email}`;
+      try {
+        nextDraft = localStorage.getItem(draftKey) || "";
+      } catch {
+        nextDraft = "";
+      }
+    }
     setSelectedUser(entry);
+    setMessage(nextDraft);
     setUnreadMap((prev) => {
       if (!prev[entry.email]) return prev;
       const next = { ...prev };
@@ -608,15 +734,23 @@ function Chat({ user, setUser }) {
 
   const sendMessage = () => {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
+    if (!socketRef.current?.connected) {
+      setComposerNotice({ type: "error", text: "Connection lost. Reconnect before sending new messages." });
+      return;
+    }
     shouldScrollRef.current = true;
+    const clientTempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const msgData = {
+      clientTempId,
       text: message.trim(),
       sender: user.email,
       receiver: activeSelectedUser.email,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time: new Date().toISOString(),
+      deliveryState: "sending",
     };
     if (replyingTo) {
       msgData.replyTo = {
+        messageId: replyingTo.messageId || null,
         senderName: replyingTo.sender === user?.email ? "You" : activeSelectedUser.name || activeSelectedUser.email,
         text: replyingTo.text,
         mediaUrl: replyingTo.mediaUrl,
@@ -625,11 +759,13 @@ function Chat({ user, setUser }) {
     }
     socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
     socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
-    setMessages((prev) => [...prev, msgData]);
+    setMessages((prev) => [...prev, normalizeMessage(msgData)]);
+    setFreshMessageId(clientTempId);
     setMessage("");
     setIsTyping(false);
     setReplyingTo(null);
     setRecentOrder((prev) => [activeSelectedUser.email, ...prev.filter((e) => e !== activeSelectedUser.email)]);
+    setComposerNotice({ type: "success", text: "Message queued and syncing to MongoDB." });
   };
 
   const handleMessageKeyDown = (event) => {
@@ -654,6 +790,10 @@ function Chat({ user, setUser }) {
     const receiver = activeSelectedUserRef.current;
     const sender = userRef.current;
     if (!receiver?.email || !sender?.email) return;
+    if (!socketRef.current?.connected) {
+      setComposerNotice({ type: "error", text: "Connection lost. Reconnect before sending media." });
+      return;
+    }
     setMediaUploading(true);
     try {
       const formData = new FormData();
@@ -663,19 +803,34 @@ function Chat({ user, setUser }) {
       const res = await fetch(`${SERVER_URL}/api/media/upload`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
+      const clientTempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const msgData = {
+        clientTempId,
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
         filename: data.filename,
         sender: sender.email,
         receiver: receiver.email,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: new Date().toISOString(),
+        deliveryState: "sending",
       };
+      if (replyingTo) {
+        msgData.replyTo = {
+          messageId: replyingTo.messageId || null,
+          senderName: replyingTo.sender === user?.email ? "You" : receiver.name || receiver.email,
+          text: replyingTo.text,
+          mediaUrl: replyingTo.mediaUrl,
+          mediaType: replyingTo.mediaType,
+        };
+      }
       socketRef.current?.emit("private_message", { to: receiver.email, message: msgData });
-      setMessages((prev) => [...prev, msgData]);
+      setMessages((prev) => [...prev, normalizeMessage(msgData)]);
+      setFreshMessageId(clientTempId);
+      setReplyingTo(null);
+      setComposerNotice({ type: "success", text: "Media uploaded and syncing to MongoDB." });
     } catch (err) {
       if (import.meta.env.DEV) console.error("Media upload error:", err);
-      alert(err?.message || "Media upload failed");
+      setComposerNotice({ type: "error", text: err?.message || "Media upload failed" });
     } finally {
       setMediaUploading(false);
     }
@@ -704,19 +859,22 @@ function Chat({ user, setUser }) {
     setUser((prev) => ({ ...prev, photo: newPhotoUrl }));
   };
 
-  const handleReaction = (key, emoji) => {
-    setReactions((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), [emoji]: ((prev[key] || {})[emoji] || 0) + 1 },
-    }));
-    if (activeSelectedUser?.email) {
-      socketRef.current?.emit("message_reaction", {
-        to: activeSelectedUser.email,
-        msgKey: key,
-        emoji,
-        by: user?.email,
-      });
+  const handleReaction = (messageId, emoji) => {
+    if (!messageId || !activeSelectedUser?.email || !user?.email) {
+      setComposerNotice({ type: "error", text: "Wait for the message to finish saving before reacting." });
+      return;
     }
+    if (!socketRef.current?.connected) {
+      setComposerNotice({ type: "error", text: "Connection lost. Reconnect before updating reactions." });
+      return;
+    }
+
+    socketRef.current?.emit("message_reaction", {
+      to: activeSelectedUser.email,
+      messageId,
+      emoji,
+      by: user.email,
+    });
   };
 
   const handleJumpToMessage = (targetMsg) => {
@@ -795,6 +953,12 @@ function Chat({ user, setUser }) {
                 </button>
               </div>
             </div>
+            <div className="chat-live-summary">
+              <span className="chat-live-pill">{onlineUsersCount} online</span>
+              <span className={`chat-live-pill ${connectionStatus === "online" ? "is-live" : "is-waiting"}`}>
+                {connectionStatus === "online" ? "Realtime connected" : connectionStatus === "offline" ? "Realtime paused" : "Realtime syncing"}
+              </span>
+            </div>
 
             <div className="chat-self-profile">
               <div
@@ -867,6 +1031,7 @@ function Chat({ user, setUser }) {
                       "chat-user-card",
                       isActive ? "chat-user-card-active" : "",
                       hasUnread ? "chat-user-card-unread" : "",
+                      isFlashing ? "chat-user-card-flash" : "",
                     ].filter(Boolean).join(" ")}
                     style={cardStyle}
                     onClick={() => handleSelectUser(entry)}
@@ -927,14 +1092,21 @@ function Chat({ user, setUser }) {
             <div>
               <span className="chat-chip">Direct Message</span>
               <h3>{activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}</h3>
-              <p>
+              <p className={isTyping ? "panel-typing-live" : ""}>
                 {activeSelectedUser
-                  ? activeSelectedUser.isOnline
-                    ? <span className="panel-online-status"><span className="chat-online-dot panel-dot" />Online</span>
-                    : <span className="panel-lastseen">Last seen: {formatLastSeen(activeSelectedUser.lastSeen)}</span>
-                  : "Choose someone from the list to start chatting."
+                  ? isTyping
+                    ? <span className="panel-typing-live"><span className="panel-typing-wave" />{panelStatusText}</span>
+                    : activeSelectedUser.isOnline
+                      ? <span className="panel-online-status"><span className="chat-online-dot panel-dot" />{panelStatusText}</span>
+                      : <span className="panel-lastseen">{panelStatusText}</span>
+                  : panelStatusText
                 }
               </p>
+              {activeSelectedUser && (
+                <p className="chat-panel-meta">
+                  {conversationMessages.length} message{conversationMessages.length === 1 ? "" : "s"} in this conversation
+                </p>
+              )}
             </div>
             {/* Header actions */}
             {activeSelectedUser && (
@@ -977,20 +1149,22 @@ function Chat({ user, setUser }) {
                       const isOwn = entry.sender === user?.email;
                       const isReplying = replyingTo?.index === index;
                       const isHighlighted = highlightedMsgIndex === index;
-                      const key = msgKey(entry, index);
-                      const msgReactions = reactions[key] || {};
+                      const key = getMessageId(entry, index);
+                      const msgReactions = getReactionCountMap(entry.reactions);
                       const hasReactions = Object.keys(msgReactions).length > 0;
                       const isLastOwn = isOwn && index === conversationMessages.length - 1;
+                      const isPending = entry.deliveryState === "sending" && !entry._id;
 
                       return (
                         <article
-                          key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
+                          key={key}
                           data-msgindex={index}
                           className={[
                             "chat-bubble",
                             isOwn ? "own" : "",
                             isReplying ? "replying" : "",
                             isHighlighted ? "chat-bubble-highlighted" : "",
+                            freshMessageId === key ? "chat-bubble-fresh" : "",
                           ].filter(Boolean).join(" ")}
                           onMouseEnter={(e) => {
                             const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
@@ -1027,16 +1201,34 @@ function Chat({ user, setUser }) {
                           {/* Reactions display */}
                           {hasReactions && (
                             <div className="chat-reactions">
-                              {Object.entries(msgReactions).map(([emoji, count]) => (
-                                <span key={emoji} className="chat-reaction-badge">{emoji} {count > 1 ? count : ""}</span>
-                              ))}
+                              {Object.entries(msgReactions).map(([emoji, count]) => {
+                                const reactedUsers = Array.isArray(entry.reactions?.[emoji]) ? entry.reactions[emoji] : [];
+                                const reactedByMe = reactedUsers.includes(user?.email);
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    className="chat-reaction-badge"
+                                    onClick={() => handleReaction(entry._id, emoji)}
+                                    title={reactedByMe ? "Remove your reaction" : "React with this emoji"}
+                                    style={reactedByMe ? { borderColor: "rgba(34,211,238,0.7)", boxShadow: "0 0 0 1px rgba(34,211,238,0.35)" } : undefined}
+                                  >
+                                    {emoji} {count > 1 ? count : ""}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
 
                           <div className="chat-bubble-footer">
                             <time>{formatMsgTime(entry.time)}</time>
+                            {isOwn && (
+                              <span className={`chat-read-receipt ${isPending ? "sent" : "read"}`} title={isPending ? "Saving to MongoDB" : "Stored"}>
+                                {isPending ? "…" : "DB"}
+                              </span>
+                            )}
                             {/* Read receipt for own messages */}
-                            {isOwn && isLastOwn && (
+                            {isOwn && isLastOwn && !isPending && (
                               <span className={`chat-read-receipt ${lastOwnMsgIsRead ? "read" : "sent"}`} title={lastOwnMsgIsRead ? "Seen" : "Sent"}>
                                 {lastOwnMsgIsRead ? "✓✓" : "✓"}
                               </span>
@@ -1049,7 +1241,7 @@ function Chat({ user, setUser }) {
                             <button
                               type="button"
                               className="chat-bubble-reply-btn"
-                              onClick={() => setReplyingTo({ index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
+                              onClick={() => setReplyingTo({ messageId: entry._id, index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
                               title="Reply"
                               aria-label="Reply to message"
                             >
@@ -1067,7 +1259,7 @@ function Chat({ user, setUser }) {
                               </button>
                               {reactionPickerFor === key && (
                                 <ReactionPicker
-                                  onSelect={(emoji) => handleReaction(key, emoji)}
+                                  onSelect={(emoji) => handleReaction(entry._id, emoji)}
                                   onClose={() => setReactionPickerFor(null)}
                                   isOwn={isOwn}
                                 />
@@ -1138,6 +1330,26 @@ function Chat({ user, setUser }) {
 
           {/* Compose */}
           <div className="chat-compose">
+            {composerNotice.text && (
+              <div
+                className="chat-compose-notice"
+                style={{
+                  flexBasis: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "12px",
+                  background: composerNotice.type === "error"
+                    ? "rgba(220, 38, 38, 0.18)"
+                    : "rgba(34, 211, 238, 0.14)",
+                  border: composerNotice.type === "error"
+                    ? "1px solid rgba(248, 113, 113, 0.4)"
+                    : "1px solid rgba(34, 211, 238, 0.25)",
+                  color: "#eaf5ff",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {composerNotice.text}
+              </div>
+            )}
             <div className="chat-compose-extras" ref={emojiPickerRef}>
               <button
                 type="button"
@@ -1182,7 +1394,19 @@ function Chat({ user, setUser }) {
               }
               disabled={!activeSelectedUser}
               rows="1"
+              maxLength="2000"
             />
+            <span
+              style={{
+                alignSelf: "flex-end",
+                fontSize: "0.78rem",
+                color: message.length > 1800 ? "#fbbf24" : "rgba(199,227,255,0.68)",
+                minWidth: "52px",
+                textAlign: "right",
+              }}
+            >
+              {message.length}/2000
+            </span>
             <button
               type="button"
               className="chat-send-button"
