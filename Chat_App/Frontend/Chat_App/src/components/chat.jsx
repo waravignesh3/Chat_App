@@ -327,6 +327,7 @@ function Chat({ user, setUser }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
   const [freshMessageId, setFreshMessageId] = useState(null);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
 
   const bottomRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -341,6 +342,7 @@ function Chat({ user, setUser }) {
   const activeSelectedUserRef = useRef(null);
   const userRef = useRef(user);
   const freshMessageTimerRef = useRef(null);
+  const copiedMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Persist unreadMap ────────────────────────────────────────────────────────
@@ -400,6 +402,7 @@ function Chat({ user, setUser }) {
         const isViewingConversation = activeSelectedUserRef.current?.email === senderEmail;
         // Send read receipt if conversation is open
         if (isViewingConversation) {
+          shouldScrollRef.current = true;
           socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
         } else {
           const incomingTime = formatMsgTime(incomingMessage.createdAt || incomingMessage.time);
@@ -462,6 +465,7 @@ function Chat({ user, setUser }) {
       clearTimeout(typingTimeoutRef.current);
       clearTimeout(typingIndicatorTimeoutRef.current);
       clearTimeout(freshMessageTimerRef.current);
+      clearTimeout(copiedMessageTimerRef.current);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -571,6 +575,15 @@ function Chat({ user, setUser }) {
     }, 1600);
     return () => window.clearTimeout(freshMessageTimerRef.current);
   }, [freshMessageId]);
+
+  useEffect(() => {
+    if (!copiedMessageId) return undefined;
+    clearTimeout(copiedMessageTimerRef.current);
+    copiedMessageTimerRef.current = window.setTimeout(() => {
+      setCopiedMessageId(null);
+    }, 1400);
+    return () => window.clearTimeout(copiedMessageTimerRef.current);
+  }, [copiedMessageId]);
 
   // ── Close emoji picker on outside click ──────────────────────────────────────
   useEffect(() => {
@@ -884,6 +897,17 @@ function Chat({ user, setUser }) {
     });
   };
 
+  const handleCopyMessage = async (entry, fallbackIndex) => {
+    if (!entry?.text?.trim()) return;
+    const copyKey = getMessageId(entry, fallbackIndex);
+    try {
+      await navigator.clipboard.writeText(entry.text);
+      setCopiedMessageId(copyKey);
+    } catch {
+      setComposerNotice({ type: "error", text: "Unable to copy that message." });
+    }
+  };
+
   const handleJumpToMessage = (targetMsg) => {
     const idx = conversationMessages.findIndex(
       (m) => m.sender === targetMsg.sender && m.time === targetMsg.time && m.text === targetMsg.text
@@ -1173,6 +1197,7 @@ function Chat({ user, setUser }) {
                             isHighlighted ? "chat-bubble-highlighted" : "",
                             freshMessageId === key ? "chat-bubble-fresh" : "",
                           ].filter(Boolean).join(" ")}
+                          onDoubleClick={() => handleCopyMessage(entry, index)}
                           onMouseEnter={(e) => {
                             const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
                             if (replyBtn) replyBtn.style.opacity = "1";
@@ -1229,6 +1254,7 @@ function Chat({ user, setUser }) {
 
                           <div className="chat-bubble-footer">
                             <time>{formatMsgTime(entry.time)}</time>
+                            {copiedMessageId === key && <span className="chat-copy-pill">Copied</span>}
                             {isOwn && (
                               <span className={`chat-read-receipt ${isPending ? "sent" : "read"}`} title={isPending ? "Saving to MongoDB" : "Stored"}>
                                 {isPending ? "…" : "DB"}

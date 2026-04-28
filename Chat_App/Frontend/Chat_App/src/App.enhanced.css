@@ -355,6 +355,20 @@
   text-shadow: 0 0 6px rgba(34,211,238,0.5);
 }
 
+.chat-copy-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(34,211,238,0.14);
+  border: 1px solid rgba(34,211,238,0.26);
+  color: #9beaf6;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  animation: fadeLift 0.2s ease both;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    BUBBLE ACTION BUTTONS (reply + react)
 ═══════════════════════════════════════════════════════════════════ */
