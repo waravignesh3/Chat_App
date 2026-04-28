@@ -215,20 +215,63 @@ function Chat({ user, setUser }) {
   useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Socket ────────────────────────────────────────────────────────────────
+  // All listeners attached here immediately after socket creation —
+  // prevents race conditions from separate useEffect hooks.
   useEffect(() => {
     if (socketRef.current) return;
     const socket = io(SERVER_URL, { transports: ["websocket"], withCredentials: true });
     socketRef.current = socket;
+
     socket.on("connect", () => {
       if (userRef.current?.email) socket.emit("register", userRef.current.email);
     });
+
+    socket.on("users_update", (data) => {
+      setUsers(Array.isArray(data) ? data : []);
+    });
+
+    socket.on("private_message", (incomingMessage) => {
+      setMessages((prev) => {
+        const isDuplicate = prev.some(
+          (m) =>
+            m.sender   === incomingMessage.sender &&
+            m.receiver === incomingMessage.receiver &&
+            m.time     === incomingMessage.time &&
+            m.text     === incomingMessage.text &&
+            m.mediaUrl === incomingMessage.mediaUrl
+        );
+        return isDuplicate ? prev : [...prev, incomingMessage];
+      });
+      setIsTyping(false);
+
+      const senderEmail = incomingMessage.sender;
+      if (senderEmail && senderEmail !== userRef.current?.email) {
+        const isViewingConversation =
+          activeSelectedUserRef.current?.email === senderEmail;
+        if (!isViewingConversation) {
+          setUnreadMap((prev) => ({
+            ...prev,
+            [senderEmail]: {
+              count:    (prev[senderEmail]?.count || 0) + 1,
+              lastText: incomingMessage.text || (incomingMessage.mediaUrl ? "📎 Media" : ""),
+              lastTime: incomingMessage.time,
+            },
+          }));
+        }
+        setRecentOrder((prev) => [
+          senderEmail,
+          ...prev.filter((e) => e !== senderEmail),
+        ]);
+      }
+    });
+
     return () => {
       clearTimeout(typingTimeoutRef.current);
       clearTimeout(typingIndicatorTimeoutRef.current);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []); // intentionally empty — socket created once
+  }, []); // intentionally empty — socket + all listeners created once on mount
 
   useEffect(() => {
     if (user?.email && socketRef.current?.connected) {
@@ -286,53 +329,6 @@ function Chat({ user, setUser }) {
     return () => { cancelled = true; };
   }, [user?.email]);
 
-  useEffect(() => {
-    const handler = (data) => setUsers(Array.isArray(data) ? data : []);
-    socketRef.current?.on("users_update", handler);
-    return () => socketRef.current?.off("users_update", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (incomingMessage) => {
-      // Avoid duplicating a message the sender already added optimistically
-      setMessages((prev) => {
-        const isDuplicate = prev.some(
-          (m) =>
-            m.sender   === incomingMessage.sender &&
-            m.receiver === incomingMessage.receiver &&
-            m.time     === incomingMessage.time &&
-            m.text     === incomingMessage.text &&
-            m.mediaUrl === incomingMessage.mediaUrl
-        );
-        return isDuplicate ? prev : [...prev, incomingMessage];
-      });
-      setIsTyping(false);
-
-      // Track unread messages from others
-      const senderEmail = incomingMessage.sender;
-      if (senderEmail && senderEmail !== userRef.current?.email) {
-        const isViewingConversation =
-          activeSelectedUserRef.current?.email === senderEmail;
-        if (!isViewingConversation) {
-          setUnreadMap((prev) => ({
-            ...prev,
-            [senderEmail]: {
-              count:    (prev[senderEmail]?.count || 0) + 1,
-              lastText: incomingMessage.text || (incomingMessage.mediaUrl ? "📎 Media" : ""),
-              lastTime: incomingMessage.time,
-            },
-          }));
-        }
-        // Bubble sender to top of recency list
-        setRecentOrder((prev) => [
-          senderEmail,
-          ...prev.filter((e) => e !== senderEmail),
-        ]);
-      }
-    };
-    socketRef.current?.on("private_message", handler);
-    return () => socketRef.current?.off("private_message", handler);
-  }, []);
 
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
