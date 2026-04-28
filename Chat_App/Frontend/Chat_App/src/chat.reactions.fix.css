@@ -20,6 +20,85 @@
   position: relative !important;
 }
 
+/* ── SIMPLE REACTION PICKER (6-emoji bar, single unwrapped row) ─────────── */
+.reaction-picker-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 400;
+
+  /* Exactly fits 6 × 36px buttons + 4px gaps × 5 + 12px padding */
+  width: 244px;
+  min-width: 244px;
+
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;       /* NEVER wrap — all 6 stay on one line  */
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+
+  background: #0f172a;
+  border: 1px solid rgba(110, 168, 254, 0.22);
+  border-radius: 999px;               /* pill shape                            */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.4),
+    0 12px 32px rgba(0,0,0,0.6);
+  backdrop-filter: blur(16px);
+  animation: reactionPickerIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* Own message — pin RIGHT so picker never bleeds past the right edge */
+.reaction-picker-popover.reaction-picker-own {
+  right: 0;
+  left: auto;
+}
+
+/* Other message — pin LEFT so picker never bleeds off the left edge */
+.reaction-picker-popover.reaction-picker-other {
+  left: 0;
+  right: auto;
+}
+
+/* Buttons inside the simple picker bar */
+.reaction-picker-popover .reaction-picker-btn {
+  flex: 0 0 36px;
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 20px !important;
+  border-radius: 50% !important;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, transform 0.12s;
+  padding: 0;
+  line-height: 1;
+}
+
+.reaction-picker-popover .reaction-picker-btn:hover {
+  background: rgba(110,168,254,0.18);
+  transform: scale(1.3);
+}
+
+/* Mobile — slightly smaller but still a single row */
+@media (max-width: 480px) {
+  .reaction-picker-popover {
+    width: 216px;
+    min-width: 216px;
+    padding: 5px;
+    gap: 2px;
+  }
+
+  .reaction-picker-popover .reaction-picker-btn {
+    flex: 0 0 32px;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 17px !important;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    EXPANDED REACTION PICKER — categorised tab grid
    ═══════════════════════════════════════════════════════════════════════════ */

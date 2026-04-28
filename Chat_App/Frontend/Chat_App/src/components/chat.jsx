@@ -128,9 +128,9 @@ function EmojiPicker({ onSelect }) {
 }
 
 // ─── Reaction Picker ──────────────────────────────────────────────────────────
-function ReactionPicker({ onSelect, onClose }) {
+function ReactionPicker({ onSelect, onClose, isOwn }) {
   return (
-    <div className="reaction-picker-popover">
+    <div className={`reaction-picker-popover ${isOwn ? "reaction-picker-own" : "reaction-picker-other"}`}>
       {REACTION_EMOJIS.map((e) => (
         <button key={e} type="button" className="reaction-picker-btn" onClick={() => { onSelect(e); onClose(); }}>
           {e}
@@ -1069,6 +1069,7 @@ function Chat({ user, setUser }) {
                                 <ReactionPicker
                                   onSelect={(emoji) => handleReaction(key, emoji)}
                                   onClose={() => setReactionPickerFor(null)}
+                                  isOwn={isOwn}
                                 />
                               )}
                             </div>
