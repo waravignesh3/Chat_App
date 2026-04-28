@@ -8,6 +8,7 @@ import "../App.css";
 import "../App.enhanced.css";
 import "../chat.profile.css";
 import "../chat.media.css";
+import "../chat.unread.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
