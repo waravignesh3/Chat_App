@@ -880,7 +880,7 @@ button {
   flex-shrink: 0;
   align-self: flex-start;
   max-width: min(75%, 720px);
-  padding: 16px 18px;
+  padding: 10px 18px 14px; /* reduced top padding — sender label provides visual top breathing room */
   border-radius: 24px 24px 24px 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -904,7 +904,8 @@ button {
 
 .chat-bubble-sender {
   display: block;
-  margin-bottom: 6px;
+  margin-top: 0;       /* no gap between bubble top-padding and label */
+  margin-bottom: 4px;  /* tighter gap to message body */
   font-size: 0.82rem;
   font-weight: 700;
   color: #cce2ff;
@@ -1003,25 +1004,31 @@ button {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #6ea8fe;              /* --auth-primary blue */
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 10px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 10px rgba(110, 168, 254, 0.6);
   animation: pulseGlow 1.8s ease-in-out infinite;
   z-index: 2;
 }
 
 .chat-user-card-unread {
-  border-color: rgba(34, 197, 94, 0.4) !important;
-  background: rgba(34, 197, 94, 0.07) !important;
+  border-color: rgba(110, 168, 254, 0.45) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.07),
+    rgba(110, 168, 254, 0.09),
+    rgba(192, 132, 252, 0.06)
+  ) !important;
+  box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.15), 0 8px 20px rgba(2, 10, 26, 0.18) !important;
 }
 
 .chat-unread-preview {
-  color: #e2f5e8 !important;
+  color: #c8dcff !important;  /* soft blue-white, matching --auth-text family */
   font-size: 0.84rem !important;
   font-weight: 500;
   white-space: nowrap;
@@ -1030,7 +1037,7 @@ button {
 }
 
 .chat-unread-time {
-  color: #4ade80 !important;
+  color: #6ea8fe !important;  /* --auth-primary blue */
   font-size: 0.78rem;
   font-weight: 600;
 }
