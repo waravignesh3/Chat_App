@@ -68,13 +68,19 @@ function hashColor(str = "") {
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
+function resolveAssetUrl(url) {
+  if (!url || typeof url !== "string") return null;
+  return url.startsWith("http") ? url : `${SERVER_URL}${url}`;
+}
+
 function Avatar({ name, email, photo, size = 44, className = "" }) {
   const initial = (name || email || "?")[0].toUpperCase();
   const bg = hashColor(name || email);
-  if (photo) {
+  const resolvedPhoto = resolveAssetUrl(photo);
+  if (resolvedPhoto) {
     return (
       <img
-        src={photo}
+        src={resolvedPhoto}
         alt={name || email}
         className={className}
         style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block" }}
@@ -212,7 +218,7 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
 
 // ─── Media Message ────────────────────────────────────────────────────────────
 function MediaMessage({ mediaUrl, mediaType }) {
-  const absoluteUrl = mediaUrl.startsWith("http") ? mediaUrl : `${SERVER_URL}${mediaUrl}`;
+  const absoluteUrl = resolveAssetUrl(mediaUrl);
   if (mediaType === "video") {
     return <video src={absoluteUrl} controls className="chat-media-video" preload="metadata" />;
   }
@@ -876,7 +882,13 @@ function Chat({ user, setUser }) {
   };
 
   const handlePhotoUpdated = (newPhotoUrl) => {
-    setUser((prev) => ({ ...prev, photo: newPhotoUrl }));
+    const resolvedPhoto = resolveAssetUrl(newPhotoUrl);
+    setUser((prev) => ({ ...prev, photo: resolvedPhoto }));
+    setUsers((prev) =>
+      prev.map((entry) =>
+        entry.email === user?.email ? { ...entry, photo: resolvedPhoto } : entry
+      )
+    );
   };
 
   const handleReaction = (messageId, emoji) => {
