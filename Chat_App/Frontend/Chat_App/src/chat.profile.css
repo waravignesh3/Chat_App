@@ -63,3 +63,78 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — Self Profile Section on Small Screens
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .chat-self-profile {
+    gap: 8px;
+    padding: 8px 10px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+
+  .chat-self-avatar {
+    width: 36px;
+    height: 36px;
+    border-width: 1.5px;
+  }
+
+  .chat-self-avatar-wrap .chat-online-ring {
+    width: 8px;
+    height: 8px;
+    border-width: 1.5px;
+  }
+
+  .chat-self-info strong {
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+
+  .chat-self-info span {
+    font-size: 0.65rem;
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-self-profile {
+    padding: 10px;
+  }
+
+  .chat-self-info strong {
+    font-size: 0.85rem;
+  }
+
+  .chat-self-info span {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-height: 600px) {
+  .chat-self-profile {
+    gap: 6px;
+    padding: 6px 8px;
+    margin-top: 6px;
+  }
+
+  .chat-self-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .chat-self-info strong {
+    font-size: 0.75rem;
+  }
+
+  .chat-self-info span {
+    font-size: 0.6rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .chat-self-avatar-wrap {
+    cursor: pointer;
+  }
+}

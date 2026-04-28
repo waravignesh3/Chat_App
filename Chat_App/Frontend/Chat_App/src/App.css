@@ -999,10 +999,9 @@ button {
   position: absolute;
   top: -4px;
   right: -4px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 999px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   background: #22c55e;
   color: #fff;
   font-size: 0.7rem;
@@ -1286,6 +1285,367 @@ button {
 
   .chat-bubble {
     max-width: 88%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE STYLES — Extra small devices (under 480px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .chat-shell {
+    padding: 4px;
+    height: 100dvh;
+  }
+
+  .chat-layout {
+    gap: 6px;
+  }
+
+  .chat-sidebar {
+    padding: 12px;
+    max-height: 50vh;
+  }
+
+  .chat-sidebar-header {
+    margin-bottom: 8px;
+  }
+
+  .chat-sidebar-topline {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .chat-chip {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+  }
+
+  .chat-logout-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-height: 34px;
+    white-space: nowrap;
+  }
+
+  .chat-self-profile {
+    gap: 8px;
+    padding: 8px;
+    margin-top: 8px;
+  }
+
+  .chat-self-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .chat-self-avatar-wrap .chat-online-ring {
+    width: 9px;
+    height: 9px;
+  }
+
+  .chat-self-info strong {
+    font-size: 0.8rem;
+  }
+
+  .chat-self-info span {
+    font-size: 0.65rem;
+  }
+
+  .chat-search {
+    margin: 12px 0;
+  }
+
+  .chat-search input {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+  }
+
+  .chat-user-list {
+    gap: 8px;
+    max-height: 200px;
+  }
+
+  .chat-user-card {
+    padding: 10px;
+    gap: 10px;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .chat-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chat-avatar-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-user-copy strong {
+    font-size: 0.9rem;
+  }
+
+  .chat-user-copy > span {
+    font-size: 0.8rem;
+  }
+
+  .chat-panel-header {
+    padding: 14px 12px 12px;
+    gap: 8px;
+  }
+
+  .chat-panel-header h3 {
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    margin: 8px 0 6px;
+  }
+
+  .chat-panel-header p {
+    font-size: 0.8rem;
+  }
+
+  .chat-messages {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+    padding: 12px 14px;
+    border-radius: 18px 18px 18px 4px;
+    font-size: 0.95rem;
+  }
+
+  .chat-bubble.own {
+    border-radius: 18px 18px 4px 18px;
+  }
+
+  .chat-bubble-sender {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+  }
+
+  .chat-bubble p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .chat-bubble time {
+    font-size: 0.75rem;
+    margin-top: 6px;
+  }
+
+  .chat-compose {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .chat-compose textarea {
+    min-height: 44px;
+    max-height: 120px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+  }
+
+  .chat-emoji-toggle,
+  .chat-media-toggle {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .chat-send-button {
+    min-width: 100px;
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 0.95rem;
+    width: auto;
+  }
+
+  .chat-scroll-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .emoji-picker-popover {
+    bottom: calc(100% + 6px);
+    max-width: min(264px, calc(100vw - 32px));
+  }
+
+  .emoji-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .emoji-btn {
+    font-size: 16px;
+    padding: 4px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDSCAPE ORIENTATION — Adjust height constraints for landscape mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-height: 600px) {
+  .chat-shell {
+    padding: 6px;
+  }
+
+  .chat-layout {
+    gap: 8px;
+  }
+
+  .chat-sidebar {
+    max-height: 40vh;
+    padding: 10px;
+  }
+
+  .chat-user-list {
+    max-height: 150px;
+    gap: 6px;
+  }
+
+  .chat-user-card {
+    padding: 8px;
+  }
+
+  .chat-panel-header {
+    padding: 10px 12px 8px;
+  }
+
+  .chat-messages {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .chat-bubble {
+    padding: 10px 12px;
+  }
+
+  .chat-compose {
+    padding: 10px;
+    gap: 6px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLET & MEDIUM DEVICES — Improved spacing and sizing
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) and (min-width: 481px) {
+  .chat-shell {
+    padding: 10px;
+  }
+
+  .chat-layout {
+    gap: 10px;
+  }
+
+  .chat-sidebar {
+    padding: 14px;
+  }
+
+  .chat-panel-header,
+  .chat-messages,
+  .chat-compose {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .chat-user-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOUCH DEVICES — Increase button/tap target sizes for mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .chat-send-button,
+  .auth-button {
+    min-height: 48px;
+    padding: 0 20px;
+  }
+
+  .chat-compose textarea {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
+
+  .chat-search input {
+    min-height: 44px;
+  }
+
+  .chat-emoji-toggle,
+  .chat-media-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  input, textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Remove :hover effects on touch devices */
+  .chat-user-card:hover {
+    transform: none;
+  }
+
+  .chat-bubble:hover {
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE ADJUSTMENTS FOR SMALL SCREENS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .chat-sidebar,
+  .chat-panel {
+    border-radius: 16px;
+  }
+
+  .chat-empty-state {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .profile-modal {
+    border-radius: 12px;
+    max-width: calc(100vw - 16px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE FONT SIZES AND SPACING — Better text hierarchy on mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+
+  .chat-panel-header h3 {
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+
+  .chat-sidebar-header {
+    text-align: center;
+  }
+
+  .chat-user-card {
+    transition: background 0.2s ease; /* Smoother animations on mobile */
   }
 }
 

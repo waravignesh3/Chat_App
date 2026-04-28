@@ -613,7 +613,7 @@ function Chat({ user, setUser }) {
                     <div className="chat-avatar-wrap">
                       <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
                       {entry.isOnline && <span className="chat-online-ring" />}
-                      {hasUnread && <span className="chat-unread-dot" aria-label={`${unread.count} unread`}>{unread.count}</span>}
+                      {hasUnread && <span className="chat-unread-dot" aria-label={`${unread.count} unread messages`} />}
                     </div>
                     <span className="chat-user-copy">
                       <strong>{entry.name || entry.email}</strong>

@@ -287,3 +287,105 @@
   transition: opacity 0.2s;
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — Emoji Picker & Profile Modal on Small Screens
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .emoji-picker-popover {
+    bottom: calc(100% + 4px);
+    width: min(256px, calc(100vw - 24px));
+    padding: 8px;
+    max-width: 90vw;
+  }
+
+  .emoji-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+  }
+
+  .emoji-btn {
+    font-size: 16px;
+    padding: 6px 2px;
+  }
+
+  .profile-modal {
+    border-radius: 12px;
+    max-width: calc(100vw - 16px);
+    margin: 0 8px;
+  }
+
+  .profile-modal-header {
+    padding: 14px 16px 10px;
+  }
+
+  .profile-modal-header h3 {
+    font-size: 15px;
+  }
+
+  .profile-modal-body {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .profile-preview-wrap {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-pick-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .profile-modal-footer {
+    padding: 10px 16px 14px;
+    gap: 8px;
+  }
+
+  .profile-cancel-btn,
+  .profile-upload-btn {
+    flex: 1;
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .profile-error {
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 600px) {
+  .emoji-picker-popover {
+    width: min(240px, calc(100vw - 32px));
+    padding: 6px;
+  }
+
+  .emoji-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .emoji-btn {
+    font-size: 15px;
+    padding: 3px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices - remove hover hint on avatar */
+  .chat-self-avatar-clickable:hover .chat-avatar-edit-hint {
+    opacity: 0;
+  }
+
+  .profile-pick-btn,
+  .profile-cancel-btn,
+  .profile-upload-btn {
+    min-height: 44px;
+  }
+
+  .emoji-btn {
+    padding: 8px 4px;
+  }
+}

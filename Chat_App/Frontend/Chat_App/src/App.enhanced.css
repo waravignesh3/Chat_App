@@ -299,6 +299,97 @@
   100% { background-position: 200% center; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — Enhanced animations and styles for small screens
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  /* Slower animations on mobile for better performance */
+  @keyframes typingBounce {
+    0%, 80%, 100% {
+      transform: translateY(0) scale(1);
+      opacity: 0.6;
+    }
+    40% {
+      transform: translateY(-5px) scale(1.1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bubbleShimmer {
+    0%   { background-position: -200% 0; opacity: 0; }
+    25%  { opacity: 1; }
+    75%  { background-position: 200% 0; opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      transform: scale(0.9);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+  }
+
+  .chat-avatar-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-online-ring {
+    inset: -2px;
+    border-width: 1.5px;
+  }
+
+  .chat-typing-indicator {
+    padding: 12px 14px;
+    gap: 4px;
+  }
+
+  .chat-typing-indicator span {
+    width: 6px;
+    height: 6px;
+  }
+
+  .chat-user-card-active::before {
+    animation: activeCardGlow 4s ease-in-out infinite;
+  }
+
+  .emoji-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+  }
+}
+
+@media (max-height: 600px) {
+  .chat-typing-indicator {
+    padding: 10px 12px;
+  }
+
+  @keyframes floatBlob {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, -10px, 0) scale(1.02);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-avatar-wrap,
+  .chat-online-ring,
+  .chat-typing-indicator,
+  .chat-bubble,
+  .chat-send-button,
+  .chat-user-card,
+  .chat-unread-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ──────────────────────────────────────
    PANEL HEADER — SELECTED USER FADE-IN
 ────────────────────────────────────── */
