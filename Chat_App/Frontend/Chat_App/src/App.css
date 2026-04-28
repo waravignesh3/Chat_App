@@ -824,6 +824,8 @@ button {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 22px 24px;
+  /* Extra top padding so first bubble's action bar is visible */
+  padding-top: 32px;
   scroll-behavior: smooth;
 }
 
@@ -887,6 +889,10 @@ button {
   box-shadow: 0 16px 28px rgba(2, 10, 26, 0.18);
   animation: bubbleIn 0.35s ease both;
   position: relative;
+  /* Allow action buttons to float above bubble without clipping */
+  overflow: visible;
+  /* Extra top margin so the action bar (top: -14px) doesn't overlap the bubble above */
+  margin-top: 18px;
 }
 
 .chat-bubble.own {

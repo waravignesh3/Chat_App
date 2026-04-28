@@ -85,16 +85,21 @@
    LOGOUT BUTTON
 ═══════════════════════════════════════════════════════════════════ */
 .chat-logout-button {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border: 1px solid rgba(251,113,133,0.28);
   border-radius: 12px;
   background: rgba(251,113,133,0.08);
   color: #fb7185;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
+  /* Ensure it never grows to push Inbox off screen */
+  flex-shrink: 0;
+  min-height: unset;
+  min-width: unset;
+  line-height: 1.4;
 }
 .chat-logout-button:hover {
   background: rgba(251,113,133,0.16);
@@ -108,7 +113,25 @@
 .chat-sidebar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar top row: Inbox chip + actions ────────────────────────── */
+.chat-sidebar-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.chat-sidebar-topline .chat-chip {
+  /* Prevent the chip from shrinking and its text being cut off */
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  padding: 6px 12px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -272,14 +295,18 @@
 ═══════════════════════════════════════════════════════════════════ */
 .chat-bubble-actions {
   position: absolute;
-  top: -14px;
+  /* Sit just above the bubble's top edge, clear of the border */
+  top: -18px;
   right: 8px;
   display: flex;
   gap: 4px;
   opacity: 0;
   transition: opacity 0.2s ease;
-  z-index: 10;
+  z-index: 20;
+  /* Prevent the bar itself from clipping */
+  pointer-events: none;
 }
+.chat-bubble-actions > * { pointer-events: auto; }
 .chat-bubble:hover .chat-bubble-actions { opacity: 1; }
 
 .chat-bubble-reply-btn,

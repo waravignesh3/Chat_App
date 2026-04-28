@@ -519,9 +519,16 @@ function Chat({ user, setUser }) {
   // ── Close reaction picker on outside click ────────────────────────────────────
   useEffect(() => {
     if (!reactionPickerFor) return undefined;
-    const handler = () => setReactionPickerFor(null);
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    // Use a small timeout so the click that opened the picker doesn't
+    // immediately close it, and so reaction button clicks fire before this handler.
+    const handler = (e) => {
+      // Don't close if clicking inside a reaction-related element
+      if (e.target.closest?.(".chat-reaction-wrap")) return;
+      setReactionPickerFor(null);
+    };
+    // Delay attaching so the opening click doesn't trigger it immediately
+    const t = setTimeout(() => document.addEventListener("click", handler), 0);
+    return () => { clearTimeout(t); document.removeEventListener("click", handler); };
   }, [reactionPickerFor]);
 
   // ── Send read receipt when conversation is opened ─────────────────────────────
