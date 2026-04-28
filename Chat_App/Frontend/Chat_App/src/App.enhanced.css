@@ -34,6 +34,7 @@
   width: 54px;
   height: 54px;
   flex-shrink: 0;
+  border-radius: 50%;
 }
 .chat-avatar-wrap .chat-avatar {
   width: 100%;
@@ -41,15 +42,16 @@
 }
 .chat-online-ring {
   position: absolute;
-  inset: -3px;
-  border-radius: 20px;
-  border: 2px solid #5eead4;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(94,234,212,0.92);
+  box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 18px rgba(94,234,212,0.26);
   animation: onlineRingPulse 2.2s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes onlineRingPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(94,234,212,0.5); }
-  50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(94,234,212,0); }
+  0%, 100% { opacity: 0.96; transform: scale(1); box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 14px rgba(94,234,212,0.22); }
+  50%       { opacity: 0.74; transform: scale(1.05); box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 24px rgba(94,234,212,0.42); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -197,6 +199,32 @@
   margin-top: 12px;
 }
 
+.chat-hello-hub {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 12px 26px rgba(3,10,24,0.22);
+  overflow: hidden;
+}
+
+.chat-hello-hub span {
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #22d3ee, #6ea8fe, #f8c34a, #fb7185, #22d3ee);
+  background-size: 280% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: helloHubShift 5.5s linear infinite;
+}
+
 .chat-live-pill {
   display: inline-flex;
   align-items: center;
@@ -230,6 +258,30 @@
 .chat-live-pill.is-waiting::before {
   background: #f59e0b;
   box-shadow: 0 0 10px rgba(245,158,11,0.35);
+}
+
+/* Message text should always stay inside chat bubbles, even for long words/links */
+.chat-bubble,
+.chat-bubble-footer,
+.chat-reply-preview,
+.chat-reply-preview-section,
+.chat-reply-preview-message {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.chat-bubble p,
+.chat-bubble time,
+.chat-bubble-sender,
+.chat-reply-preview p,
+.chat-reply-media,
+.chat-reply-media-label,
+.chat-reply-sender,
+.chat-copy-pill {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .chat-header-action-btn {
   display: flex;
@@ -503,6 +555,9 @@
   min-height: 52px;
   height: 52px;
   max-height: 52px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease;
 }
 
@@ -520,6 +575,12 @@
     transform: scale(1.08);
     box-shadow: 0 0 0 8px rgba(34,211,238,0);
   }
+}
+
+@keyframes helloHubShift {
+  0% { background-position: 0% 50%; filter: drop-shadow(0 0 0 rgba(34,211,238,0)); }
+  50% { background-position: 100% 50%; filter: drop-shadow(0 0 10px rgba(248,195,74,0.22)); }
+  100% { background-position: 0% 50%; filter: drop-shadow(0 0 0 rgba(34,211,238,0)); }
 }
 
 @keyframes chatFreshBubble {
@@ -702,6 +763,14 @@
    MOBILE RESPONSIVE ADDITIONS
 ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
+  .chat-hello-hub {
+    margin-bottom: 10px;
+    padding: 7px 12px;
+  }
+  .chat-hello-hub span {
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+  }
   .chat-live-summary {
     margin-top: 10px;
     gap: 6px;
@@ -734,6 +803,7 @@
    REDUCED MOTION
 ═══════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
+  .chat-hello-hub span,
   .chat-live-pill,
   .panel-typing-wave,
   .chat-bubble-fresh,

@@ -983,6 +983,9 @@ function Chat({ user, setUser }) {
         {/* ── Sidebar ── */}
         <aside className="chat-sidebar">
           <div className="chat-sidebar-header">
+            <div className="chat-hello-hub" aria-label="Hello Hub">
+              <span>HELLO HUB</span>
+            </div>
             <div className="chat-sidebar-topline">
               <span className="chat-chip">Inbox</span>
               <div className="chat-sidebar-actions">
