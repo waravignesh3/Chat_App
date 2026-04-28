@@ -480,16 +480,21 @@
 
 .chat-compose {
   align-items: flex-end;
+  position: relative;
 }
 
 .chat-compose textarea {
   resize: none;
   overflow-y: auto;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease, height 0.12s ease;
+  min-height: 52px;
+  height: 52px;
+  max-height: 52px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease;
 }
 
 .chat-compose-notice {
   animation: slideDown 0.22s ease both;
+  margin-bottom: 6px;
 }
 
 @keyframes livePulse {

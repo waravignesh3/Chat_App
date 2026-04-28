@@ -328,7 +328,6 @@ function Chat({ user, setUser }) {
     } catch { return {}; }
   });
   const [flashEmail, setFlashEmail] = useState(null);
-  const [recentOrder, setRecentOrder] = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
@@ -427,7 +426,6 @@ function Chat({ user, setUser }) {
           setFlashEmail(senderEmail);
           setTimeout(() => setFlashEmail((cur) => cur === senderEmail ? null : cur), 800);
         }
-        setRecentOrder((prev) => [senderEmail, ...prev.filter((e) => e !== senderEmail)]);
       }
     });
 
@@ -521,14 +519,6 @@ function Chat({ user, setUser }) {
         if (!cancelled && Array.isArray(data)) {
           const normalizedMessages = data.map((entry) => normalizeMessage(entry));
           setMessages(normalizedMessages);
-          const seen = new Set();
-          const order = [];
-          for (let i = normalizedMessages.length - 1; i >= 0; i--) {
-            const m = normalizedMessages[i];
-            const other = m.sender === user.email ? m.receiver : m.sender;
-            if (!seen.has(other)) { seen.add(other); order.unshift(other); }
-          }
-          setRecentOrder(order);
         }
       } catch (_err) {
         if (import.meta.env.DEV) console.error("Message history fetch error:", _err);
@@ -569,13 +559,6 @@ function Chat({ user, setUser }) {
     }
     shouldScrollRef.current = false;
   }, [messages, selectedUser, isTyping]);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
-  }, [message]);
 
   useEffect(() => {
     if (!freshMessageId) return undefined;
@@ -656,20 +639,30 @@ function Chat({ user, setUser }) {
   }, [activeSelectedUser?.email, message, user?.email]);
 
   const filteredUsers = useMemo(() => {
+    const latestMessageTimeByEmail = new Map();
+    for (const entry of messages) {
+      const otherEmail = entry.sender === user?.email ? entry.receiver : entry.sender;
+      if (!otherEmail || otherEmail === user?.email) continue;
+      const entryTime = new Date(entry.createdAt || entry.updatedAt || entry.time || 0).getTime() || 0;
+      const currentLatest = latestMessageTimeByEmail.get(otherEmail) || 0;
+      if (entryTime > currentLatest) {
+        latestMessageTimeByEmail.set(otherEmail, entryTime);
+      }
+    }
+
     const base = users.filter((u) => {
       if (!u?.email || u.email === user?.email) return false;
       const q = search.toLowerCase();
       return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
     });
+
     return [...base].sort((a, b) => {
-      const ai = recentOrder.indexOf(a.email);
-      const bi = recentOrder.indexOf(b.email);
-      if (ai !== -1 && bi !== -1) return ai - bi;
-      if (ai !== -1) return -1;
-      if (bi !== -1) return 1;
+      const at = latestMessageTimeByEmail.get(a.email) || 0;
+      const bt = latestMessageTimeByEmail.get(b.email) || 0;
+      if (at !== bt) return bt - at;
       return (a.name || a.email).localeCompare(b.name || b.email);
     });
-  }, [search, user?.email, users, recentOrder]);
+  }, [messages, search, user?.email, users]);
 
   const onlineUsersCount = useMemo(
     () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
@@ -703,7 +696,6 @@ function Chat({ user, setUser }) {
       setMessage("");
       setMessages([]);
       setUnreadMap({});
-      setRecentOrder([]);
       setUser(null);
       navigate("/login", { replace: true });
     }
@@ -764,8 +756,6 @@ function Chat({ user, setUser }) {
     setMessage("");
     setIsTyping(false);
     setReplyingTo(null);
-    setRecentOrder((prev) => [activeSelectedUser.email, ...prev.filter((e) => e !== activeSelectedUser.email)]);
-    setComposerNotice({ type: "success", text: "Message queued and syncing to MongoDB." });
   };
 
   const handleMessageKeyDown = (event) => {
@@ -827,7 +817,6 @@ function Chat({ user, setUser }) {
       setMessages((prev) => [...prev, normalizeMessage(msgData)]);
       setFreshMessageId(clientTempId);
       setReplyingTo(null);
-      setComposerNotice({ type: "success", text: "Media uploaded and syncing to MongoDB." });
     } catch (err) {
       if (import.meta.env.DEV) console.error("Media upload error:", err);
       setComposerNotice({ type: "error", text: err?.message || "Media upload failed" });
@@ -1330,19 +1319,15 @@ function Chat({ user, setUser }) {
 
           {/* Compose */}
           <div className="chat-compose">
-            {composerNotice.text && (
+            {composerNotice.text && composerNotice.type === "error" && (
               <div
                 className="chat-compose-notice"
                 style={{
                   flexBasis: "100%",
                   padding: "10px 14px",
                   borderRadius: "12px",
-                  background: composerNotice.type === "error"
-                    ? "rgba(220, 38, 38, 0.18)"
-                    : "rgba(34, 211, 238, 0.14)",
-                  border: composerNotice.type === "error"
-                    ? "1px solid rgba(248, 113, 113, 0.4)"
-                    : "1px solid rgba(34, 211, 238, 0.25)",
+                  background: "rgba(220, 38, 38, 0.18)",
+                  border: "1px solid rgba(248, 113, 113, 0.4)",
                   color: "#eaf5ff",
                   fontSize: "0.9rem",
                 }}
