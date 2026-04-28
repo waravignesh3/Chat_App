@@ -42,16 +42,33 @@
 }
 .chat-online-ring {
   position: absolute;
-  inset: -4px;
+  /* Wraps the full avatar — inset -5px gives a 3px border + 2px visual gap */
+  inset: -5px;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
   border-radius: 50%;
-  border: 2px solid rgba(94,234,212,0.92);
-  box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 18px rgba(94,234,212,0.26);
-  animation: onlineRingPulse 2.2s ease-in-out infinite;
+  background: transparent;
+  /* Sky-blue glowing border that acts as the avatar's online border */
+  border: 3px solid #38bdf8;
+  box-shadow:
+    0 0 8px  3px rgba(56, 189, 248, 0.60),
+    0 0 18px 4px rgba(56, 189, 248, 0.28);
+  animation: onlineRingPulse 2.4s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes onlineRingPulse {
-  0%, 100% { opacity: 0.96; transform: scale(1); box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 14px rgba(94,234,212,0.22); }
-  50%       { opacity: 0.74; transform: scale(1.05); box-shadow: 0 0 0 2px rgba(8,18,36,0.78), 0 0 24px rgba(94,234,212,0.42); }
+  0%, 100% {
+    border-color: #38bdf8;
+    box-shadow:
+      0 0 8px  3px rgba(56, 189, 248, 0.55),
+      0 0 18px 4px rgba(56, 189, 248, 0.24);
+  }
+  50% {
+    border-color: #7dd3fc;
+    box-shadow:
+      0 0 12px 4px rgba(56, 189, 248, 0.80),
+      0 0 26px 6px rgba(56, 189, 248, 0.38);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
