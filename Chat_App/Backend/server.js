@@ -376,10 +376,23 @@ io.on("connection", (socket) => {
     if (targetSocketId) io.to(targetSocketId).emit("stop_typing", { from });
   });
 
+  // ── Read receipts ──────────────────────────────────────────────────────────
+  socket.on("read_receipt", ({ to, from }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("read_receipt", { from });
+  });
+
+  // ── Message reactions ──────────────────────────────────────────────────────
+  socket.on("message_reaction", ({ to, msgKey, emoji, by }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("message_reaction", { msgKey, emoji, by });
+  });
+
   socket.on("disconnect", async () => {
     const email = Object.keys(onlineUsers).find((e) => onlineUsers[e] === socket.id);
     if (email) {
       delete onlineUsers[email];
+      // Store full ISO timestamp so frontend can format it as "27 Apr 2025"
       await User.findOneAndUpdate({ email }, { isOnline: false, lastSeen: new Date().toISOString() });
       await broadcastUsers();
     }

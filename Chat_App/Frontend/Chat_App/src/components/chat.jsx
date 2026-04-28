@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,48 @@ import "../chat.media.css";
 import "../chat.unread.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
+
+// ─── Format lastSeen timestamp ────────────────────────────────────────────────
+function formatLastSeen(raw) {
+  if (!raw || raw === "Online" || raw === "Offline") return raw || "Offline";
+  const date = new Date(raw);
+  if (isNaN(date.getTime())) return raw;
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  // Format: 27 Apr 2025
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// ─── Format message time ──────────────────────────────────────────────────────
+function formatMsgTime(timeStr) {
+  if (!timeStr) return "";
+  // Already a short time string like "10:32 AM" — return as-is
+  if (/^\d{1,2}:\d{2}/.test(timeStr)) return timeStr;
+  const date = new Date(timeStr);
+  if (isNaN(date.getTime())) return timeStr;
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+// ─── Date separator label ─────────────────────────────────────────────────────
+function getDateLabel(timeStr) {
+  if (!timeStr) return null;
+  const date = new Date(timeStr);
+  if (isNaN(date.getTime())) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diff = today - msgDate;
+  if (diff === 0) return "Today";
+  if (diff === 86400000) return "Yesterday";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
 
 // ─── Avatar colours ───────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
@@ -26,8 +68,7 @@ function hashColor(str = "") {
 
 function Avatar({ name, email, photo, size = 44, className = "" }) {
   const initial = (name || email || "?")[0].toUpperCase();
-  const bg      = hashColor(name || email);
-
+  const bg = hashColor(name || email);
   if (photo) {
     return (
       <img
@@ -43,7 +84,6 @@ function Avatar({ name, email, photo, size = 44, className = "" }) {
       />
     );
   }
-
   return (
     <div
       className={className}
@@ -69,18 +109,14 @@ const EMOJI_LIST = [
   "🌟","💡","📸","🎮","🍕","☕","🌈","🌙","⚡","🎯",
 ];
 
+const REACTION_EMOJIS = ["❤️","😂","👍","😮","😢","🔥"];
+
 function EmojiPicker({ onSelect }) {
   return (
     <div className="emoji-picker-popover" role="dialog" aria-label="Emoji picker">
       <div className="emoji-picker-grid">
         {EMOJI_LIST.map((emoji) => (
-          <button
-            key={emoji}
-            type="button"
-            className="emoji-btn"
-            onClick={() => onSelect(emoji)}
-            aria-label={emoji}
-          >
+          <button key={emoji} type="button" className="emoji-btn" onClick={() => onSelect(emoji)} aria-label={emoji}>
             {emoji}
           </button>
         ))}
@@ -89,19 +125,32 @@ function EmojiPicker({ onSelect }) {
   );
 }
 
+// ─── Reaction Picker ──────────────────────────────────────────────────────────
+function ReactionPicker({ onSelect, onClose }) {
+  return (
+    <div className="reaction-picker-popover">
+      {REACTION_EMOJIS.map((e) => (
+        <button key={e} type="button" className="reaction-picker-btn" onClick={() => { onSelect(e); onClose(); }}>
+          {e}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Profile Photo Modal ──────────────────────────────────────────────────────
 function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
-  const [preview, setPreview]     = useState(null);
-  const [file, setFile]           = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [error, setError]         = useState("");
-  const inputRef                  = useRef(null);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     if (!f) return;
     if (!f.type.startsWith("image/")) { setError("Only image files are allowed."); return; }
-    if (f.size > 5 * 1024 * 1024)    { setError("Image must be under 5 MB."); return; }
+    if (f.size > 5 * 1024 * 1024) { setError("Image must be under 5 MB."); return; }
     setError("");
     setFile(f);
     const reader = new FileReader();
@@ -117,11 +166,9 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
       const formData = new FormData();
       formData.append("email", user.email);
       formData.append("photo", file);
-
-      const res  = await fetch(`${SERVER_URL}/api/profile/photo`, { method: "POST", body: formData });
+      const res = await fetch(`${SERVER_URL}/api/profile/photo`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
-
       onPhotoUpdated(`${SERVER_URL}${data.photo}`);
       onClose();
     } catch (err) {
@@ -138,13 +185,11 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
           <h3>Update Profile Photo</h3>
           <button type="button" className="profile-modal-close" onClick={onClose}>✕</button>
         </div>
-
         <div className="profile-modal-body">
           <div className="profile-preview-wrap">
             {preview
               ? <img src={preview} alt="Preview" className="profile-preview-img" />
-              : <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={100} />
-            }
+              : <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={100} />}
           </div>
           <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
           <button type="button" className="profile-pick-btn" onClick={() => inputRef.current?.click()}>
@@ -152,7 +197,6 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
           </button>
           {error && <p className="profile-error">{error}</p>}
         </div>
-
         <div className="profile-modal-footer">
           <button type="button" className="profile-cancel-btn" onClick={onClose}>Cancel</button>
           <button type="button" className="profile-upload-btn" onClick={handleUpload} disabled={!file || uploading}>
@@ -177,71 +221,120 @@ function MediaMessage({ mediaUrl, mediaType }) {
   );
 }
 
+// ─── Message Search Modal ─────────────────────────────────────────────────────
+function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    return messages
+      .filter((m) => m.text && m.text.toLowerCase().includes(q))
+      .slice(-30)
+      .reverse();
+  }, [query, messages]);
+
+  return (
+    <div className="msg-search-overlay" onClick={onClose}>
+      <div className="msg-search-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="msg-search-header">
+          <span>🔍 Search Messages</span>
+          <button className="profile-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <input
+          ref={inputRef}
+          className="msg-search-input"
+          placeholder={`Search in chat with ${selectedUser?.name || selectedUser?.email || "…"}`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <div className="msg-search-results">
+          {query.trim() && results.length === 0 && (
+            <p className="msg-search-empty">No messages found for "{query}"</p>
+          )}
+          {results.map((m, i) => (
+            <button
+              key={i}
+              className="msg-search-result-item"
+              onClick={() => { onJump(m); onClose(); }}
+            >
+              <span className="msg-search-sender">
+                {m.sender === user?.email ? "You" : selectedUser?.name || selectedUser?.email}
+              </span>
+              <span className="msg-search-text">
+                {m.text.replace(new RegExp(`(${query})`, "gi"), "|||$1|||").split("|||").map((part, idx) =>
+                  part.toLowerCase() === query.toLowerCase()
+                    ? <mark key={idx}>{part}</mark>
+                    : part
+                )}
+              </span>
+              <span className="msg-search-time">{m.time}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 function Chat({ user, setUser }) {
-  const [message, setMessage]             = useState("");
-  const [messages, setMessages]           = useState([]);
-  const [users, setUsers]                 = useState([]);
-  const [search, setSearch]               = useState("");
-  const [selectedUser, setSelectedUser]   = useState(null);
-  const [isTyping, setIsTyping]           = useState(false);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [usersError, setUsersError]       = useState("");
-  const [showEmojiPicker, setShowEmojiPicker]   = useState(false);
+  const [usersError, setUsersError] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [mediaUploading, setMediaUploading]     = useState(false);
-  // ── unreadMap persisted to localStorage so badges survive page refresh ──
-  // Shape: { [senderEmail]: { count: number, lastText: string, lastTime: string } }
+  const [showMsgSearch, setShowMsgSearch] = useState(false);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const [highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
+  // reactions: { [msgKey]: { [emoji]: count } }
+  const [reactions, setReactions] = useState({});
+  const [reactionPickerFor, setReactionPickerFor] = useState(null); // msgKey
+  // read receipts: Set of msgKeys seen by remote
+  const [readBy, setReadBy] = useState(new Set());
+  const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting | online | offline
   const [unreadMap, setUnreadMap] = useState(() => {
     try {
       const raw = localStorage.getItem(`chatapp-unread||${user?.email}`);
       return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
   });
-
-  // flashEmail: the email of the card that should play the arrival flash right now
   const [flashEmail, setFlashEmail] = useState(null);
-  // recentOrder: email[] sorted by last-message timestamp
-  const [recentOrder, setRecentOrder]     = useState([]);
+  const [recentOrder, setRecentOrder] = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-  // replyingTo: { index, sender, text, mediaUrl, mediaType } - for message reply feature
-  const [replyingTo, setReplyingTo]       = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
 
-  const bottomRef                 = useRef(null);
-  const messagesContainerRef      = useRef(null);
-  const typingTimeoutRef          = useRef(null);
+  const bottomRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
   const typingIndicatorTimeoutRef = useRef(null);
-  const socketRef                 = useRef(null);
-  const mediaInputRef             = useRef(null);
-  const emojiPickerRef            = useRef(null);
-  const textareaRef               = useRef(null);
-  const shouldScrollRef           = useRef(true); // true = scroll to bottom on next render
-  const navigate                  = useNavigate();
-
-  // Keep latest values in refs so callbacks never go stale — eliminates
-  // all exhaustive-deps warnings without disabling the rule.
+  const socketRef = useRef(null);
+  const mediaInputRef = useRef(null);
+  const emojiPickerRef = useRef(null);
+  const textareaRef = useRef(null);
+  const shouldScrollRef = useRef(true);
+  const navigate = useNavigate();
   const activeSelectedUserRef = useRef(null);
-  const userRef               = useRef(user);
+  const userRef = useRef(user);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── Write unreadMap to localStorage any time it changes ─────────────────
+  // ── Persist unreadMap ────────────────────────────────────────────────────────
   useEffect(() => {
     const key = `chatapp-unread||${user?.email}`;
     try {
-      if (Object.keys(unreadMap).length === 0) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, JSON.stringify(unreadMap));
-      }
-    } catch { /* quota exceeded – ignore */ }
+      if (Object.keys(unreadMap).length === 0) localStorage.removeItem(key);
+      else localStorage.setItem(key, JSON.stringify(unreadMap));
+    } catch { /* ignore */ }
   }, [unreadMap, user?.email]);
 
-  // ── Socket ────────────────────────────────────────────────────────────────
-  // Socket is created once. All event listeners are attached synchronously
-  // to the local `socket` variable — never via socketRef.current to avoid
-  // any race or Strict Mode double-invoke issues.
+  // ── Socket ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = io(SERVER_URL, {
       transports: ["websocket"],
@@ -252,10 +345,12 @@ function Chat({ user, setUser }) {
 
     const register = () => {
       if (userRef.current?.email) socket.emit("register", userRef.current.email);
+      setConnectionStatus("online");
     };
 
     socket.on("connect", register);
-    // Re-register immediately if already connected (reconnect scenario)
+    socket.on("disconnect", () => setConnectionStatus("offline"));
+    socket.on("connect_error", () => setConnectionStatus("offline"));
     if (socket.connected) register();
 
     socket.on("users_update", (data) => {
@@ -266,10 +361,10 @@ function Chat({ user, setUser }) {
       setMessages((prev) => {
         const isDuplicate = prev.some(
           (m) =>
-            m.sender   === incomingMessage.sender &&
+            m.sender === incomingMessage.sender &&
             m.receiver === incomingMessage.receiver &&
-            m.time     === incomingMessage.time &&
-            m.text     === incomingMessage.text &&
+            m.time === incomingMessage.time &&
+            m.text === incomingMessage.text &&
             m.mediaUrl === incomingMessage.mediaUrl
         );
         return isDuplicate ? prev : [...prev, incomingMessage];
@@ -278,27 +373,38 @@ function Chat({ user, setUser }) {
 
       const senderEmail = incomingMessage.sender;
       if (senderEmail && senderEmail !== userRef.current?.email) {
-        const isViewingConversation =
-          activeSelectedUserRef.current?.email === senderEmail;
-        if (!isViewingConversation) {
+        const isViewingConversation = activeSelectedUserRef.current?.email === senderEmail;
+        // Send read receipt if conversation is open
+        if (isViewingConversation) {
+          socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
+        } else {
           setUnreadMap((prev) => ({
             ...prev,
             [senderEmail]: {
-              count:    (prev[senderEmail]?.count || 0) + 1,
+              count: (prev[senderEmail]?.count || 0) + 1,
               lastText: incomingMessage.text || (incomingMessage.mediaUrl ? "📎 Media" : ""),
               lastTime: incomingMessage.time,
             },
           }));
-          // Trigger arrival flash on the card (auto-clears after 800 ms)
           setFlashEmail(senderEmail);
           setTimeout(() => setFlashEmail((cur) => cur === senderEmail ? null : cur), 800);
         }
-        // Always push sender to top of list regardless of conversation state
-        setRecentOrder((prev) => [
-          senderEmail,
-          ...prev.filter((e) => e !== senderEmail),
-        ]);
+        setRecentOrder((prev) => [senderEmail, ...prev.filter((e) => e !== senderEmail)]);
       }
+    });
+
+    // Read receipt received — mark our messages as seen
+    socket.on("read_receipt", ({ from }) => {
+      setReadBy((prev) => new Set([...prev, from]));
+    });
+
+    // Reaction received
+    socket.on("message_reaction", ({ msgKey, emoji }) => {
+      setReactions((prev) => {
+        const existing = prev[msgKey] || {};
+        const emojiMap = { ...(existing[emoji] ? existing : {}), [emoji]: (existing[emoji] || 0) + 1 };
+        return { ...prev, [msgKey]: { ...(prev[msgKey] || {}), ...emojiMap } };
+      });
     });
 
     return () => {
@@ -307,9 +413,9 @@ function Chat({ user, setUser }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []); 
+  }, []);
 
-  // ── Load users ────────────────────────────────────────────────────────────
+  // ── Load users ────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     const loadUsers = async (attempt = 1) => {
@@ -317,7 +423,7 @@ function Chat({ user, setUser }) {
         setIsLoadingUsers(true);
         setUsersError("");
         const response = await fetch(`${SERVER_URL}/api/users`);
-        const data     = await parseJsonResponse(response);
+        const data = await parseJsonResponse(response);
         if (cancelled) return;
         if (!response.ok) {
           if (response.status === 503 && attempt < 4) {
@@ -329,7 +435,6 @@ function Chat({ user, setUser }) {
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
         if (cancelled) return;
-        if (import.meta.env.DEV) console.error("Users fetch error:", error);
         setUsers([]);
         setUsersError(error.message || "Unable to load users");
       } finally {
@@ -340,17 +445,16 @@ function Chat({ user, setUser }) {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Load message history + seed recentOrder ────────────────────────────────
+  // ── Load message history ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
     const loadMessages = async () => {
       try {
-        const res  = await fetch(`${SERVER_URL}/api/messages/${encodeURIComponent(user.email)}`);
+        const res = await fetch(`${SERVER_URL}/api/messages/${encodeURIComponent(user.email)}`);
         const data = await res.json();
         if (!cancelled && res.ok && Array.isArray(data)) {
           setMessages(data);
-          // Seed recentOrder so existing conversations are sorted by last message time
           const seen = new Set();
           const order = [];
           for (let i = data.length - 1; i >= 0; i--) {
@@ -360,15 +464,15 @@ function Chat({ user, setUser }) {
           }
           setRecentOrder(order);
         }
-      } catch (err) {
-        if (import.meta.env.DEV) console.error("Message history fetch error:", err);
+      } catch (_err) {
+        if (import.meta.env.DEV) console.error("Message history fetch error:", _err);
       }
     };
     loadMessages();
     return () => { cancelled = true; };
   }, [user?.email]);
 
-
+  // ── Typing indicators ─────────────────────────────────────────────────────────
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
       if (!selectedUser || from !== selectedUser.email) return;
@@ -380,28 +484,27 @@ function Chat({ user, setUser }) {
       if (!selectedUser || from !== selectedUser.email) return;
       setIsTyping(false);
     };
-    socketRef.current?.on("typing",      handleTypingStart);
+    socketRef.current?.on("typing", handleTypingStart);
     socketRef.current?.on("stop_typing", handleTypingStop);
     return () => {
-      socketRef.current?.off("typing",      handleTypingStart);
+      socketRef.current?.off("typing", handleTypingStart);
       socketRef.current?.off("stop_typing", handleTypingStop);
     };
   }, [selectedUser]);
 
-  // Smart scroll: only jump to bottom if the user is already near it,
-  // or if shouldScrollRef says so (set true right before sending).
+  // ── Smart scroll ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
     const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    const nearBottom     = distFromBottom < 120;
+    const nearBottom = distFromBottom < 120;
     if (shouldScrollRef.current || nearBottom) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
     shouldScrollRef.current = false;
   }, [messages, selectedUser, isTyping]);
 
-  // ── Close emoji picker on outside click ───────────────────────────────────
+  // ── Close emoji picker on outside click ──────────────────────────────────────
   useEffect(() => {
     if (!showEmojiPicker) return undefined;
     const handler = (e) => {
@@ -413,7 +516,22 @@ function Chat({ user, setUser }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [showEmojiPicker]);
 
-  // ── Derived values ────────────────────────────────────────────────────────
+  // ── Close reaction picker on outside click ────────────────────────────────────
+  useEffect(() => {
+    if (!reactionPickerFor) return undefined;
+    const handler = () => setReactionPickerFor(null);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [reactionPickerFor]);
+
+  // ── Send read receipt when conversation is opened ─────────────────────────────
+  useEffect(() => {
+    if (selectedUser?.email && socketRef.current) {
+      socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
+    }
+  }, [selectedUser?.email, user?.email]);
+
+  // ── Derived values ─────────────────────────────────────────────────────────────
   const activeSelectedUser = useMemo(
     () => selectedUser?.email
       ? users.find((u) => u.email === selectedUser.email) || selectedUser
@@ -421,7 +539,6 @@ function Chat({ user, setUser }) {
     [selectedUser, users]
   );
 
-  // Keep ref in sync so media/upload callbacks can read it without stale closure
   useEffect(() => { activeSelectedUserRef.current = activeSelectedUser; }, [activeSelectedUser]);
 
   const filteredUsers = useMemo(() => {
@@ -430,7 +547,6 @@ function Chat({ user, setUser }) {
       const q = search.toLowerCase();
       return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
     });
-    // Sort by recentOrder (most recently messaged first), then alphabetical
     return [...base].sort((a, b) => {
       const ai = recentOrder.indexOf(a.email);
       const bi = recentOrder.indexOf(b.email);
@@ -450,11 +566,13 @@ function Chat({ user, setUser }) {
     [activeSelectedUser, messages, user?.email]
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // Build message key for reactions/read receipts
+  const msgKey = useCallback((m, idx) => `${m.sender}:${m.receiver}:${m.time}:${idx}`, []);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    try { await signOut(auth); } catch (err) {
-      if (import.meta.env.DEV) console.error("Logout error:", err);
-    } finally {
+    try { await signOut(auth); } catch { /* ignore */ }
+    finally {
       try { localStorage.removeItem(`chatapp-unread||${user?.email}`); } catch { /* ignore */ }
       setSelectedUser(null);
       setMessage("");
@@ -466,32 +584,28 @@ function Chat({ user, setUser }) {
     }
   };
 
-  // Clear unread badge when a conversation is opened
   const handleSelectUser = (entry) => {
     shouldScrollRef.current = true;
     setSelectedUser(entry);
-    // Remove badge and clear from localStorage (the useEffect above syncs it)
     setUnreadMap((prev) => {
       if (!prev[entry.email]) return prev;
       const next = { ...prev };
       delete next[entry.email];
       return next;
     });
-    // Clear any arrival flash for this card
     setFlashEmail((cur) => cur === entry.email ? null : cur);
+    setHighlightedMsgIndex(null);
   };
 
   const sendMessage = () => {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
-    shouldScrollRef.current = true; // always scroll to bottom on own send
+    shouldScrollRef.current = true;
     const msgData = {
-      text:     message.trim(),
-      sender:   user.email,
+      text: message.trim(),
+      sender: user.email,
       receiver: activeSelectedUser.email,
-      time:     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
-    
-    // Add reply information if replying to a message
     if (replyingTo) {
       msgData.replyTo = {
         senderName: replyingTo.sender === user?.email ? "You" : activeSelectedUser.name || activeSelectedUser.email,
@@ -500,13 +614,13 @@ function Chat({ user, setUser }) {
         mediaType: replyingTo.mediaType,
       };
     }
-    
     socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
-    socketRef.current?.emit("stop_typing",     { to: activeSelectedUser.email, from: user.email });
+    socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
     setIsTyping(false);
     setReplyingTo(null);
+    setRecentOrder((prev) => [activeSelectedUser.email, ...prev.filter((e) => e !== activeSelectedUser.email)]);
   };
 
   const handleMessageKeyDown = (event) => {
@@ -527,30 +641,26 @@ function Chat({ user, setUser }) {
     }
   };
 
-  // Uses refs — no stale closure, no useCallback needed
   const sendMediaMessage = async (file) => {
     const receiver = activeSelectedUserRef.current;
-    const sender   = userRef.current;
+    const sender = userRef.current;
     if (!receiver?.email || !sender?.email) return;
-
     setMediaUploading(true);
     try {
       const formData = new FormData();
-      formData.append("sender",   sender.email);
+      formData.append("sender", sender.email);
       formData.append("receiver", receiver.email);
-      formData.append("file",     file);
-
-      const res  = await fetch(`${SERVER_URL}/api/media/upload`, { method: "POST", body: formData });
+      formData.append("file", file);
+      const res = await fetch(`${SERVER_URL}/api/media/upload`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-
       const msgData = {
-        mediaUrl:  data.mediaUrl,
+        mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
-        filename:  data.filename,
-        sender:    sender.email,
-        receiver:  receiver.email,
-        time:      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        filename: data.filename,
+        sender: sender.email,
+        receiver: receiver.email,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       socketRef.current?.emit("private_message", { to: receiver.email, message: msgData });
       setMessages((prev) => [...prev, msgData]);
@@ -572,7 +682,7 @@ function Chat({ user, setUser }) {
     const ta = textareaRef.current;
     if (!ta) { setMessage((prev) => prev + emoji); return; }
     const start = ta.selectionStart;
-    const end   = ta.selectionEnd;
+    const end = ta.selectionEnd;
     setMessage(message.slice(0, start) + emoji + message.slice(end));
     setShowEmojiPicker(false);
     requestAnimationFrame(() => {
@@ -585,7 +695,57 @@ function Chat({ user, setUser }) {
     setUser((prev) => ({ ...prev, photo: newPhotoUrl }));
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  const handleReaction = (key, emoji) => {
+    setReactions((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), [emoji]: ((prev[key] || {})[emoji] || 0) + 1 },
+    }));
+    if (activeSelectedUser?.email) {
+      socketRef.current?.emit("message_reaction", {
+        to: activeSelectedUser.email,
+        msgKey: key,
+        emoji,
+        by: user?.email,
+      });
+    }
+  };
+
+  const handleJumpToMessage = (targetMsg) => {
+    const idx = conversationMessages.findIndex(
+      (m) => m.sender === targetMsg.sender && m.time === targetMsg.time && m.text === targetMsg.text
+    );
+    if (idx === -1) return;
+    setHighlightedMsgIndex(idx);
+    setTimeout(() => {
+      const el = messagesContainerRef.current?.querySelector(`[data-msgindex="${idx}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    setTimeout(() => setHighlightedMsgIndex(null), 2500);
+  };
+
+  // ── Group messages by date for separators ────────────────────────────────────
+  // Build a list of items: { type: "date", label } | { type: "msg", entry, index }
+  const messageItems = useMemo(() => {
+    const items = [];
+    let lastLabel = null;
+    conversationMessages.forEach((entry, index) => {
+      const label = getDateLabel(entry.time);
+      if (label && label !== lastLabel) {
+        items.push({ type: "date", label });
+        lastLabel = label;
+      }
+      items.push({ type: "msg", entry, index });
+    });
+    return items;
+  }, [conversationMessages]);
+
+  // Check if the last message was sent by me and is read by the other user
+  const lastOwnMsgIsRead = useMemo(() => {
+    if (!activeSelectedUser) return false;
+    return readBy.has(activeSelectedUser.email);
+  }, [readBy, activeSelectedUser]);
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="chat-shell">
       <div className="chat-ambient chat-ambient-left" />
@@ -599,14 +759,32 @@ function Chat({ user, setUser }) {
         />
       )}
 
+      {showMsgSearch && activeSelectedUser && (
+        <MessageSearchModal
+          messages={conversationMessages}
+          user={user}
+          selectedUser={activeSelectedUser}
+          onClose={() => setShowMsgSearch(false)}
+          onJump={handleJumpToMessage}
+        />
+      )}
+
       <section className="chat-layout">
+        {/* ── Sidebar ── */}
         <aside className="chat-sidebar">
           <div className="chat-sidebar-header">
             <div className="chat-sidebar-topline">
               <span className="chat-chip">Inbox</span>
-              <button type="button" className="chat-logout-button" onClick={handleLogout}>
-                Logout
-              </button>
+              <div className="chat-sidebar-actions">
+                {/* Connection dot */}
+                <span
+                  className={`chat-conn-dot chat-conn-dot-${connectionStatus}`}
+                  title={connectionStatus === "online" ? "Connected" : connectionStatus === "offline" ? "Disconnected" : "Connecting…"}
+                />
+                <button type="button" className="chat-logout-button" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
             </div>
 
             <div className="chat-self-profile">
@@ -652,21 +830,17 @@ function Chat({ user, setUser }) {
               </div>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((entry) => {
-                const isActive  = activeSelectedUser?.email === entry.email;
-                const unread    = unreadMap[entry.email];
+                const isActive = activeSelectedUser?.email === entry.email;
+                const unread = unreadMap[entry.email];
                 const hasUnread = !isActive && unread?.count > 0;
                 const isFlashing = flashEmail === entry.email;
 
-                // ── Inline styles for unread state ───────────────────────
-                // We use inline styles (not just CSS classes) so the highlight
-                // is guaranteed to win over ANY CSS cascade or specificity fight.
                 const unreadCardStyle = hasUnread ? {
                   background: "linear-gradient(135deg, rgba(34,211,238,0.16), rgba(110,168,254,0.20), rgba(192,132,252,0.13))",
                   borderColor: "rgba(110, 168, 254, 0.65)",
                   boxShadow: "0 0 0 1.5px rgba(34,211,238,0.30), 0 6px 20px rgba(110,168,254,0.18)",
                 } : {};
 
-                // Arrival flash: bright burst that fades — applied for 800 ms
                 const flashStyle = isFlashing ? {
                   background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(110,168,254,0.36), rgba(192,132,252,0.26))",
                   borderColor: "rgba(34, 211, 238, 0.85)",
@@ -682,8 +856,8 @@ function Chat({ user, setUser }) {
                     type="button"
                     className={[
                       "chat-user-card",
-                      isActive  ? "chat-user-card-active"  : "",
-                      hasUnread ? "chat-user-card-unread"  : "",
+                      isActive ? "chat-user-card-active" : "",
+                      hasUnread ? "chat-user-card-unread" : "",
                     ].filter(Boolean).join(" ")}
                     style={cardStyle}
                     onClick={() => handleSelectUser(entry)}
@@ -696,24 +870,13 @@ function Chat({ user, setUser }) {
                           className="chat-unread-dot"
                           aria-label={`${unread.count} unread`}
                           style={{
-                            /* guaranteed visible badge */
-                            position: "absolute",
-                            top: "-4px",
-                            right: "-4px",
-                            minWidth: "20px",
-                            height: "20px",
-                            borderRadius: "10px",
+                            position: "absolute", top: "-4px", right: "-4px",
+                            minWidth: "20px", height: "20px", borderRadius: "10px",
                             background: "linear-gradient(135deg,#22d3ee,#6ea8fe)",
-                            color: "#04101e",
-                            fontSize: "11px",
-                            fontWeight: 900,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "0 5px",
-                            border: "2px solid #040d1a",
-                            boxShadow: "0 0 10px rgba(34,211,238,0.8)",
-                            zIndex: 5,
+                            color: "#04101e", fontSize: "11px", fontWeight: 900,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            padding: "0 5px", border: "2px solid #040d1a",
+                            boxShadow: "0 0 10px rgba(34,211,238,0.8)", zIndex: 5,
                           }}
                         >
                           {unread.count > 99 ? "99+" : unread.count}
@@ -726,12 +889,14 @@ function Chat({ user, setUser }) {
                       </strong>
                       {hasUnread
                         ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
-                        : <span>{entry.email}</span>
+                        : <span className="chat-user-email">{entry.email}</span>
                       }
                       <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
                         {hasUnread
                           ? <span className="chat-unread-time" style={{ color: "#22d3ee", fontWeight: 700 }}>{unread.lastTime}</span>
-                          : entry.isOnline ? "Online" : `Last seen: ${entry.lastSeen || "Offline"}`
+                          : entry.isOnline
+                            ? <><span className="chat-online-dot" />Online</>
+                            : `Last seen: ${formatLastSeen(entry.lastSeen)}`
                         }
                       </span>
                     </span>
@@ -747,6 +912,7 @@ function Chat({ user, setUser }) {
           </div>
         </aside>
 
+        {/* ── Chat Panel ── */}
         <main className="chat-panel">
           <div className="chat-panel-header">
             <div>
@@ -754,10 +920,26 @@ function Chat({ user, setUser }) {
               <h3>{activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}</h3>
               <p>
                 {activeSelectedUser
-                  ? activeSelectedUser.isOnline ? "Available now" : activeSelectedUser.lastSeen || "Offline"
-                  : "Choose someone from the list to start chatting."}
+                  ? activeSelectedUser.isOnline
+                    ? <span className="panel-online-status"><span className="chat-online-dot panel-dot" />Online</span>
+                    : <span className="panel-lastseen">Last seen: {formatLastSeen(activeSelectedUser.lastSeen)}</span>
+                  : "Choose someone from the list to start chatting."
+                }
               </p>
             </div>
+            {/* Header actions */}
+            {activeSelectedUser && (
+              <div className="chat-panel-header-actions">
+                <button
+                  type="button"
+                  className="chat-header-action-btn"
+                  title="Search messages"
+                  onClick={() => setShowMsgSearch(true)}
+                >
+                  🔍
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="chat-messages-wrap">
@@ -773,13 +955,34 @@ function Chat({ user, setUser }) {
               {activeSelectedUser ? (
                 conversationMessages.length > 0 ? (
                   <>
-                    {conversationMessages.map((entry, index) => {
+                    {messageItems.map((item, itemIdx) => {
+                      if (item.type === "date") {
+                        return (
+                          <div key={`date-${item.label}-${itemIdx}`} className="chat-date-separator">
+                            <span>{item.label}</span>
+                          </div>
+                        );
+                      }
+
+                      const { entry, index } = item;
                       const isOwn = entry.sender === user?.email;
                       const isReplying = replyingTo?.index === index;
+                      const isHighlighted = highlightedMsgIndex === index;
+                      const key = msgKey(entry, index);
+                      const msgReactions = reactions[key] || {};
+                      const hasReactions = Object.keys(msgReactions).length > 0;
+                      const isLastOwn = isOwn && index === conversationMessages.length - 1;
+
                       return (
                         <article
                           key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
-                          className={`chat-bubble${isOwn ? " own" : ""}${isReplying ? " replying" : ""}`}
+                          data-msgindex={index}
+                          className={[
+                            "chat-bubble",
+                            isOwn ? "own" : "",
+                            isReplying ? "replying" : "",
+                            isHighlighted ? "chat-bubble-highlighted" : "",
+                          ].filter(Boolean).join(" ")}
                           onMouseEnter={(e) => {
                             const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
                             if (replyBtn) replyBtn.style.opacity = "1";
@@ -789,7 +992,7 @@ function Chat({ user, setUser }) {
                             if (replyBtn) replyBtn.style.opacity = "0";
                           }}
                         >
-                          {/* Replied-to message context — only render when there is actual content */}
+                          {/* Reply context */}
                           {entry.replyTo && (entry.replyTo.text || entry.replyTo.mediaUrl) && (
                             <div className="chat-reply-context">
                               {entry.replyTo.senderName && (
@@ -804,26 +1007,63 @@ function Chat({ user, setUser }) {
                               </div>
                             </div>
                           )}
-                          
+
                           <span className="chat-bubble-sender">
                             {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
                           </span>
-                          
+
                           {entry.text && <p>{entry.text}</p>}
                           {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
-                          
-                          <time>{entry.time}</time>
-                          
-                          {/* Reply button */}
-                          <button
-                            type="button"
-                            className="chat-bubble-reply-btn"
-                            onClick={() => setReplyingTo({ index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
-                            title="Reply to this message"
-                            aria-label="Reply to message"
-                          >
-                            ↩️
-                          </button>
+
+                          {/* Reactions display */}
+                          {hasReactions && (
+                            <div className="chat-reactions">
+                              {Object.entries(msgReactions).map(([emoji, count]) => (
+                                <span key={emoji} className="chat-reaction-badge">{emoji} {count > 1 ? count : ""}</span>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="chat-bubble-footer">
+                            <time>{formatMsgTime(entry.time)}</time>
+                            {/* Read receipt for own messages */}
+                            {isOwn && isLastOwn && (
+                              <span className={`chat-read-receipt ${lastOwnMsgIsRead ? "read" : "sent"}`} title={lastOwnMsgIsRead ? "Seen" : "Sent"}>
+                                {lastOwnMsgIsRead ? "✓✓" : "✓"}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="chat-bubble-actions">
+                            {/* Reply button */}
+                            <button
+                              type="button"
+                              className="chat-bubble-reply-btn"
+                              onClick={() => setReplyingTo({ index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
+                              title="Reply"
+                              aria-label="Reply to message"
+                            >
+                              ↩
+                            </button>
+                            {/* Reaction button */}
+                            <div className="chat-reaction-wrap" style={{ position: "relative" }}>
+                              <button
+                                type="button"
+                                className="chat-bubble-react-btn"
+                                onClick={(e) => { e.stopPropagation(); setReactionPickerFor(reactionPickerFor === key ? null : key); }}
+                                title="React"
+                              >
+                                😊
+                              </button>
+                              {reactionPickerFor === key && (
+                                <ReactionPicker
+                                  onSelect={(emoji) => handleReaction(key, emoji)}
+                                  onClose={() => setReactionPickerFor(null)}
+                                />
+                              )}
+                            </div>
+                          </div>
                         </article>
                       );
                     })}
@@ -862,7 +1102,7 @@ function Chat({ user, setUser }) {
             )}
           </div>
 
-          {/* Reply preview section */}
+          {/* Reply preview */}
           {replyingTo && (
             <div className="chat-reply-preview-section">
               <div className="chat-reply-preview-content">
@@ -886,6 +1126,7 @@ function Chat({ user, setUser }) {
             </div>
           )}
 
+          {/* Compose */}
           <div className="chat-compose">
             <div className="chat-compose-extras" ref={emojiPickerRef}>
               <button
