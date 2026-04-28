@@ -35,6 +35,28 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    replyTo: {
+      messageId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null,
+      },
+      senderName: {
+        type: String,
+        default: null,
+      },
+      text: {
+        type: String,
+        default: null,
+      },
+      mediaUrl: {
+        type: String,
+        default: null,
+      },
+      mediaType: {
+        type: String,
+        default: null,
+      },
+    },
   },
   { timestamps: true }
 );

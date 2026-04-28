@@ -194,6 +194,8 @@ function Chat({ user, setUser }) {
   // recentOrder: email[] sorted by last-message timestamp
   const [recentOrder, setRecentOrder]     = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  // replyingTo: { index, sender, text, mediaUrl, mediaType } - for message reply feature
+  const [replyingTo, setReplyingTo]       = useState(null);
 
   const bottomRef                 = useRef(null);
   const messagesContainerRef      = useRef(null);
@@ -450,11 +452,23 @@ function Chat({ user, setUser }) {
       receiver: activeSelectedUser.email,
       time:     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
+    
+    // Add reply information if replying to a message
+    if (replyingTo) {
+      msgData.replyTo = {
+        senderName: replyingTo.sender === user?.email ? "You" : activeSelectedUser.name || activeSelectedUser.email,
+        text: replyingTo.text,
+        mediaUrl: replyingTo.mediaUrl,
+        mediaType: replyingTo.mediaType,
+      };
+    }
+    
     socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
     socketRef.current?.emit("stop_typing",     { to: activeSelectedUser.email, from: user.email });
     setMessages((prev) => [...prev, msgData]);
     setMessage("");
     setIsTyping(false);
+    setReplyingTo(null);
   };
 
   const handleMessageKeyDown = (event) => {
@@ -668,17 +682,53 @@ function Chat({ user, setUser }) {
                   <>
                     {conversationMessages.map((entry, index) => {
                       const isOwn = entry.sender === user?.email;
+                      const isReplying = replyingTo?.index === index;
                       return (
                         <article
                           key={`${entry.sender}-${entry.receiver}-${entry.time}-${index}`}
-                          className={`chat-bubble${isOwn ? " own" : ""}`}
+                          className={`chat-bubble${isOwn ? " own" : ""}${isReplying ? " replying" : ""}`}
+                          onMouseEnter={(e) => {
+                            const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
+                            if (replyBtn) replyBtn.style.opacity = "1";
+                          }}
+                          onMouseLeave={(e) => {
+                            const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
+                            if (replyBtn) replyBtn.style.opacity = "0";
+                          }}
                         >
+                          {/* Replied-to message context */}
+                          {entry.replyTo && (
+                            <div className="chat-reply-context">
+                              <span className="chat-reply-sender">{entry.replyTo.senderName}</span>
+                              <div className="chat-reply-preview">
+                                {entry.replyTo.text ? (
+                                  <p>{entry.replyTo.text.substring(0, 80)}{entry.replyTo.text.length > 80 ? "..." : ""}</p>
+                                ) : entry.replyTo.mediaUrl ? (
+                                  <span className="chat-reply-media">{entry.replyTo.mediaType === "video" ? "🎥 Video" : "📎 Image"}</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          )}
+                          
                           <span className="chat-bubble-sender">
                             {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
                           </span>
+                          
                           {entry.text && <p>{entry.text}</p>}
                           {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
+                          
                           <time>{entry.time}</time>
+                          
+                          {/* Reply button */}
+                          <button
+                            type="button"
+                            className="chat-bubble-reply-btn"
+                            onClick={() => setReplyingTo({ index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
+                            title="Reply to this message"
+                            aria-label="Reply to message"
+                          >
+                            ↩️
+                          </button>
                         </article>
                       );
                     })}
@@ -716,6 +766,30 @@ function Chat({ user, setUser }) {
               </button>
             )}
           </div>
+
+          {/* Reply preview section */}
+          {replyingTo && (
+            <div className="chat-reply-preview-section">
+              <div className="chat-reply-preview-content">
+                <span className="chat-reply-label">Replying to:</span>
+                <div className="chat-reply-preview-message">
+                  {replyingTo.text ? (
+                    <p>{replyingTo.text.substring(0, 100)}{replyingTo.text.length > 100 ? "..." : ""}</p>
+                  ) : replyingTo.mediaUrl ? (
+                    <span className="chat-reply-media-label">{replyingTo.mediaType === "video" ? "🎥 Video" : "📎 Image"}</span>
+                  ) : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="chat-reply-cancel"
+                onClick={() => setReplyingTo(null)}
+                aria-label="Cancel reply"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <div className="chat-compose">
             <div className="chat-compose-extras" ref={emojiPickerRef}>
