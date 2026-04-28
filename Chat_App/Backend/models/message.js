@@ -57,6 +57,30 @@ const messageSchema = new mongoose.Schema(
         default: null,
       },
     },
+    // reactions: { "❤️": ["user@a.com", "user@b.com"], "😂": ["user@c.com"] }
+    reactions: {
+      type: Map,
+      of: [String],  // array of user emails who reacted
+      default: {},
+    },
+    // soft-delete: per-user list of emails who deleted this message
+    deletedFor: {
+      type: [String],
+      default: [],
+    },
+    // pinned message support
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    pinnedBy: {
+      type: String,
+      default: null,
+    },
+    pinnedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -64,5 +88,6 @@ const messageSchema = new mongoose.Schema(
 // Index for fast conversation lookups
 messageSchema.index({ sender: 1, receiver: 1 });
 messageSchema.index({ receiver: 1, sender: 1 });
+messageSchema.index({ isPinned: 1 });
 
 export default mongoose.model("Message", messageSchema);

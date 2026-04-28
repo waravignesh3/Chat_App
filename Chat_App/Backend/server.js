@@ -69,7 +69,6 @@ mongoose
   .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 })
   .then(() => {
     console.log("MongoDB Connected");
-    // Pre-warm the buckets so they are ready immediately after connection
     _mediaBucket  = new GridFSBucket(mongoose.connection.db, { bucketName: "media" });
     _avatarBucket = new GridFSBucket(mongoose.connection.db, { bucketName: "avatars" });
   })
@@ -130,6 +129,17 @@ const buildUsersPayload = async () => {
 const broadcastUsers = async () => {
   const users = await buildUsersPayload();
   io.emit("users_update", users);
+};
+
+// ─── Serialize reactions Map → plain object for JSON ─────────────────────────
+const serializeReactions = (reactionsMap) => {
+  if (!reactionsMap) return {};
+  if (reactionsMap instanceof Map) {
+    const obj = {};
+    for (const [k, v] of reactionsMap) obj[k] = v;
+    return obj;
+  }
+  return reactionsMap;
 };
 
 // ─── Google login ─────────────────────────────────────────────────────────────
@@ -198,37 +208,26 @@ app.post("/api/profile/photo", avatarUpload.single("photo"), async (req, res) =>
     if (!req.body.email)  return res.status(400).json({ error: "Email is required" });
 
     if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
     const avatarBucket = getAvatarBucket();
+    const email        = req.body.email.toLowerCase().trim();
+    const filename     = `avatar_${email}_${Date.now()}`;
 
-    const normalizedEmail = req.body.email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    const uploadStream = avatarBucket.openUploadStream(filename, {
+      contentType: req.file.mimetype,
+      metadata:    { email },
+    });
 
-    // Delete old avatar from GridFS if it was stored by us
-    if (user.photo && user.photo.includes("/api/avatar/")) {
-      try {
-        const oldId = user.photo.split("/api/avatar/")[1];
-        if (oldId && mongoose.Types.ObjectId.isValid(oldId)) {
-          await avatarBucket.delete(new mongoose.Types.ObjectId(oldId));
-        }
-      } catch (_) { /* ignore */ }
-    }
-
-    const uploadStream = avatarBucket.openUploadStream(
-      `avatar_${normalizedEmail}_${Date.now()}`,
-      { contentType: req.file.mimetype }
-    );
     await new Promise((resolve, reject) => {
       uploadStream.on("finish", resolve);
       uploadStream.on("error", reject);
       uploadStream.end(req.file.buffer);
     });
 
-    user.photo = `/api/avatar/${uploadStream.id}`;
-    await user.save();
-    await broadcastUsers();
+    const photoPath = `/api/avatar/${uploadStream.id}`;
+    await User.findOneAndUpdate({ email }, { photo: photoPath });
 
-    return res.json({ success: true, photo: user.photo });
+    return res.json({ success: true, photo: photoPath });
   } catch (err) {
     console.error("Profile photo upload error:", err);
     return res.status(500).json({ error: err.message || "Upload failed" });
@@ -335,6 +334,161 @@ app.get("/api/media/:id", async (req, res) => {
   }
 });
 
+// ─── Messages history ─────────────────────────────────────────────────────────
+app.get("/api/messages/:email", async (req, res) => {
+  try {
+    const email = req.params.email?.toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+    const msgs = await Message.find({
+      $or: [{ sender: email }, { receiver: email }],
+      deletedFor: { $ne: email }, // exclude soft-deleted for this user
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    // Serialize reactions Map to plain object
+    const serialized = msgs.map((m) => ({
+      ...m,
+      reactions: serializeReactions(m.reactions),
+    }));
+    return res.json(serialized);
+  } catch (err) {
+    console.error("Fetch messages error:", err);
+    return res.status(500).json({ error: "Unable to fetch messages" });
+  }
+});
+
+// ─── Toggle reaction on a message (MongoDB) ───────────────────────────────────
+// POST /api/messages/:id/react  body: { emoji, userEmail }
+// If the user already reacted with that emoji → remove it (toggle off)
+// Otherwise → add it
+app.post("/api/messages/:id/react", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { emoji, userEmail } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid message id" });
+    if (!emoji || !userEmail) return res.status(400).json({ error: "emoji and userEmail are required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const email = userEmail.toLowerCase().trim();
+    const msg   = await Message.findById(id);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+
+    const current = msg.reactions.get(emoji) || [];
+    let updated;
+    if (current.includes(email)) {
+      // Toggle OFF — remove this user's reaction
+      updated = current.filter((e) => e !== email);
+    } else {
+      // Toggle ON — add this user's reaction
+      updated = [...current, email];
+    }
+
+    if (updated.length === 0) {
+      msg.reactions.delete(emoji);
+    } else {
+      msg.reactions.set(emoji, updated);
+    }
+
+    await msg.save();
+
+    return res.json({
+      success: true,
+      messageId: id,
+      reactions: serializeReactions(msg.reactions),
+    });
+  } catch (err) {
+    console.error("React error:", err);
+    return res.status(500).json({ error: err.message || "React failed" });
+  }
+});
+
+// ─── Soft-delete a message for a user ────────────────────────────────────────
+// DELETE /api/messages/:id  body: { userEmail, deleteFor: "me" | "everyone" }
+app.delete("/api/messages/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail, deleteFor = "me" } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid message id" });
+    if (!userEmail) return res.status(400).json({ error: "userEmail is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const email = userEmail.toLowerCase().trim();
+    const msg   = await Message.findById(id);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+
+    if (deleteFor === "everyone" && msg.sender === email) {
+      // Hard delete — only the sender can delete for everyone
+      await Message.deleteOne({ _id: id });
+      return res.json({ success: true, deletedFor: "everyone", messageId: id });
+    } else {
+      // Soft delete — just for this user
+      if (!msg.deletedFor.includes(email)) {
+        msg.deletedFor.push(email);
+        await msg.save();
+      }
+      return res.json({ success: true, deletedFor: "me", messageId: id });
+    }
+  } catch (err) {
+    console.error("Delete message error:", err);
+    return res.status(500).json({ error: err.message || "Delete failed" });
+  }
+});
+
+// ─── Pin / Unpin a message ────────────────────────────────────────────────────
+// POST /api/messages/:id/pin  body: { userEmail, pin: true|false }
+app.post("/api/messages/:id/pin", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail, pin = true } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid message id" });
+    if (!userEmail) return res.status(400).json({ error: "userEmail is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const email = userEmail.toLowerCase().trim();
+    const update = pin
+      ? { isPinned: true, pinnedBy: email, pinnedAt: new Date() }
+      : { isPinned: false, pinnedBy: null, pinnedAt: null };
+
+    const msg = await Message.findByIdAndUpdate(id, { $set: update }, { new: true }).lean();
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+
+    return res.json({ success: true, messageId: id, isPinned: msg.isPinned });
+  } catch (err) {
+    console.error("Pin message error:", err);
+    return res.status(500).json({ error: err.message || "Pin failed" });
+  }
+});
+
+// ─── Get pinned messages for a conversation ───────────────────────────────────
+app.get("/api/messages/pinned/:userA/:userB", async (req, res) => {
+  try {
+    const a = req.params.userA?.toLowerCase().trim();
+    const b = req.params.userB?.toLowerCase().trim();
+    if (!a || !b) return res.status(400).json({ error: "Both user emails required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const msgs = await Message.find({
+      $or: [
+        { sender: a, receiver: b },
+        { sender: b, receiver: a },
+      ],
+      isPinned: true,
+    })
+      .sort({ pinnedAt: -1 })
+      .lean();
+
+    return res.json(msgs.map((m) => ({ ...m, reactions: serializeReactions(m.reactions) })));
+  } catch (err) {
+    console.error("Pinned messages error:", err);
+    return res.status(500).json({ error: "Unable to fetch pinned messages" });
+  }
+});
+
 // ─── Socket.IO events ─────────────────────────────────────────────────────────
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -349,10 +503,11 @@ io.on("connection", (socket) => {
 
   socket.on("private_message", async ({ to, message }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) io.to(targetSocketId).emit("private_message", message);
-    // Persist the message to MongoDB
+
+    // Persist the message to MongoDB first, get the _id back
+    let savedMsg = null;
     try {
-      await Message.create({
+      const doc = await Message.create({
         sender:    message.sender?.toLowerCase().trim(),
         receiver:  message.receiver?.toLowerCase().trim(),
         text:      message.text    || null,
@@ -360,10 +515,25 @@ io.on("connection", (socket) => {
         mediaType: message.mediaType || null,
         filename:  message.filename  || null,
         time:      message.time,
+        replyTo:   message.replyTo
+          ? {
+              senderName: message.replyTo.senderName || null,
+              text:       message.replyTo.text       || null,
+              mediaUrl:   message.replyTo.mediaUrl   || null,
+              mediaType:  message.replyTo.mediaType  || null,
+            }
+          : undefined,
       });
+      savedMsg = { ...message, _id: doc._id.toString(), reactions: {}, isPinned: false };
     } catch (err) {
       console.error("Failed to save message:", err.message);
+      savedMsg = message; // fallback: send without DB id
     }
+
+    // Emit to recipient with DB _id so reactions/delete can reference it
+    if (targetSocketId) io.to(targetSocketId).emit("private_message", savedMsg);
+    // Echo back to sender with _id
+    socket.emit("message_saved", savedMsg);
   });
 
   socket.on("typing", ({ to, from }) => {
@@ -382,39 +552,73 @@ io.on("connection", (socket) => {
     if (targetSocketId) io.to(targetSocketId).emit("read_receipt", { from });
   });
 
-  // ── Message reactions ──────────────────────────────────────────────────────
-  socket.on("message_reaction", ({ to, msgKey, emoji, by }) => {
+  // ── Message reactions — toggle and persist to MongoDB ─────────────────────
+  socket.on("message_reaction", async ({ to, messageId, emoji, by }) => {
+    if (!messageId || !emoji || !by) return;
+
+    try {
+      if (mongoose.connection.readyState !== 1) return;
+      const email = by.toLowerCase().trim();
+      const msg   = await Message.findById(messageId);
+      if (!msg) return;
+
+      const current = msg.reactions.get(emoji) || [];
+      let updated;
+      let action; // "added" | "removed"
+      if (current.includes(email)) {
+        updated = current.filter((e) => e !== email);
+        action  = "removed";
+      } else {
+        updated = [...current, email];
+        action  = "added";
+      }
+
+      if (updated.length === 0) {
+        msg.reactions.delete(emoji);
+      } else {
+        msg.reactions.set(emoji, updated);
+      }
+
+      await msg.save();
+
+      const reactionPayload = {
+        messageId,
+        emoji,
+        by: email,
+        action,
+        reactions: serializeReactions(msg.reactions),
+      };
+
+      // Notify the target user
+      const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+      if (targetSocketId) io.to(targetSocketId).emit("message_reaction", reactionPayload);
+      // Echo updated state back to sender
+      socket.emit("message_reaction", reactionPayload);
+    } catch (err) {
+      console.error("Reaction persist error:", err.message);
+    }
+  });
+
+  // ── Message deleted ────────────────────────────────────────────────────────
+  socket.on("message_deleted", ({ to, messageId, deletedFor, by }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) io.to(targetSocketId).emit("message_reaction", { msgKey, emoji, by });
+    if (targetSocketId) io.to(targetSocketId).emit("message_deleted", { messageId, deletedFor, by });
+  });
+
+  // ── Message pinned / unpinned ──────────────────────────────────────────────
+  socket.on("message_pinned", ({ to, messageId, isPinned, by }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("message_pinned", { messageId, isPinned, by });
   });
 
   socket.on("disconnect", async () => {
     const email = Object.keys(onlineUsers).find((e) => onlineUsers[e] === socket.id);
     if (email) {
       delete onlineUsers[email];
-      // Store full ISO timestamp so frontend can format it as "27 Apr 2025"
       await User.findOneAndUpdate({ email }, { isOnline: false, lastSeen: new Date().toISOString() });
       await broadcastUsers();
     }
   });
-});
-
-// ─── Messages history ────────────────────────────────────────────────────────
-app.get("/api/messages/:email", async (req, res) => {
-  try {
-    const email = req.params.email?.toLowerCase().trim();
-    if (!email) return res.status(400).json({ error: "Email is required" });
-    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
-    const msgs = await Message.find({
-      $or: [{ sender: email }, { receiver: email }],
-    })
-      .sort({ createdAt: 1 })
-      .lean();
-    return res.json(msgs);
-  } catch (err) {
-    console.error("Fetch messages error:", err);
-    return res.status(500).json({ error: "Unable to fetch messages" });
-  }
 });
 
 // ─── 404 / error handlers ─────────────────────────────────────────────────────
