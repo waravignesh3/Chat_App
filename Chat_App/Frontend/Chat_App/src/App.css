@@ -1001,34 +1001,66 @@ button {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #6ea8fe;              /* --auth-primary blue */
+  background: linear-gradient(135deg, #22d3ee, #6ea8fe);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 10px rgba(110, 168, 254, 0.6);
-  animation: pulseGlow 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 12px rgba(34, 211, 238, 0.7);
+  animation: unreadDotPulse 1.6s ease-in-out infinite;
   z-index: 2;
 }
 
+@keyframes unreadDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 8px rgba(34, 211, 238, 0.5);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 16px rgba(110, 168, 254, 0.8);
+  }
+}
+
 .chat-user-card-unread {
-  border-color: rgba(110, 168, 254, 0.45) !important;
+  border-color: rgba(110, 168, 254, 0.6) !important;
   background: linear-gradient(
     135deg,
-    rgba(34, 211, 238, 0.07),
-    rgba(110, 168, 254, 0.09),
-    rgba(192, 132, 252, 0.06)
+    rgba(34, 211, 238, 0.10),
+    rgba(110, 168, 254, 0.13),
+    rgba(192, 132, 252, 0.09)
   ) !important;
-  box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.15), 0 8px 20px rgba(2, 10, 26, 0.18) !important;
+  box-shadow:
+    0 0 0 1px rgba(110, 168, 254, 0.25),
+    0 0 18px rgba(110, 168, 254, 0.18),
+    0 8px 24px rgba(2, 10, 26, 0.22) !important;
+  animation: unreadCardPulse 2.4s ease-in-out infinite !important;
+}
+
+@keyframes unreadCardPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(110, 168, 254, 0.25),
+      0 0 14px rgba(110, 168, 254, 0.14),
+      0 8px 24px rgba(2, 10, 26, 0.22);
+    border-color: rgba(110, 168, 254, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(110, 168, 254, 0.35),
+      0 0 28px rgba(110, 168, 254, 0.28),
+      0 10px 30px rgba(34, 211, 238, 0.14);
+    border-color: rgba(34, 211, 238, 0.65);
+  }
 }
 
 .chat-unread-preview {
-  color: #c8dcff !important;  /* soft blue-white, matching --auth-text family */
+  color: #dceeff !important;        /* bright blue-white, very readable on dark */
   font-size: 0.84rem !important;
   font-weight: 500;
   white-space: nowrap;
@@ -1037,9 +1069,9 @@ button {
 }
 
 .chat-unread-time {
-  color: #6ea8fe !important;  /* --auth-primary blue */
+  color: #22d3ee !important;        /* --auth-accent cyan — matches dot gradient */
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 @keyframes floatBlob {

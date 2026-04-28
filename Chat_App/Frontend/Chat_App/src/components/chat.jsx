@@ -696,10 +696,12 @@ function Chat({ user, setUser }) {
                             if (replyBtn) replyBtn.style.opacity = "0";
                           }}
                         >
-                          {/* Replied-to message context */}
-                          {entry.replyTo && (
+                          {/* Replied-to message context — only render when there is actual content */}
+                          {entry.replyTo && (entry.replyTo.text || entry.replyTo.mediaUrl) && (
                             <div className="chat-reply-context">
-                              <span className="chat-reply-sender">{entry.replyTo.senderName}</span>
+                              {entry.replyTo.senderName && (
+                                <span className="chat-reply-sender">{entry.replyTo.senderName}</span>
+                              )}
                               <div className="chat-reply-preview">
                                 {entry.replyTo.text ? (
                                   <p>{entry.replyTo.text.substring(0, 80)}{entry.replyTo.text.length > 80 ? "..." : ""}</p>
