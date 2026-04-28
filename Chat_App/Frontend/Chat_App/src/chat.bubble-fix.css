@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   chat.bubble-fix.css
+   Fixes: reaction/emoji panel hidden in top notch on short messages.
+
+   Root cause: .chat-messages-wrap { overflow: hidden } clips the
+   .chat-bubble-actions bar that sits at top: -18px above each bubble.
+   When a bubble is near the top of the scroll area the bar is swallowed.
+
+   Import AFTER App.css and App.enhanced.css in chat.jsx:
+     import "../chat.bubble-fix.css";
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Let the wrapper pass overflow up instead of clipping it ─────────── */
+.chat-messages-wrap {
+  /*
+    'overflow: visible' lets absolutely-positioned children (action bars,
+    reaction pickers) escape the box. The scrollable area is .chat-messages
+    directly, so removing clip here has no visible side-effect.
+  */
+  overflow: visible !important;
+}
+
+/* ── 2. Keep horizontal scroll contained without creating a clip context ── */
+.chat-messages {
+  /*
+    'overflow-x: clip' prevents horizontal bleed exactly like 'hidden' but
+    does NOT establish a new block-formatting context, so children with
+    negative top offsets are still visible above the scroll container.
+    'overflow-y: auto' is kept from the base stylesheet.
+  */
+  overflow-x: clip !important;
+
+  /*
+    Extra top padding ensures the very first bubble's action bar (top: -18px,
+    height: 30px → needs ~48 px of clearance) is never hidden behind the
+    chat header. Bump from the existing 32px to 52px.
+  */
+  padding-top: 52px !important;
+}
+
+/* ── 3. Guarantee action bar is always above bubbles, never clipped ──────── */
+.chat-bubble-actions {
+  /*
+    Raise z-index above sibling bubbles and the scroll container's
+    stacking context. 30 is enough; reaction-picker-popover is z-index 300.
+  */
+  z-index: 30;
+
+  /*
+    Move the bar a touch further up so it clears the bubble border cleanly.
+    -20px gives 2 px of breathing room over the original -18px.
+  */
+  top: -20px;
+}
+
+/* ── 4. Reaction picker: flip below when bubble is close to top ──────────── */
+/*
+  The .near-top class should be added in JS when the bubble's top offset
+  is within ~80px of the scroll container's top. Example (add to the
+  virtualised row renderer or a ResizeObserver):
+
+    article.classList.toggle(
+      'near-top',
+      article.offsetTop - scrollEl.scrollTop < 80
+    );
+
+  As a CSS-only fallback we also handle the case where the picker would
+  overflow by anchoring it below the action bar instead.
+*/
+.chat-bubble.near-top .reaction-picker-popover {
+  bottom: auto;
+  top: calc(100% + 6px);
+  animation-name: reactionPopDown;
+}
+
+@keyframes reactionPopDown {
+  from { transform: scale(0.7) translateY(-8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);       opacity: 1; }
+}
+
+/* ── 5. Remove double border on the message area ─────────────────────────── */
+/*
+  If you see a double border at the top of .chat-messages-wrap it is because
+  both .chat-main and .chat-messages-wrap have a border or background edge.
+  This rule normalises it — adjust colour/width to match your design.
+*/
+.chat-messages-wrap {
+  /* Prevent a phantom extra border line appearing when overflow is visible */
+  border-top: none;
+}
+
+/* ── 6. Mobile: keep padding sane on small viewports ────────────────────── */
+@media (max-width: 480px) {
+  .chat-messages {
+    padding-top: 44px !important;
+  }
+
+  .chat-bubble-actions {
+    top: -18px;
+  }
+}
+
+/* ── 7. Reduced-motion: no animation override needed (inherits base) ──────── */
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble.near-top .reaction-picker-popover {
+    animation: none !important;
+  }
+}
