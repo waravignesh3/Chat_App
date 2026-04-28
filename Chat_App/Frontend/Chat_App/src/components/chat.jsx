@@ -190,19 +190,19 @@ function Chat({ user, setUser }) {
   const [showEmojiPicker, setShowEmojiPicker]   = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [mediaUploading, setMediaUploading]     = useState(false);
-  // unreadMap: { [senderEmail]: { count, lastText, lastTime } }
-  // Persisted to localStorage so unread badges survive page refreshes.
+  // ── unreadMap persisted to localStorage so badges survive page refresh ──
+  // Shape: { [senderEmail]: { count: number, lastText: string, lastTime: string } }
   const [unreadMap, setUnreadMap] = useState(() => {
     try {
-      const key = `chatapp-unread-${user?.email || "guest"}`;
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : {};
+      const raw = localStorage.getItem(`chatapp-unread||${user?.email}`);
+      return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
     }
   });
-  // flashSet: Set of emails whose card should briefly flash (new-message animation)
-  const [flashSet, setFlashSet] = useState(new Set());
+
+  // flashEmail: the email of the card that should play the arrival flash right now
+  const [flashEmail, setFlashEmail] = useState(null);
   // recentOrder: email[] sorted by last-message timestamp
   const [recentOrder, setRecentOrder]     = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -226,18 +226,16 @@ function Chat({ user, setUser }) {
   const userRef               = useRef(user);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── Persist unreadMap to localStorage whenever it changes ────────────────
+  // ── Write unreadMap to localStorage any time it changes ─────────────────
   useEffect(() => {
-    const key = `chatapp-unread-${user?.email || "guest"}`;
+    const key = `chatapp-unread||${user?.email}`;
     try {
       if (Object.keys(unreadMap).length === 0) {
         localStorage.removeItem(key);
       } else {
         localStorage.setItem(key, JSON.stringify(unreadMap));
       }
-    } catch {
-      // localStorage quota exceeded or unavailable — fail silently
-    }
+    } catch { /* quota exceeded – ignore */ }
   }, [unreadMap, user?.email]);
 
   // ── Socket ────────────────────────────────────────────────────────────────
@@ -291,19 +289,9 @@ function Chat({ user, setUser }) {
               lastTime: incomingMessage.time,
             },
           }));
-          // Trigger a brief flash animation on the card
-          setFlashSet((prev) => {
-            const next = new Set(prev);
-            next.add(senderEmail);
-            return next;
-          });
-          setTimeout(() => {
-            setFlashSet((prev) => {
-              const next = new Set(prev);
-              next.delete(senderEmail);
-              return next;
-            });
-          }, 700);
+          // Trigger arrival flash on the card (auto-clears after 800 ms)
+          setFlashEmail(senderEmail);
+          setTimeout(() => setFlashEmail((cur) => cur === senderEmail ? null : cur), 800);
         }
         // Always push sender to top of list regardless of conversation state
         setRecentOrder((prev) => [
@@ -467,10 +455,7 @@ function Chat({ user, setUser }) {
     try { await signOut(auth); } catch (err) {
       if (import.meta.env.DEV) console.error("Logout error:", err);
     } finally {
-      // Clear persisted unread state for this user
-      try {
-        localStorage.removeItem(`chatapp-unread-${user?.email || "guest"}`);
-      } catch { /* ignore */ }
+      try { localStorage.removeItem(`chatapp-unread||${user?.email}`); } catch { /* ignore */ }
       setSelectedUser(null);
       setMessage("");
       setMessages([]);
@@ -483,22 +468,17 @@ function Chat({ user, setUser }) {
 
   // Clear unread badge when a conversation is opened
   const handleSelectUser = (entry) => {
-    shouldScrollRef.current = true; // jump to bottom when opening a chat
+    shouldScrollRef.current = true;
     setSelectedUser(entry);
-    if (unreadMap[entry.email]) {
-      setUnreadMap((prev) => {
-        const next = { ...prev };
-        delete next[entry.email];
-        return next;
-        // The useEffect above will sync the removal to localStorage automatically
-      });
-    }
-    // Also clear any lingering flash for this email
-    setFlashSet((prev) => {
-      const next = new Set(prev);
-      next.delete(entry.email);
+    // Remove badge and clear from localStorage (the useEffect above syncs it)
+    setUnreadMap((prev) => {
+      if (!prev[entry.email]) return prev;
+      const next = { ...prev };
+      delete next[entry.email];
       return next;
     });
+    // Clear any arrival flash for this card
+    setFlashEmail((cur) => cur === entry.email ? null : cur);
   };
 
   const sendMessage = () => {
@@ -675,7 +655,27 @@ function Chat({ user, setUser }) {
                 const isActive  = activeSelectedUser?.email === entry.email;
                 const unread    = unreadMap[entry.email];
                 const hasUnread = !isActive && unread?.count > 0;
-                const isFlash   = flashSet.has(entry.email);
+                const isFlashing = flashEmail === entry.email;
+
+                // ── Inline styles for unread state ───────────────────────
+                // We use inline styles (not just CSS classes) so the highlight
+                // is guaranteed to win over ANY CSS cascade or specificity fight.
+                const unreadCardStyle = hasUnread ? {
+                  background: "linear-gradient(135deg, rgba(34,211,238,0.16), rgba(110,168,254,0.20), rgba(192,132,252,0.13))",
+                  borderColor: "rgba(110, 168, 254, 0.65)",
+                  boxShadow: "0 0 0 1.5px rgba(34,211,238,0.30), 0 6px 20px rgba(110,168,254,0.18)",
+                } : {};
+
+                // Arrival flash: bright burst that fades — applied for 800 ms
+                const flashStyle = isFlashing ? {
+                  background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(110,168,254,0.36), rgba(192,132,252,0.26))",
+                  borderColor: "rgba(34, 211, 238, 0.85)",
+                  boxShadow: "0 0 0 2px rgba(34,211,238,0.55), 0 8px 28px rgba(110,168,254,0.30)",
+                  transition: "none",
+                } : {};
+
+                const cardStyle = { ...unreadCardStyle, ...flashStyle };
+
                 return (
                   <button
                     key={entry.email}
@@ -684,28 +684,53 @@ function Chat({ user, setUser }) {
                       "chat-user-card",
                       isActive  ? "chat-user-card-active"  : "",
                       hasUnread ? "chat-user-card-unread"  : "",
-                      isFlash   ? "chat-user-card-flash"   : "",
                     ].filter(Boolean).join(" ")}
+                    style={cardStyle}
                     onClick={() => handleSelectUser(entry)}
                   >
                     <div className="chat-avatar-wrap">
                       <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
                       {entry.isOnline && <span className="chat-online-ring" />}
                       {hasUnread && (
-                        <span className="chat-unread-dot" aria-label={`${unread.count} unread messages`}>
+                        <span
+                          className="chat-unread-dot"
+                          aria-label={`${unread.count} unread`}
+                          style={{
+                            /* guaranteed visible badge */
+                            position: "absolute",
+                            top: "-4px",
+                            right: "-4px",
+                            minWidth: "20px",
+                            height: "20px",
+                            borderRadius: "10px",
+                            background: "linear-gradient(135deg,#22d3ee,#6ea8fe)",
+                            color: "#04101e",
+                            fontSize: "11px",
+                            fontWeight: 900,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0 5px",
+                            border: "2px solid #040d1a",
+                            boxShadow: "0 0 10px rgba(34,211,238,0.8)",
+                            zIndex: 5,
+                          }}
+                        >
                           {unread.count > 99 ? "99+" : unread.count}
                         </span>
                       )}
                     </div>
                     <span className="chat-user-copy">
-                      <strong>{entry.name || entry.email}</strong>
+                      <strong style={hasUnread ? { color: "#ffffff", fontWeight: 700 } : {}}>
+                        {entry.name || entry.email}
+                      </strong>
                       {hasUnread
-                        ? <span className="chat-unread-preview">{unread.lastText}</span>
+                        ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
                         : <span>{entry.email}</span>
                       }
                       <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
                         {hasUnread
-                          ? <span className="chat-unread-time">{unread.lastTime}</span>
+                          ? <span className="chat-unread-time" style={{ color: "#22d3ee", fontWeight: 700 }}>{unread.lastTime}</span>
                           : entry.isOnline ? "Online" : `Last seen: ${entry.lastSeen || "Offline"}`
                         }
                       </span>
