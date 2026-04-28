@@ -10,7 +10,7 @@ import "../chat.profile.css";
 import "../chat.media.css";
 import "../chat.unread.css";
 import "../chat.bubble-fix.css";   // after App.enhanced.css
-import "../chat.reactions.css"; // after chat.bubble-fix.css
+import "../chat.reactions.fix.css"; // after chat.bubble-fix.css
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
