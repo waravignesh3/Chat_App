@@ -31,28 +31,34 @@
 ═══════════════════════════════════════════════════════════════════ */
 .chat-avatar-wrap {
   position: relative;
-  width: 54px;
-  height: 54px;
+  /* Match the Avatar component's rendered size (size=44) exactly */
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border-radius: 50%;
 }
 .chat-avatar-wrap .chat-avatar {
-  width: 100%;
-  height: 100%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 .chat-online-ring {
   position: absolute;
-  /* Wraps the full avatar — inset -5px gives a 3px border + 2px visual gap */
-  inset: -5px;
-  width: calc(100% + 10px);
-  height: calc(100% + 10px);
+  /* inset: 0 makes the ring sit exactly on the avatar edge,
+     then a negative margin via outline/box-shadow creates the glowing border.
+     We use inset: -3px so the border appears just outside the avatar. */
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
   border-radius: 50%;
   background: transparent;
-  /* Sky-blue glowing border that acts as the avatar's online border */
-  border: 3px solid #38bdf8;
+  /* Sky-blue glowing border — this IS the avatar border for online users */
+  border: 2.5px solid #38bdf8;
   box-shadow:
-    0 0 8px  3px rgba(56, 189, 248, 0.60),
-    0 0 18px 4px rgba(56, 189, 248, 0.28);
+    0 0 6px  2px rgba(56, 189, 248, 0.70),
+    0 0 14px 3px rgba(56, 189, 248, 0.35);
   animation: onlineRingPulse 2.4s ease-in-out infinite;
   pointer-events: none;
 }
