@@ -514,6 +514,7 @@ io.on("connection", (socket) => {
         mediaUrl:  message.mediaUrl  || null,
         mediaType: message.mediaType || null,
         filename:  message.filename  || null,
+        readBy:    [message.sender?.toLowerCase().trim()].filter(Boolean),
         time:      message.time,
         replyTo:   message.replyTo
           ? {
@@ -557,6 +558,23 @@ io.on("connection", (socket) => {
   // ── Read receipts ──────────────────────────────────────────────────────────
   socket.on("read_receipt", ({ to, from }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    const senderEmail = to?.toLowerCase().trim();
+    const readerEmail = from?.toLowerCase().trim();
+
+    if (senderEmail && readerEmail) {
+      Message.updateMany(
+        {
+          sender: senderEmail,
+          receiver: readerEmail,
+          deletedFor: { $ne: readerEmail },
+          readBy: { $ne: readerEmail },
+        },
+        { $addToSet: { readBy: readerEmail } }
+      ).catch((err) => {
+        console.error("Read receipt persist error:", err.message);
+      });
+    }
+
     if (targetSocketId) io.to(targetSocketId).emit("read_receipt", { from });
   });
 

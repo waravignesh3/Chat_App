@@ -321,12 +321,7 @@ function Chat({ user, setUser }) {
   // read receipts: Set of msgKeys seen by remote
   const [readBy, setReadBy] = useState(new Set());
   const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting | online | offline
-  const [unreadMap, setUnreadMap] = useState(() => {
-    try {
-      const raw = localStorage.getItem(`chatapp-unread||${user?.email}`);
-      return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
-  });
+  const [unreadMap, setUnreadMap] = useState({});
   const [flashEmail, setFlashEmail] = useState(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -349,14 +344,6 @@ function Chat({ user, setUser }) {
   useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Persist unreadMap ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const key = `chatapp-unread||${user?.email}`;
-    try {
-      if (Object.keys(unreadMap).length === 0) localStorage.removeItem(key);
-      else localStorage.setItem(key, JSON.stringify(unreadMap));
-    } catch { /* ignore */ }
-  }, [unreadMap, user?.email]);
-
   useEffect(() => {
     if (!composerNotice.text) return undefined;
     const timer = window.setTimeout(() => {
@@ -415,12 +402,13 @@ function Chat({ user, setUser }) {
         if (isViewingConversation) {
           socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
         } else {
+          const incomingTime = formatMsgTime(incomingMessage.createdAt || incomingMessage.time);
           setUnreadMap((prev) => ({
             ...prev,
             [senderEmail]: {
               count: (prev[senderEmail]?.count || 0) + 1,
               lastText: incomingMessage.text || (incomingMessage.mediaUrl ? "📎 Media" : ""),
-              lastTime: incomingMessage.time,
+              lastTime: incomingTime,
             },
           }));
           setFlashEmail(senderEmail);
@@ -519,6 +507,21 @@ function Chat({ user, setUser }) {
         if (!cancelled && Array.isArray(data)) {
           const normalizedMessages = data.map((entry) => normalizeMessage(entry));
           setMessages(normalizedMessages);
+
+          const nextUnreadMap = {};
+          for (const entry of normalizedMessages) {
+            if (entry.receiver !== user.email) continue;
+            const readByList = Array.isArray(entry.readBy) ? entry.readBy : [];
+            if (readByList.includes(user.email)) continue;
+
+            nextUnreadMap[entry.sender] = {
+              count: (nextUnreadMap[entry.sender]?.count || 0) + 1,
+              lastText: entry.text || (entry.mediaUrl ? "📎 Media" : ""),
+              lastTime: formatMsgTime(entry.createdAt || entry.time),
+            };
+          }
+
+          setUnreadMap(nextUnreadMap);
         }
       } catch (_err) {
         if (import.meta.env.DEV) console.error("Message history fetch error:", _err);
@@ -600,6 +603,18 @@ function Chat({ user, setUser }) {
   useEffect(() => {
     if (selectedUser?.email && socketRef.current) {
       socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
+      setMessages((prev) =>
+        prev.map((entry) =>
+          entry.sender === selectedUser.email && entry.receiver === user?.email
+            ? {
+                ...entry,
+                readBy: Array.isArray(entry.readBy) && entry.readBy.includes(user?.email)
+                  ? entry.readBy
+                  : [...(Array.isArray(entry.readBy) ? entry.readBy : []), user?.email].filter(Boolean),
+              }
+            : entry
+        )
+      );
     }
   }, [selectedUser?.email, user?.email]);
 
@@ -657,12 +672,16 @@ function Chat({ user, setUser }) {
     });
 
     return [...base].sort((a, b) => {
+      const aHasUnread = (unreadMap[a.email]?.count || 0) > 0;
+      const bHasUnread = (unreadMap[b.email]?.count || 0) > 0;
+      if (aHasUnread !== bHasUnread) return aHasUnread ? -1 : 1;
+
       const at = latestMessageTimeByEmail.get(a.email) || 0;
       const bt = latestMessageTimeByEmail.get(b.email) || 0;
       if (at !== bt) return bt - at;
       return (a.name || a.email).localeCompare(b.name || b.email);
     });
-  }, [messages, search, user?.email, users]);
+  }, [messages, search, unreadMap, user?.email, users]);
 
   const onlineUsersCount = useMemo(
     () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
@@ -691,7 +710,6 @@ function Chat({ user, setUser }) {
   const handleLogout = async () => {
     try { await signOut(auth); } catch { /* ignore */ }
     finally {
-      try { localStorage.removeItem(`chatapp-unread||${user?.email}`); } catch { /* ignore */ }
       setSelectedUser(null);
       setMessage("");
       setMessages([]);

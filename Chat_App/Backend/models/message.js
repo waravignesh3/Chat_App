@@ -31,6 +31,10 @@ const messageSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    readBy: {
+      type: [String],
+      default: [],
+    },
     time: {
       type: String,
       required: true,
@@ -89,5 +93,6 @@ const messageSchema = new mongoose.Schema(
 messageSchema.index({ sender: 1, receiver: 1 });
 messageSchema.index({ receiver: 1, sender: 1 });
 messageSchema.index({ isPinned: 1 });
+messageSchema.index({ receiver: 1, createdAt: -1 });
 
 export default mongoose.model("Message", messageSchema);
