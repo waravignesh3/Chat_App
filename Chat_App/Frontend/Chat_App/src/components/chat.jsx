@@ -319,7 +319,7 @@ function Chat({ user, setUser }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   // ── Load users ────────────────────────────────────────────────────────────
   useEffect(() => {
