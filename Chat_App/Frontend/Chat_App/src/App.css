@@ -997,70 +997,73 @@ button {
   flex-shrink: 0;
 }
 
+/* ── Unread indicator dot ──────────────────────────────────────────────────── */
 .chat-unread-dot {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
+  bottom: 1px;
+  right: 1px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22d3ee, #6ea8fe);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 800;
+  background: linear-gradient(135deg, #22d3ee 0%, #6ea8fe 100%);
+  color: #04101e;
+  font-size: 0.65rem;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 12px rgba(34, 211, 238, 0.7);
-  animation: unreadDotPulse 1.6s ease-in-out infinite;
-  z-index: 2;
+  border: 2px solid #040d1a;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.8), 0 0 20px rgba(110, 168, 254, 0.4);
+  z-index: 3;
+  animation: unreadDotPop 1.8s ease-in-out infinite;
 }
 
-@keyframes unreadDotPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 8px rgba(34, 211, 238, 0.5);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 2px rgba(10, 21, 39, 0.9), 0 0 16px rgba(110, 168, 254, 0.8);
-  }
+@keyframes unreadDotPop {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 8px  rgba(34,211,238,0.7), 0 0 16px rgba(110,168,254,0.35); }
+  50%       { transform: scale(1.2); box-shadow: 0 0 14px rgba(34,211,238,1.0), 0 0 28px rgba(110,168,254,0.6);  }
 }
 
+/* ── Unread user card ──────────────────────────────────────────────────────── */
+/* Uses outline instead of box-shadow so it's never blocked by !important wars */
 .chat-user-card-unread {
-  border-color: rgba(110, 168, 254, 0.6) !important;
   background: linear-gradient(
     135deg,
-    rgba(34, 211, 238, 0.10),
-    rgba(110, 168, 254, 0.13),
-    rgba(192, 132, 252, 0.09)
+    rgba(34,  211, 238, 0.12),
+    rgba(110, 168, 254, 0.15),
+    rgba(192, 132, 252, 0.10)
   ) !important;
-  box-shadow:
-    0 0 0 1px rgba(110, 168, 254, 0.25),
-    0 0 18px rgba(110, 168, 254, 0.18),
-    0 8px 24px rgba(2, 10, 26, 0.22) !important;
-  animation: unreadCardPulse 2.4s ease-in-out infinite !important;
+  border-color: rgba(110, 168, 254, 0.55) !important;
+  outline: 1.5px solid rgba(34, 211, 238, 0.35);
+  outline-offset: -1px;
+  animation: unreadCardBreath 2s ease-in-out infinite;
+  transform: translateY(-1px);
 }
 
-@keyframes unreadCardPulse {
+.chat-user-card-unread:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(34,  211, 238, 0.18),
+    rgba(110, 168, 254, 0.22),
+    rgba(192, 132, 252, 0.14)
+  ) !important;
+}
+
+@keyframes unreadCardBreath {
   0%, 100% {
-    box-shadow:
-      0 0 0 1px rgba(110, 168, 254, 0.25),
-      0 0 14px rgba(110, 168, 254, 0.14),
-      0 8px 24px rgba(2, 10, 26, 0.22);
-    border-color: rgba(110, 168, 254, 0.45);
+    outline-color: rgba(34,  211, 238, 0.30);
+    border-color:  rgba(110, 168, 254, 0.45) !important;
+    box-shadow: 0 0 12px rgba(110, 168, 254, 0.12), 0 6px 18px rgba(2,10,26,0.20);
   }
   50% {
-    box-shadow:
-      0 0 0 2px rgba(110, 168, 254, 0.35),
-      0 0 28px rgba(110, 168, 254, 0.28),
-      0 10px 30px rgba(34, 211, 238, 0.14);
-    border-color: rgba(34, 211, 238, 0.65);
+    outline-color: rgba(34,  211, 238, 0.70);
+    border-color:  rgba(34,  211, 238, 0.65) !important;
+    box-shadow: 0 0 22px rgba(34,  211, 238, 0.22), 0 8px 24px rgba(2,10,26,0.28);
   }
 }
 
+/* ── Unread message preview text ────────────────────────────────────────────── */
 .chat-unread-preview {
-  color: #dceeff !important;        /* bright blue-white, very readable on dark */
+  color: #e0eeff;
   font-size: 0.84rem !important;
   font-weight: 500;
   white-space: nowrap;
@@ -1068,8 +1071,9 @@ button {
   text-overflow: ellipsis;
 }
 
+/* ── Unread time stamp ────────────────────────────────────────────────────── */
 .chat-unread-time {
-  color: #22d3ee !important;        /* --auth-accent cyan — matches dot gradient */
+  color: #22d3ee;
   font-size: 0.78rem;
   font-weight: 700;
 }

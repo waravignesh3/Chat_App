@@ -215,16 +215,24 @@ function Chat({ user, setUser }) {
   useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Socket ────────────────────────────────────────────────────────────────
-  // All listeners attached here immediately after socket creation —
-  // prevents race conditions from separate useEffect hooks.
+  // Socket is created once. All event listeners are attached synchronously
+  // to the local `socket` variable — never via socketRef.current to avoid
+  // any race or Strict Mode double-invoke issues.
   useEffect(() => {
-    if (socketRef.current) return;
-    const socket = io(SERVER_URL, { transports: ["websocket"], withCredentials: true });
+    const socket = io(SERVER_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+      autoConnect: true,
+    });
     socketRef.current = socket;
 
-    socket.on("connect", () => {
+    const register = () => {
       if (userRef.current?.email) socket.emit("register", userRef.current.email);
-    });
+    };
+
+    socket.on("connect", register);
+    // Re-register immediately if already connected (reconnect scenario)
+    if (socket.connected) register();
 
     socket.on("users_update", (data) => {
       setUsers(Array.isArray(data) ? data : []);
@@ -258,6 +266,7 @@ function Chat({ user, setUser }) {
             },
           }));
         }
+        // Always push sender to top of list regardless of conversation state
         setRecentOrder((prev) => [
           senderEmail,
           ...prev.filter((e) => e !== senderEmail),
@@ -271,13 +280,7 @@ function Chat({ user, setUser }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []); // intentionally empty — socket + all listeners created once on mount
-
-  useEffect(() => {
-    if (user?.email && socketRef.current?.connected) {
-      socketRef.current.emit("register", user.email);
-    }
-  }, [user?.email]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load users ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -310,7 +313,7 @@ function Chat({ user, setUser }) {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Load message history ─────────────────────────────────────────
+  // ── Load message history + seed recentOrder ────────────────────────────────
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
@@ -320,6 +323,15 @@ function Chat({ user, setUser }) {
         const data = await res.json();
         if (!cancelled && res.ok && Array.isArray(data)) {
           setMessages(data);
+          // Seed recentOrder so existing conversations are sorted by last message time
+          const seen = new Set();
+          const order = [];
+          for (let i = data.length - 1; i >= 0; i--) {
+            const m = data[i];
+            const other = m.sender === user.email ? m.receiver : m.sender;
+            if (!seen.has(other)) { seen.add(other); order.unshift(other); }
+          }
+          setRecentOrder(order);
         }
       } catch (err) {
         if (import.meta.env.DEV) console.error("Message history fetch error:", err);
