@@ -1,2 +1,1 @@
-#This is our first project
-founder Madhan and Vigneshwara
+A real-time chat application that enables users to communicate instantly with a smooth and responsive interface. The app supports secure authentication, live messaging, and a modern UI to deliver a seamless chatting experience.
