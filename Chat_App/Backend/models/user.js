@@ -31,6 +31,17 @@ const userSchema = new mongoose.Schema(
       enum: ["local", "google"],
       default: "local",
     },
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: "Available for messages",
+      trim: true,
+      maxlength: 160,
+    },
     isOnline: {
       type: Boolean,
       default: false,
@@ -44,6 +55,52 @@ const userSchema = new mongoose.Schema(
       mediaUrl: { type: String, default: "" },
       mediaType: { type: String, default: "" },
       createdAt: { type: Date, default: null },
+    },
+    privacy: {
+      lastSeen: {
+        type: String,
+        enum: ["everyone", "contacts", "nobody"],
+        default: "everyone",
+      },
+      profilePhoto: {
+        type: String,
+        enum: ["everyone", "contacts", "nobody"],
+        default: "everyone",
+      },
+      readReceipts: {
+        type: Boolean,
+        default: true,
+      },
+    },
+    notifications: {
+      messagePreview: {
+        type: Boolean,
+        default: true,
+      },
+      sound: {
+        type: Boolean,
+        default: true,
+      },
+      vibrate: {
+        type: Boolean,
+        default: true,
+      },
+      desktopAlerts: {
+        type: Boolean,
+        default: true,
+      },
+    },
+    pinnedChats: {
+      type: [String],
+      default: [],
+    },
+    archivedChats: {
+      type: [String],
+      default: [],
+    },
+    blockedUsers: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true }

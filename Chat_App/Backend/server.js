@@ -119,7 +119,7 @@ const waitForDatabaseConnection = (timeoutMs = 12000) =>
   });
 
 const buildUsersPayload = async () => {
-  const users = await User.find({}, "name email photo lastSeen isOnline status").lean();
+  const users = await User.find({}, "name email photo bio lastSeen isOnline status privacy notifications pinnedChats archivedChats blockedUsers").lean();
   const now = new Date();
   const oneDayMs = 24 * 60 * 60 * 1000;
 
@@ -183,8 +183,15 @@ const handleGoogleLogin = async (req, res) => {
       user: {
         _id: user._id, name: user.name, email: user.email, photo: user.photo,
         provider: user.provider,
+        phone: user.phone,
+        bio: user.bio,
         isOnline: Boolean(onlineUsers[user.email]),
         lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+        privacy: user.privacy,
+        notifications: user.notifications,
+        pinnedChats: user.pinnedChats,
+        archivedChats: user.archivedChats,
+        blockedUsers: user.blockedUsers,
       },
     });
   } catch (error) {
@@ -206,6 +213,107 @@ app.get("/users", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try { return res.json(await buildUsersPayload()); }
   catch (err) { return res.status(500).json({ error: "Server error" }); }
+});
+
+app.get("/api/profile/:email", async (req, res) => {
+  try {
+    const email = req.params.email?.toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const user = await User.findOne({ email }).lean();
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    return res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        photo: user.photo,
+        provider: user.provider,
+        phone: user.phone || "",
+        bio: user.bio || "",
+        status: user.status || {},
+        privacy: user.privacy || {},
+        notifications: user.notifications || {},
+        pinnedChats: user.pinnedChats || [],
+        archivedChats: user.archivedChats || [],
+        blockedUsers: user.blockedUsers || [],
+        isOnline: Boolean(onlineUsers[user.email]),
+        lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+      },
+    });
+  } catch (err) {
+    console.error("Profile fetch error:", err);
+    return res.status(500).json({ error: err.message || "Unable to fetch profile" });
+  }
+});
+
+app.put("/api/profile/preferences", async (req, res) => {
+  try {
+    const { email, name, phone, bio, privacy, notifications } = req.body || {};
+    const normalizedEmail = email?.toLowerCase().trim();
+    if (!normalizedEmail) return res.status(400).json({ error: "Email is required" });
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const update = {
+      ...(typeof name === "string" ? { name: name.trim() || "User" } : {}),
+      ...(typeof phone === "string" ? { phone: phone.trim() } : {}),
+      ...(typeof bio === "string" ? { bio: bio.trim().slice(0, 160) } : {}),
+    };
+
+    if (privacy && typeof privacy === "object") {
+      update.privacy = {
+        lastSeen: privacy.lastSeen || "everyone",
+        profilePhoto: privacy.profilePhoto || "everyone",
+        readReceipts: privacy.readReceipts !== false,
+      };
+    }
+
+    if (notifications && typeof notifications === "object") {
+      update.notifications = {
+        messagePreview: notifications.messagePreview !== false,
+        sound: notifications.sound !== false,
+        vibrate: notifications.vibrate !== false,
+        desktopAlerts: notifications.desktopAlerts !== false,
+      };
+    }
+
+    const user = await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      { $set: update },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    await broadcastUsers();
+
+    return res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        photo: user.photo,
+        provider: user.provider,
+        phone: user.phone || "",
+        bio: user.bio || "",
+        privacy: user.privacy || {},
+        notifications: user.notifications || {},
+        pinnedChats: user.pinnedChats || [],
+        archivedChats: user.archivedChats || [],
+        blockedUsers: user.blockedUsers || [],
+        status: user.status || {},
+        isOnline: Boolean(onlineUsers[user.email]),
+        lastSeen: onlineUsers[user.email] ? "Online" : user.lastSeen || "Offline",
+      },
+    });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    return res.status(500).json({ error: err.message || "Unable to update profile" });
+  }
 });
 
 // ─── Health ───────────────────────────────────────────────────────────────────

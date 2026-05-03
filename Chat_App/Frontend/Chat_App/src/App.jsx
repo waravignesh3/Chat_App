@@ -17,8 +17,24 @@ const buildFirebaseFallbackUser = (firebaseUser) => ({
   email: firebaseUser.email,
   photo: firebaseUser.photoURL,
   provider: "google",
+  phone: "",
+  bio: "Available for messages",
   isOnline: true,
   lastSeen: "Online",
+  privacy: {
+    lastSeen: "everyone",
+    profilePhoto: "everyone",
+    readReceipts: true,
+  },
+  notifications: {
+    messagePreview: true,
+    sound: true,
+    vibrate: true,
+    desktopAlerts: true,
+  },
+  pinnedChats: [],
+  archivedChats: [],
+  blockedUsers: [],
 });
 
 const syncGoogleUser = (firebaseUser) =>

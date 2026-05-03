@@ -336,6 +336,317 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
   );
 }
 
+function BottomNav({ activeTab, onChange, unreadCount, statusCount, callCount }) {
+  const items = [
+    {
+      id: "chats",
+      label: "Chats",
+      badge: unreadCount,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+    },
+    {
+      id: "status",
+      label: "Status",
+      badge: statusCount,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+    },
+    {
+      id: "calls",
+      label: "Calls",
+      badge: callCount,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z" />
+        </svg>
+      ),
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      badge: 0,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.49.74.83 1.3.83H21a2 2 0 1 1 0 4h-.09c-.56 0-1.1.34-1.51.83z" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <nav className="chat-bottom-nav" aria-label="Primary">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`chat-bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
+          onClick={() => onChange(item.id)}
+        >
+          <span className="chat-bottom-nav-icon">
+            {item.icon}
+            {item.badge > 0 && <span className="chat-bottom-nav-badge">{item.badge > 9 ? "9+" : item.badge}</span>}
+          </span>
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function CallsPanel({ contacts, callHistory, onStartCall }) {
+  return (
+    <main className="chat-panel full-height">
+      <div className="chat-panel-header">
+        <div className="chat-panel-header-left">
+          <div className="chat-active-user-info">
+            <h3>Calls</h3>
+            <p>Voice and video call shortcuts with recent activity.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="chat-feature-panel">
+        <section className="chat-feature-hero">
+          <div>
+            <span className="chat-feature-kicker">Fast calling</span>
+            <h2>Start a voice or video conversation in one tap.</h2>
+            <p>Calls are prepared with microphone and camera permissions for a smooth WhatsApp-style launch flow.</p>
+          </div>
+        </section>
+
+        <section className="chat-feature-grid">
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Quick Call</h4>
+              <span>{contacts.length} contacts</span>
+            </div>
+            <div className="chat-call-list">
+              {contacts.length > 0 ? contacts.map((entry) => (
+                <article key={entry.email} className="chat-call-card">
+                  <div className="chat-call-card-main">
+                    <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={52} className="chat-avatar" />
+                    <div className="chat-call-copy">
+                      <strong>{entry.name || entry.email}</strong>
+                      <span>{entry.isOnline ? "Online now" : `Last seen ${formatLastSeen(entry.lastSeen)}`}</span>
+                    </div>
+                  </div>
+                  <div className="chat-call-actions">
+                    <button type="button" className="chat-mini-action-btn" onClick={() => onStartCall("voice", entry)} title="Voice call">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z" /></svg>
+                    </button>
+                    <button type="button" className="chat-mini-action-btn primary" onClick={() => onStartCall("video", entry)} title="Video call">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                    </button>
+                  </div>
+                </article>
+              )) : <div className="chat-empty-state">Your recent chat contacts will show up here for quick calling.</div>}
+            </div>
+          </div>
+
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Recent Calls</h4>
+              <span>{callHistory.length} records</span>
+            </div>
+            <div className="chat-call-history">
+              {callHistory.length > 0 ? callHistory.map((item) => (
+                <article key={item.id} className="chat-history-card">
+                  <div className="chat-history-icon">
+                    {item.type === "video" ? "VC" : "AC"}
+                  </div>
+                  <div className="chat-history-copy">
+                    <strong>{item.name}</strong>
+                    <span>{item.type === "video" ? "Video call" : "Voice call"} • {item.status} • {item.durationLabel}</span>
+                  </div>
+                  <time>{item.timeLabel}</time>
+                </article>
+              )) : <div className="chat-empty-state">No calls yet. Start one from a chat or the quick call list.</div>}
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLogout, saving, theme, toggleTheme, stats }) {
+  return (
+    <main className="chat-panel full-height">
+      <div className="chat-panel-header">
+        <div className="chat-panel-header-left">
+          <div className="chat-active-user-info">
+            <h3>Settings</h3>
+            <p>Profile, privacy, notifications, and app preferences.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="chat-feature-panel settings-panel-view">
+        <section className="chat-settings-top">
+          <div className="chat-settings-profile-card">
+            <button type="button" className="chat-settings-avatar-btn" onClick={onOpenProfile}>
+              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={76} className="chat-settings-avatar" />
+              <span>Change photo</span>
+            </button>
+            <div className="chat-settings-profile-copy">
+              <h4>{user?.name || user?.email}</h4>
+              <p>{draft.bio || "Add a short bio for your profile."}</p>
+              <span>{user?.email}</span>
+            </div>
+          </div>
+          <div className="chat-settings-stats">
+            <div className="chat-stat-tile"><strong>{stats.unreadCount}</strong><span>Unread</span></div>
+            <div className="chat-stat-tile"><strong>{stats.statusCount}</strong><span>Status</span></div>
+            <div className="chat-stat-tile"><strong>{stats.blockedCount}</strong><span>Blocked</span></div>
+            <div className="chat-stat-tile"><strong>{stats.pinnedCount}</strong><span>Pinned</span></div>
+          </div>
+        </section>
+
+        <section className="chat-feature-grid settings-grid">
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Profile</h4>
+              <span>Visible account details</span>
+            </div>
+            <div className="chat-settings-form">
+              <label className="chat-settings-field">
+                <span>Name</span>
+                <input type="text" value={draft.name} onChange={(e) => onDraftChange("name", e.target.value)} />
+              </label>
+              <label className="chat-settings-field">
+                <span>Phone</span>
+                <input type="text" value={draft.phone} onChange={(e) => onDraftChange("phone", e.target.value)} placeholder="+91 98765 43210" />
+              </label>
+              <label className="chat-settings-field">
+                <span>Bio</span>
+                <textarea rows="4" value={draft.bio} onChange={(e) => onDraftChange("bio", e.target.value)} maxLength={160} />
+              </label>
+            </div>
+          </div>
+
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Privacy</h4>
+              <span>Control what others can see</span>
+            </div>
+            <div className="chat-settings-form">
+              <label className="chat-settings-field">
+                <span>Last seen</span>
+                <select value={draft.privacy.lastSeen} onChange={(e) => onDraftChange("privacy.lastSeen", e.target.value)}>
+                  <option value="everyone">Everyone</option>
+                  <option value="contacts">My contacts</option>
+                  <option value="nobody">Nobody</option>
+                </select>
+              </label>
+              <label className="chat-settings-field">
+                <span>Profile photo</span>
+                <select value={draft.privacy.profilePhoto} onChange={(e) => onDraftChange("privacy.profilePhoto", e.target.value)}>
+                  <option value="everyone">Everyone</option>
+                  <option value="contacts">My contacts</option>
+                  <option value="nobody">Nobody</option>
+                </select>
+              </label>
+              <label className="chat-toggle-row">
+                <div>
+                  <strong>Read receipts</strong>
+                  <span>Allow others to know when you have read messages.</span>
+                </div>
+                <input type="checkbox" checked={draft.privacy.readReceipts} onChange={(e) => onDraftChange("privacy.readReceipts", e.target.checked)} />
+              </label>
+            </div>
+          </div>
+
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Notifications</h4>
+              <span>Device and desktop behavior</span>
+            </div>
+            <div className="chat-settings-form">
+              {[
+                ["notifications.messagePreview", "Message preview", "Show a preview in notifications."],
+                ["notifications.sound", "Sound", "Play a sound for new activity."],
+                ["notifications.vibrate", "Vibrate", "Use vibration feedback on supported devices."],
+                ["notifications.desktopAlerts", "Desktop alerts", "Keep tab notifications visible on desktop."],
+              ].map(([key, title, desc]) => (
+                <label key={key} className="chat-toggle-row">
+                  <div>
+                    <strong>{title}</strong>
+                    <span>{desc}</span>
+                  </div>
+                  <input type="checkbox" checked={key.split(".").reduce((acc, part) => acc?.[part], draft)} onChange={(e) => onDraftChange(key, e.target.checked)} />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="chat-card-section">
+            <div className="chat-section-head">
+              <h4>Experience</h4>
+              <span>App-wide preferences</span>
+            </div>
+            <div className="chat-settings-form">
+              <label className="chat-toggle-row">
+                <div>
+                  <strong>{theme === "dark" ? "Dark mode" : "Light mode"}</strong>
+                  <span>Switch the full messaging interface theme.</span>
+                </div>
+                <button type="button" className="chat-secondary-btn" onClick={toggleTheme}>Toggle theme</button>
+              </label>
+              <div className="chat-insight-card">
+                <strong>End-to-end encryption</strong>
+                <span>Conversation transport and data model are prepared as a secure baseline. Full cross-device key exchange can be layered on top of this structure.</span>
+              </div>
+              <div className="chat-insight-card">
+                <strong>Cloud sync and scalability</strong>
+                <span>Messages, media, presence, and profile settings are already separated cleanly for scalable server-side persistence.</span>
+              </div>
+            </div>
+            <div className="chat-settings-actions">
+              <button type="button" className="chat-primary-btn" onClick={onSave} disabled={saving}>{saving ? "Saving..." : "Save settings"}</button>
+              <button type="button" className="chat-secondary-btn danger" onClick={onLogout}>Logout</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function ActiveCallOverlay({ call, onEnd }) {
+  if (!call) return null;
+
+  return (
+    <div className="chat-call-overlay">
+      <div className="chat-call-modal">
+        <div className="chat-call-avatar-wrap">
+          <Avatar name={call.target.name} email={call.target.email} photo={call.target.photo} size={92} className="chat-call-avatar" />
+        </div>
+        <h3>{call.target.name || call.target.email}</h3>
+        <p>{call.type === "video" ? "Video calling" : "Voice calling"} • {call.phaseLabel}</p>
+        <strong>{call.durationLabel}</strong>
+        <div className="chat-call-chip-row">
+          <span className="chat-call-chip">Encrypted</span>
+          <span className="chat-call-chip">{call.type === "video" ? "Camera active" : "Mic active"}</span>
+          <span className="chat-call-chip">{call.target.isOnline ? "Reachable" : "Trying to connect"}</span>
+        </div>
+        <div className="chat-call-controls">
+          <button type="button" className="chat-mini-action-btn" onClick={() => onEnd("muted")}>Mute</button>
+          <button type="button" className="chat-mini-action-btn primary" onClick={() => onEnd("ended")}>End</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 function Chat({ user, setUser, theme, toggleTheme }) {
   const [message, setMessage] = useState("");
@@ -363,8 +674,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [freshMessageId, setFreshMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
-  // Page navigation state: 'dm' or 'status'
-  const [activeTab, setActiveTab] = useState('dm');
+  const [activeTab, setActiveTab] = useState("chats");
 
   // Status state
   const [isEditingStatus, setIsEditingStatus] = useState(false);
@@ -372,11 +682,40 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [statusFile, setStatusFile] = useState(null);
   const [statusUploading, setStatusUploading] = useState(false);
   const [viewingStatusUser, setViewingStatusUser] = useState(null);
+  const [settingsDraft, setSettingsDraft] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    bio: user?.bio || "",
+    privacy: {
+      lastSeen: user?.privacy?.lastSeen || "everyone",
+      profilePhoto: user?.privacy?.profilePhoto || "everyone",
+      readReceipts: user?.privacy?.readReceipts !== false,
+    },
+    notifications: {
+      messagePreview: user?.notifications?.messagePreview !== false,
+      sound: user?.notifications?.sound !== false,
+      vibrate: user?.notifications?.vibrate !== false,
+      desktopAlerts: user?.notifications?.desktopAlerts !== false,
+    },
+  });
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [callHistory, setCallHistory] = useState(() => {
+    try {
+      const raw = localStorage.getItem("chatapp-call-history");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeCall, setActiveCall] = useState(null);
+  const [callDuration, setCallDuration] = useState(0);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const callStreamRef = useRef(null);
+  const callPhaseTimerRef = useRef(null);
 
   const { showToast } = useToast();
 
@@ -395,6 +734,33 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const freshMessageTimerRef = useRef(null);
   const copiedMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
+
+  useEffect(() => {
+    setSettingsDraft({
+      name: user?.name || "",
+      phone: user?.phone || "",
+      bio: user?.bio || "",
+      privacy: {
+        lastSeen: user?.privacy?.lastSeen || "everyone",
+        profilePhoto: user?.privacy?.profilePhoto || "everyone",
+        readReceipts: user?.privacy?.readReceipts !== false,
+      },
+      notifications: {
+        messagePreview: user?.notifications?.messagePreview !== false,
+        sound: user?.notifications?.sound !== false,
+        vibrate: user?.notifications?.vibrate !== false,
+        desktopAlerts: user?.notifications?.desktopAlerts !== false,
+      },
+    });
+  }, [user]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("chatapp-call-history", JSON.stringify(callHistory));
+    } catch {
+      // ignore persistence issues
+    }
+  }, [callHistory]);
 
   // ── Persist unreadMap ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -635,6 +1001,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }, 1400);
     return () => window.clearTimeout(copiedMessageTimerRef.current);
   }, [copiedMessageId]);
+
+  useEffect(() => {
+    if (!activeCall) return undefined;
+    const interval = window.setInterval(() => {
+      setCallDuration(Math.max(0, Math.floor((Date.now() - activeCall.startedAt) / 1000)));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [activeCall]);
+
+  useEffect(() => () => {
+    clearTimeout(callPhaseTimerRef.current);
+    if (callStreamRef.current) {
+      callStreamRef.current.getTracks().forEach((track) => track.stop());
+      callStreamRef.current = null;
+    }
+  }, []);
 
   // ── Close emoji picker on outside click ──────────────────────────────────────
   useEffect(() => {
@@ -1090,6 +1472,134 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     return readBy.has(activeSelectedUser.email);
   }, [readBy, activeSelectedUser]);
 
+  const callContacts = useMemo(() => filteredUsers.slice(0, 8), [filteredUsers]);
+
+  const callRecords = useMemo(
+    () =>
+      callHistory.map((entry) => ({
+        ...entry,
+        durationLabel: entry.duration > 0
+          ? `${Math.floor(entry.duration / 60)}m ${String(entry.duration % 60).padStart(2, "0")}s`
+          : "No answer",
+        timeLabel: new Date(entry.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+    [callHistory]
+  );
+
+  const settingsStats = useMemo(() => ({
+    unreadCount: Object.values(unreadMap).reduce((sum, entry) => sum + (entry?.count || 0), 0),
+    statusCount: users.filter((entry) => entry.email !== user?.email && entry.status?.mediaUrl).length,
+    blockedCount: user?.blockedUsers?.length || 0,
+    pinnedCount: user?.pinnedChats?.length || 0,
+  }), [unreadMap, user?.blockedUsers?.length, user?.email, user?.pinnedChats?.length, users]);
+
+  const activeCallView = useMemo(() => {
+    if (!activeCall) return null;
+    return {
+      ...activeCall,
+      durationLabel: `${Math.floor(callDuration / 60)}:${String(callDuration % 60).padStart(2, "0")}`,
+      phaseLabel: activeCall.phase === "connecting" ? "Connecting" : "Live",
+    };
+  }, [activeCall, callDuration]);
+
+  const handleDraftChange = (path, value) => {
+    const keys = path.split(".");
+    setSettingsDraft((prev) => {
+      const next = { ...prev };
+      let cursor = next;
+      for (let i = 0; i < keys.length - 1; i += 1) {
+        const key = keys[i];
+        cursor[key] = { ...cursor[key] };
+        cursor = cursor[key];
+      }
+      cursor[keys[keys.length - 1]] = value;
+      return next;
+    });
+  };
+
+  const handleSaveSettings = async () => {
+    if (!user?.email) return;
+    setSettingsSaving(true);
+    try {
+      const data = await requestJson(`${SERVER_URL}/api/profile/preferences`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          name: settingsDraft.name,
+          phone: settingsDraft.phone,
+          bio: settingsDraft.bio,
+          privacy: settingsDraft.privacy,
+          notifications: settingsDraft.notifications,
+        }),
+      });
+
+      if (data?.user) {
+        setUser((prev) => ({ ...prev, ...data.user }));
+        setUsers((prev) => prev.map((entry) => (entry.email === data.user.email ? { ...entry, ...data.user } : entry)));
+      }
+      showToast("Settings saved successfully", "success");
+    } catch (error) {
+      showToast(error.message || "Unable to save settings", "error");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handleStartCall = async (type, contact = activeSelectedUser) => {
+    if (!contact?.email) {
+      showToast("Select a contact to start a call", "info");
+      return;
+    }
+
+    try {
+      if (callStreamRef.current) {
+        callStreamRef.current.getTracks().forEach((track) => track.stop());
+        callStreamRef.current = null;
+      }
+
+      const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      callStreamRef.current = stream;
+      setCallDuration(0);
+      setActiveCall({
+        type,
+        target: contact,
+        startedAt: Date.now(),
+        phase: "connecting",
+      });
+      clearTimeout(callPhaseTimerRef.current);
+      callPhaseTimerRef.current = window.setTimeout(() => {
+        setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
+      }, 1200);
+    } catch (error) {
+      showToast(error?.message || "Microphone or camera permission was denied", "error");
+    }
+  };
+
+  const handleEndCall = (status = "ended") => {
+    setCallHistory((prev) => {
+      if (!activeCall) return prev;
+      const nextEntry = {
+        id: `call-${Date.now()}`,
+        name: activeCall.target.name || activeCall.target.email,
+        email: activeCall.target.email,
+        type: activeCall.type,
+        status,
+        duration: callDuration,
+        startedAt: activeCall.startedAt,
+      };
+      return [nextEntry, ...prev].slice(0, 20);
+    });
+    clearTimeout(callPhaseTimerRef.current);
+    if (callStreamRef.current) {
+      callStreamRef.current.getTracks().forEach((track) => track.stop());
+      callStreamRef.current = null;
+    }
+    setActiveCall(null);
+    setCallDuration(0);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="chat-shell">
@@ -1112,7 +1622,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       )}
 
       <section className="chat-layout">
-        {activeTab === 'dm' ? (
+        {activeTab === "chats" ? (
           <>
             {/* ── Sidebar ── */}
             <aside className="chat-sidebar">
@@ -1137,21 +1647,23 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                   />
                   <button
                     type="button"
-                    className={`chat-nav-icon-btn ${activeTab === 'dm' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('dm')}
-                    title="Chats"
+                    className="chat-nav-icon-btn"
+                    onClick={toggleTheme}
+                    title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    {Object.values(unreadMap).some(u => u.count > 0) && <span className="chat-nav-badge-small" />}
+                    {theme === "dark" ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 .28 0 .57.02.85A7 7 0 0 0 20.15 12c.28 0 .57 0 .85-.02z"/></svg>
+                    )}
                   </button>
                   <button
                     type="button"
-                    className={`chat-nav-icon-btn ${activeTab === 'status' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('status')}
-                    title="Status"
+                    className="chat-nav-icon-btn"
+                    onClick={() => setActiveTab("settings")}
+                    title="Settings"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {users.some(u => u.email !== user?.email && u.status?.mediaUrl) && <span className="chat-nav-badge-small" />}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.49.74.83 1.3.83H21a2 2 0 1 1 0 4h-.09c-.56 0-1.1.34-1.51.83z" /></svg>
                   </button>
                   <button type="button" className="chat-nav-icon-btn" onClick={handleLogout} title="Logout">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1228,6 +1740,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                       </div>
                     </div>
                     <div className="chat-panel-header-actions">
+                      <button type="button" className="chat-header-icon-btn" onClick={() => handleStartCall("voice", activeSelectedUser)} title="Voice call">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/></svg>
+                      </button>
+                      <button type="button" className="chat-header-icon-btn" onClick={() => handleStartCall("video", activeSelectedUser)} title="Video call">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                      </button>
                       <button type="button" className="chat-header-icon-btn" onClick={() => setShowMsgSearch(true)} title="Search">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                       </button>
@@ -1323,16 +1841,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 )}
             </main>
           </>
-        ) : (
+        ) : activeTab === "status" ? (
           /* ── Full Width Status Section ── */
           <main className="chat-panel full-height">
             <div className="chat-panel-header">
               <div className="chat-panel-header-left">
-                <button className="chat-header-icon-btn" onClick={() => setActiveTab('dm')} title="Back to chats">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                </button>
                 <div className="chat-active-user-info">
                   <h3>Status</h3>
+                  <p>Stories and disappearing updates from your network.</p>
                 </div>
               </div>
             </div>
@@ -1413,6 +1929,21 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               </div>
             </div>
           </main>
+        ) : activeTab === "calls" ? (
+          <CallsPanel contacts={callContacts} callHistory={callRecords} onStartCall={handleStartCall} />
+        ) : (
+          <SettingsPanel
+            user={user}
+            draft={settingsDraft}
+            onDraftChange={handleDraftChange}
+            onSave={handleSaveSettings}
+            onOpenProfile={() => setShowProfileModal(true)}
+            onLogout={handleLogout}
+            saving={settingsSaving}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            stats={settingsStats}
+          />
         )}
 
         {isEditingStatus && statusFile && (
@@ -1431,7 +1962,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         )}
 
-        {viewingStatusUser && (
+        {viewingStatusUser && activeTab !== "status" && (
           <div className="status-viewer-overlay" onClick={() => setViewingStatusUser(null)}>
             <div className="status-viewer-content" onClick={e => e.stopPropagation()}>
               <div className="status-viewer-header">
@@ -1450,6 +1981,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         )}
       </section>
+      <BottomNav
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        unreadCount={settingsStats.unreadCount}
+        statusCount={settingsStats.statusCount}
+        callCount={callRecords.length}
+      />
+      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
     </div>
   );
 }

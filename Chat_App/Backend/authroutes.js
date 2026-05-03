@@ -43,6 +43,7 @@ router.post("/register", async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       provider: "local",
+      bio: "Hey there! I am using Messenger.",
       lastSeen: "Offline",
       isOnline: false,
     });
@@ -98,8 +99,15 @@ router.post("/login", async (req, res) => {
         email: user.email,
         photo: user.photo,
         provider: user.provider,
+        phone: user.phone,
+        bio: user.bio,
         lastSeen: user.lastSeen,
         isOnline: user.isOnline,
+        privacy: user.privacy,
+        notifications: user.notifications,
+        pinnedChats: user.pinnedChats,
+        archivedChats: user.archivedChats,
+        blockedUsers: user.blockedUsers,
       },
     });
   } catch (error) {
