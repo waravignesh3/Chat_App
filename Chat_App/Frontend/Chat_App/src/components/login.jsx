@@ -138,9 +138,12 @@ function Login({ setUser = () => {} }) {
 
       <section className="auth-layout auth-layout-login">
         <div className="auth-panel auth-intro">
-          <span className="auth-badge">ChatApp</span>
-          <h1>Welcome back to your conversations.</h1>
-          <p>Log in to continue chatting with your friends, teams, and private groups.</p>
+          <div className="auth-brand">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Messenger</span>
+          </div>
+          <h1>Connect with your world.</h1>
+          <p>Sign in to start chatting with friends and family in real-time.</p>
 
           <div className="auth-metrics">
             <div className="metric-card">

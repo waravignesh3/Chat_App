@@ -1292,11 +1292,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               ) : (
                 <div className="chat-panel-empty">
                   <div className="chat-panel-empty-content">
-                    <div className="chat-hello-hub-logo">
-                      <span>HELLO HUB</span>
+                    <div className="chat-empty-icon">
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.1 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
-                    <h2>WhatsApp Web Clone</h2>
-                    <p>Send and receive messages without keeping your phone online.<br/>Use WhatsApp on up to 4 linked devices and 1 phone at the same time.</p>
+                    <h2>Select a chat to start messaging</h2>
+                    <p>Send and receive messages without keeping your phone online.<br/>Use the app on up to 4 linked devices at the same time.</p>
                   </div>
                 </div>
               )}
@@ -1304,7 +1304,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </>
         ) : (
           /* ── Full Width Status Section ── */
-          <main className="chat-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <main className="chat-panel full-height">
             <div className="chat-panel-header">
               <div className="chat-panel-header-left">
                 <button className="chat-header-icon-btn" onClick={() => setActiveTab('dm')} title="Back to chats">

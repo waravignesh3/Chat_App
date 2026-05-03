@@ -43,28 +43,358 @@ button {
   cursor: pointer;
 }
 
-.auth-shell {
+/* ── Status Dashboard ── */
+.chat-status-dashboard {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  flex: 1;
+  min-height: 0;
+  background: #0b141a;
+}
+
+.chat-status-sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  background: #111b21;
+}
+
+.chat-my-status-card {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-my-status-card:hover {
+  background: #202c33;
+}
+
+.chat-status-avatar-wrap {
   position: relative;
+  margin-right: 15px;
+}
+
+.chat-status-add-overlay {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  background: #00a884;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 2px solid #111b21;
+}
+
+.chat-status-info strong {
+  display: block;
+  color: #e9edef;
+  font-size: 1rem;
+}
+
+.chat-status-info p {
+  color: #8696a0;
+  font-size: 0.85rem;
+  margin: 2px 0 0;
+}
+
+.chat-status-label {
+  padding: 15px 16px;
+  color: #00a884;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.chat-status-main-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b141a;
+  position: relative;
+}
+
+.chat-status-empty {
+  text-align: center;
+  color: #8696a0;
+}
+
+.chat-status-viewer-content {
   width: 100%;
-  min-height: 100vh;
-  padding: clamp(12px, 2vw, 28px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.status-viewer-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.status-viewer-meta strong {
+  display: block;
+  color: #fff;
+}
+
+.status-viewer-meta span {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.8rem;
+}
+
+.status-viewer-media {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  isolation: isolate;
+}
+
+.status-viewer-media img,
+.status-viewer-media video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.status-viewer-caption {
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.status-viewer-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* ── Overlays ── */
+.status-upload-overlay,
+.status-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-upload-modal {
+  background: #202c33;
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.status-preview {
+  width: 100%;
+  aspect-ratio: 9/16;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.status-preview img,
+.status-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.status-upload-modal input {
+  background: #2a3942;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: #e9edef;
+}
+
+.status-upload-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.status-upload-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+}
+
+.status-upload-actions button:first-child {
+  background: #00a884;
+  color: #111b21;
+}
+
+.status-upload-actions button:last-child {
+  background: transparent;
+  color: #00a884;
+}
+
+.chat-status-avatar-ring {
+  padding: 2px;
+  border: 2px solid #00a884;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+
+/* ── Message Bubbles ── */
+.chat-bubble {
+  max-width: 50%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  position: relative;
+  font-size: 14.2px;
+  line-height: 1.5;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  word-wrap: break-word;
+}
+
+.chat-bubble.own {
+  background: #005c4b;
+  color: #e9edef;
+  align-self: flex-end;
+  border-top-right-radius: 0;
+}
+
+.chat-bubble:not(.own) {
+  background: #202c33;
+  color: #e9edef;
+  align-self: flex-start;
+  border-top-left-radius: 0;
+}
+
+/* ── Media ── */
+.chat-media-image,
+.chat-media-video {
+  max-width: 100%;
+  border-radius: 6px;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ── Login & Signup Theme Overrides ── */
+:root {
+  --wa-teal: #00a884;
+  --wa-teal-dark: #008f6f;
+  --wa-bg-dark: #0b141a;
+  --wa-panel-dark: #202c33;
+  --wa-input-dark: #2a3942;
+  --wa-text: #e9edef;
+  --wa-text-muted: #8696a0;
+}
+
+.auth-shell {
+  background: #0b141a !important;
 }
 
 .auth-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 30%),
-    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.22), transparent 32%),
-    linear-gradient(135deg, #040b16 0%, #081224 48%, #0b1630 100%);
-  z-index: -3;
+  background: radial-gradient(circle at top, #00a88415, transparent 50%), #0b141a !important;
 }
+
+.auth-panel {
+  background: #202c33 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.auth-card {
+  background: #111b21 !important;
+}
+
+.auth-button-primary {
+  background: #00a884 !important;
+  color: #0b141a !important;
+  box-shadow: none !important;
+}
+
+.auth-button-primary:hover {
+  background: #008f6f !important;
+}
+
+.auth-field input {
+  background: #2a3942 !important;
+  border: 1px solid transparent !important;
+  color: #e9edef !important;
+}
+
+.auth-field input:focus {
+  border-color: #00a884 !important;
+  box-shadow: none !important;
+}
+
+.auth-field span {
+  color: #00a884 !important;
+}
+
+.auth-intro h1 {
+  color: #e9edef !important;
+}
+
+.auth-intro p {
+  color: #8696a0 !important;
+}
+
+.metric-card {
+  background: #2a3942 !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #00a884;
+  font-weight: 800;
+  font-size: 1.4rem;
+  letter-spacing: -0.5px;
+  margin-bottom: 20px;
+}
+
+.auth-brand svg {
+  color: #00a884;
+}
+
+.auth-badge, .auth-eyebrow {
+  background: rgba(0, 168, 132, 0.1) !important;
+  color: #00a884 !important;
+  border-color: rgba(0, 168, 132, 0.2) !important;
+}
+
+.auth-switch-text a {
+  color: #00a884 !important;
+}
+
 
 .auth-shell::after {
   content: "";
@@ -592,11 +922,20 @@ button {
 }
 
 .chat-panel {
+  flex: 1;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
   min-height: 0;
+  background: #0b141a;
+  position: relative;
   animation: slideUp 0.85s ease both;
+}
+
+/* For full-height sections like Status */
+.chat-panel.full-height {
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-nav-icon-btn {
