@@ -336,8 +336,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [freshMessageId, setFreshMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
-  // View mode: 'chat' or 'status'
-  const [showStatusPanel, setShowStatusPanel] = useState(false);
+  // Page navigation state: 'dm' or 'status'
+  const [activeTab, setActiveTab] = useState('dm');
 
   // Status state
   const [isEditingStatus, setIsEditingStatus] = useState(false);
@@ -1045,8 +1045,29 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="chat-shell">
+
       <div className="chat-ambient chat-ambient-left" />
       <div className="chat-ambient chat-ambient-right" />
+
+      {/* ── Page Indicator / Navigation ── */}
+      <nav className="chat-page-nav">
+        <button 
+          className={`chat-nav-item ${activeTab === 'dm' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dm')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Direct Message
+          {Object.values(unreadMap).some(u => u.count > 0) && <span className="chat-nav-badge" />}
+        </button>
+        <button 
+          className={`chat-nav-item ${activeTab === 'status' ? 'active' : ''}`}
+          onClick={() => setActiveTab('status')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Status
+          {users.some(u => u.email !== user?.email && u.status?.mediaUrl) && <span className="chat-nav-badge" />}
+        </button>
+      </nav>
 
       {showProfileModal && (
         <ProfilePhotoModal
@@ -1067,7 +1088,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       )}
 
       <section className="chat-layout">
-        <div className="chat-direct-message-section">
+        {activeTab === 'dm' ? (
+          <div className="chat-direct-message-section">
           {/* ── Sidebar ── */}
           <aside className="chat-sidebar">
             <div className="chat-sidebar-header">
@@ -1132,14 +1154,6 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
             <div className="chat-sidebar-tabs">
               <span className="chat-sidebar-label">Direct Message</span>
-              <button 
-                className={`chat-status-tab-btn ${showStatusPanel ? "active" : ""}`}
-                onClick={() => setShowStatusPanel(!showStatusPanel)}
-                title={showStatusPanel ? "Close Status Panel" : "View Statuses"}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {showStatusPanel ? "Close" : "Status"}
-              </button>
             </div>
           </div>
 
@@ -1625,16 +1639,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         </main>
       </div>
-
-      {/* ── Status Right Panel ── */}
-        {showStatusPanel && (
-          <aside className="chat-status-panel">
-            <div className="chat-status-panel-header">
-              <h3>Statuses</h3>
-              <button className="chat-status-panel-close" onClick={() => setShowStatusPanel(false)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            </div>
+    ) : (
+      /* ── Status Section (Full Page) ── */
+      <aside className="chat-status-panel full-page">
+        <div className="chat-status-panel-header">
+          <h3>Statuses</h3>
+        </div>
 
             <div className="chat-status-view">
               {viewingStatusUser ? (
