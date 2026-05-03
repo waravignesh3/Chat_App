@@ -124,11 +124,11 @@ const buildUsersPayload = async () => {
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   return users.map((u) => {
-    let currentStatus = u.status || { text: "", createdAt: null };
+    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null };
 
     // Check if status is older than 1 day
     if (currentStatus.createdAt && (now - new Date(currentStatus.createdAt)) > oneDayMs) {
-      currentStatus = { text: "", createdAt: null };
+      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null };
       // Proactively clear it in DB if expired (optional but good for cleanup)
       User.updateOne({ _id: u._id }, { $set: { status: currentStatus } }).exec().catch(err => console.error("Error clearing status:", err));
     }
@@ -251,7 +251,7 @@ app.post("/api/profile/photo", avatarUpload.single("photo"), async (req, res) =>
 });
 
 // ─── Status update ────────────────────────────────────────────────────────────
-app.post("/api/status", async (req, res) => {
+app.post("/api/status", upload.single("file"), async (req, res) => {
   try {
     const { email, text } = req.body;
     if (!email) return res.status(400).json({ error: "Email is required" });
@@ -259,9 +259,34 @@ app.post("/api/status", async (req, res) => {
     if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
 
     const normalizedEmail = email.toLowerCase().trim();
+    let statusUpdate = { 
+      text: text || "", 
+      mediaUrl: "",
+      mediaType: "",
+      createdAt: new Date() 
+    };
+
+    if (req.file) {
+      const mediaBucket = getMediaBucket();
+      const filename = `status_${normalizedEmail}_${Date.now()}_${req.file.originalname}`;
+      const uploadStream = mediaBucket.openUploadStream(filename, {
+        contentType: req.file.mimetype,
+        metadata: { email: normalizedEmail, type: "status" },
+      });
+
+      await new Promise((resolve, reject) => {
+        uploadStream.on("finish", resolve);
+        uploadStream.on("error", reject);
+        uploadStream.end(req.file.buffer);
+      });
+
+      statusUpdate.mediaUrl = `/api/media/${uploadStream.id}`;
+      statusUpdate.mediaType = req.file.mimetype.startsWith("video/") ? "video" : "image";
+    }
+
     const user = await User.findOneAndUpdate(
       { email: normalizedEmail },
-      { $set: { status: { text: text || "", createdAt: text ? new Date() : null } } },
+      { $set: { status: statusUpdate } },
       { new: true }
     );
 

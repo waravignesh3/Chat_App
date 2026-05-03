@@ -41,6 +41,8 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       text: { type: String, default: "" },
+      mediaUrl: { type: String, default: "" },
+      mediaType: { type: String, default: "" },
       createdAt: { type: Date, default: null },
     },
   },

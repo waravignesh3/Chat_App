@@ -336,9 +336,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [freshMessageId, setFreshMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
+  // View mode: 'chat' or 'status'
+  const [viewMode, setViewMode] = useState("chat");
+
   // Status state
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusText, setStatusText] = useState(user?.status?.text || "");
+  const [statusFile, setStatusFile] = useState(null);
+  const [statusUploading, setStatusUploading] = useState(false);
+  const [viewingStatusUser, setViewingStatusUser] = useState(null);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -754,20 +760,32 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   };
 
   const handleStatusUpdate = async () => {
+    if (!user?.email) return;
+    setStatusUploading(true);
     try {
+      const formData = new FormData();
+      formData.append("email", user.email);
+      formData.append("text", statusText);
+      if (statusFile) {
+        formData.append("file", statusFile);
+      }
+
       const response = await fetch(`${SERVER_URL}/api/status`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, text: statusText }),
+        body: formData,
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to update status");
 
       setUser((prev) => ({ ...prev, status: data.status }));
       setIsEditingStatus(false);
+      setStatusFile(null);
+      setStatusText("");
       showToast("Status updated successfully", "success");
     } catch (err) {
       showToast(err.message || "Failed to update status", "error");
+    } finally {
+      setStatusUploading(false);
     }
   };
 
@@ -1113,38 +1131,16 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               </div>
             </div>
 
-            {/* Status Section */}
-            <div className="chat-status-section">
-              <div className="chat-status-header">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                My Status
-              </div>
-              
-              {isEditingStatus ? (
-                <div className="chat-status-edit">
-                  <input
-                    type="text"
-                    value={statusText}
-                    onChange={(e) => setStatusText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleStatusUpdate();
-                      if (e.key === "Escape") setIsEditingStatus(false);
-                    }}
-                    autoFocus
-                    placeholder="Add a status..."
-                  />
-                  <button onClick={handleStatusUpdate}>Save</button>
-                  <button onClick={() => setIsEditingStatus(false)}>✕</button>
-                </div>
-              ) : (
-                <button 
-                  className="chat-add-status-btn"
-                  onClick={() => setIsEditingStatus(true)}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  {user?.status?.text || "Add a status"}
-                </button>
-              )}
+            <div className="chat-sidebar-tabs">
+              <span className="chat-sidebar-label">Direct Message</span>
+              <button 
+                className={`chat-status-tab-btn ${viewMode === "status" ? "active" : ""}`}
+                onClick={() => setViewMode(viewMode === "chat" ? "status" : "chat")}
+                title={viewMode === "chat" ? "View Statuses" : "Back to Chats"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {viewMode === "chat" ? "My Status" : "Chats"}
+              </button>
             </div>
           </div>
 
@@ -1162,99 +1158,222 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </label>
 
           <div className="chat-user-list">
-            {isLoadingUsers ? (
-              <div className="chat-empty-state">
-                <strong>Loading users…</strong>
-                <p>Please wait while we sync your contacts.</p>
-              </div>
-            ) : usersError ? (
-              <div className="chat-empty-state">
-                <strong>Unable to load users</strong>
-                <p>{usersError}</p>
-              </div>
-            ) : filteredUsers.length > 0 ? (
-              filteredUsers.map((entry) => {
-                const isActive = activeSelectedUser?.email === entry.email;
-                const unread = unreadMap[entry.email];
-                const hasUnread = !isActive && unread?.count > 0;
-                const isFlashing = flashEmail === entry.email;
+            {viewMode === "chat" ? (
+              isLoadingUsers ? (
+                <div className="chat-empty-state">
+                  <strong>Loading users…</strong>
+                  <p>Please wait while we sync your contacts.</p>
+                </div>
+              ) : usersError ? (
+                <div className="chat-empty-state">
+                  <strong>Unable to load users</strong>
+                  <p>{usersError}</p>
+                </div>
+              ) : filteredUsers.length > 0 ? (
+                filteredUsers.map((entry) => {
+                  const isActive = activeSelectedUser?.email === entry.email;
+                  const unread = unreadMap[entry.email];
+                  const hasUnread = !isActive && unread?.count > 0;
+                  const isFlashing = flashEmail === entry.email;
 
-                const unreadCardStyle = hasUnread ? {
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.16), rgba(110,168,254,0.20), rgba(192,132,252,0.13))",
-                  borderColor: "rgba(110, 168, 254, 0.65)",
-                  boxShadow: "0 0 0 1.5px rgba(34,211,238,0.30), 0 6px 20px rgba(110,168,254,0.18)",
-                } : {};
+                  const unreadCardStyle = hasUnread ? {
+                    background: "linear-gradient(135deg, rgba(34,211,238,0.16), rgba(110,168,254,0.20), rgba(192,132,252,0.13))",
+                    borderColor: "rgba(110, 168, 254, 0.65)",
+                    boxShadow: "0 0 0 1.5px rgba(34,211,238,0.30), 0 6px 20px rgba(110,168,254,0.18)",
+                  } : {};
 
-                const flashStyle = isFlashing ? {
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(110,168,254,0.36), rgba(192,132,252,0.26))",
-                  borderColor: "rgba(34, 211, 238, 0.85)",
-                  boxShadow: "0 0 0 2px rgba(34,211,238,0.55), 0 8px 28px rgba(110,168,254,0.30)",
-                  transition: "none",
-                } : {};
+                  const flashStyle = isFlashing ? {
+                    background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(110,168,254,0.36), rgba(192,132,252,0.26))",
+                    borderColor: "rgba(34, 211, 238, 0.85)",
+                    boxShadow: "0 0 0 2px rgba(34,211,238,0.55), 0 8px 28px rgba(110,168,254,0.30)",
+                    transition: "none",
+                  } : {};
 
-                const cardStyle = { ...unreadCardStyle, ...flashStyle };
+                  const cardStyle = { ...unreadCardStyle, ...flashStyle };
 
-                return (
-                  <button
-                    key={entry.email}
-                    type="button"
-                    className={[
-                      "chat-user-card",
-                      isActive ? "chat-user-card-active" : "",
-                      hasUnread ? "chat-user-card-unread" : "",
-                      isFlashing ? "chat-user-card-flash" : "",
-                    ].filter(Boolean).join(" ")}
-                    style={cardStyle}
-                    onClick={() => handleSelectUser(entry)}
-                  >
-                    <div className="chat-avatar-wrap">
-                      <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
-                      {entry.isOnline && <span className="chat-online-ring" />}
-                      {hasUnread && (
-                        <span
-                          className="chat-unread-dot"
-                          aria-label={`${unread.count} unread`}
-                          style={{
-                            position: "absolute", top: "-4px", right: "-4px",
-                            minWidth: "20px", height: "20px", borderRadius: "10px",
-                            background: "linear-gradient(135deg,#22d3ee,#6ea8fe)",
-                            color: "#04101e", fontSize: "11px", fontWeight: 900,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            padding: "0 5px", border: "2px solid #040d1a",
-                            boxShadow: "0 0 10px rgba(34,211,238,0.8)", zIndex: 5,
-                          }}
-                        >
-                          {unread.count > 99 ? "99+" : unread.count}
+                  return (
+                    <button
+                      key={entry.email}
+                      type="button"
+                      className={[
+                        "chat-user-card",
+                        isActive ? "chat-user-card-active" : "",
+                        hasUnread ? "chat-user-card-unread" : "",
+                        isFlashing ? "chat-user-card-flash" : "",
+                      ].filter(Boolean).join(" ")}
+                      style={cardStyle}
+                      onClick={() => handleSelectUser(entry)}
+                    >
+                      <div className="chat-avatar-wrap">
+                        <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
+                        {entry.isOnline && <span className="chat-online-ring" />}
+                        {hasUnread && (
+                          <span
+                            className="chat-unread-dot"
+                            aria-label={`${unread.count} unread`}
+                            style={{
+                              position: "absolute", top: "-4px", right: "-4px",
+                              minWidth: "20px", height: "20px", borderRadius: "10px",
+                              background: "linear-gradient(135deg,#22d3ee,#6ea8fe)",
+                              color: "#04101e", fontSize: "11px", fontWeight: 900,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              padding: "0 5px", border: "2px solid #040d1a",
+                              boxShadow: "0 0 10px rgba(34,211,238,0.8)", zIndex: 5,
+                            }}
+                          >
+                            {unread.count > 99 ? "99+" : unread.count}
+                          </span>
+                        )}
+                      </div>
+                      <span className="chat-user-copy">
+                        <strong style={hasUnread ? { color: "#ffffff", fontWeight: 700 } : {}}>
+                          {entry.name || entry.email}
+                        </strong>
+                        {entry.status?.text && (
+                          <span className="chat-user-status-preview">{entry.status.text}</span>
+                        )}
+                        {hasUnread
+                          ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
+                          : <span className="chat-user-email">{entry.email}</span>
+                        }
+                        <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
+                          {hasUnread
+                            ? <span className="chat-unread-time" style={{ color: "#22d3ee", fontWeight: 700 }}>{unread.lastTime}</span>
+                            : entry.isOnline
+                              ? <><span className="chat-online-dot" />Online</>
+                              : `Last seen: ${formatLastSeen(entry.lastSeen)}`
+                          }
                         </span>
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="chat-empty-state">
+                  <strong>No users found</strong>
+                  <p>Try a different name or email.</p>
+                </div>
+              )
+            ) : (
+              <div className="chat-status-view">
+                {viewingStatusUser ? (
+                  <div className="chat-status-viewer">
+                    <div className="chat-status-viewer-header">
+                      <button className="chat-status-viewer-back" onClick={() => setViewingStatusUser(null)}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Back
+                      </button>
+                      <div className="chat-status-viewer-user">
+                        <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={32} />
+                        <div className="chat-status-viewer-meta">
+                          <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
+                          <span>{new Date(viewingStatusUser.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="chat-status-viewer-content">
+                      {viewingStatusUser.status.mediaType === "video" ? (
+                        <video src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls />
+                      ) : (
+                        <img src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />
                       )}
                     </div>
-                    <span className="chat-user-copy">
-                      <strong style={hasUnread ? { color: "#ffffff", fontWeight: 700 } : {}}>
-                        {entry.name || entry.email}
-                      </strong>
-                      {entry.status?.text && (
-                        <span className="chat-user-status-preview">{entry.status.text}</span>
+                    {viewingStatusUser.status.text && (
+                      <div className="chat-status-viewer-caption">
+                        <p>{viewingStatusUser.status.text}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="chat-status-view-header">
+                      <h4 className="chat-status-label">My Status</h4>
+                      <div 
+                        className="chat-my-status-card"
+                        onClick={() => {
+                          if (user?.status?.mediaUrl) {
+                            setViewingStatusUser(user);
+                          }
+                        }}
+                        style={{ cursor: user?.status?.mediaUrl ? "pointer" : "default" }}
+                      >
+                        <div className="chat-status-avatar-wrap">
+                          <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={48} />
+                          <button 
+                            className="chat-status-add-overlay"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const input = document.createElement("input");
+                              input.type = "file";
+                              input.accept = "image/*,video/*";
+                              input.onchange = (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  setStatusFile(file);
+                                  setIsEditingStatus(true);
+                                }
+                              };
+                              input.click();
+                            }}
+                            title="Add photo or video"
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          </button>
+                        </div>
+                        <div className="chat-my-status-info">
+                          <strong>{user?.status?.mediaUrl ? "Tap to view your status" : "Add to my status"}</strong>
+                          <p>{user?.status?.createdAt ? `Last updated: ${new Date(user.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Share a photo or video"}</p>
+                        </div>
+                      </div>
+                      
+                      {isEditingStatus && statusFile && (
+                        <div className="chat-status-upload-form">
+                          <div className="chat-status-preview-box">
+                             {statusFile.type.startsWith("video/") ? (
+                               <video src={URL.createObjectURL(statusFile)} controls />
+                             ) : (
+                               <img src={URL.createObjectURL(statusFile)} alt="Preview" />
+                             )}
+                          </div>
+                          <input 
+                            type="text" 
+                            placeholder="Add a caption..." 
+                            value={statusText} 
+                            onChange={(e) => setStatusText(e.target.value)}
+                            className="chat-status-caption-input"
+                          />
+                          <div className="chat-status-upload-actions">
+                            <button className="chat-status-share-btn" onClick={handleStatusUpdate} disabled={statusUploading}>
+                              {statusUploading ? "Uploading..." : "Share"}
+                            </button>
+                            <button className="chat-status-cancel-btn" onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>Cancel</button>
+                          </div>
+                        </div>
                       )}
-                      {hasUnread
-                        ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
-                        : <span className="chat-user-email">{entry.email}</span>
-                      }
-                      <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
-                        {hasUnread
-                          ? <span className="chat-unread-time" style={{ color: "#22d3ee", fontWeight: 700 }}>{unread.lastTime}</span>
-                          : entry.isOnline
-                            ? <><span className="chat-online-dot" />Online</>
-                            : `Last seen: ${formatLastSeen(entry.lastSeen)}`
-                        }
-                      </span>
-                    </span>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="chat-empty-state">
-                <strong>No users found</strong>
-                <p>Try a different name or email.</p>
+                    </div>
+
+                    <div className="chat-others-status-section">
+                      <h4 className="chat-status-label">Recent Updates</h4>
+                      {users.filter(u => u.email !== user?.email && u.status?.mediaUrl).length > 0 ? (
+                        users.filter(u => u.email !== user?.email && u.status?.mediaUrl).map(u => (
+                          <button key={u.email} className="chat-status-user-card" onClick={() => setViewingStatusUser(u)}>
+                            <div className="chat-status-avatar-ring">
+                              <Avatar name={u.name} email={u.email} photo={u.photo} size={48} />
+                            </div>
+                            <div className="chat-status-user-info">
+                              <strong>{u.name || u.email}</strong>
+                              <span>{new Date(u.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="chat-empty-state">
+                          <p>No recent updates from your contacts.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
