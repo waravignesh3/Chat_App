@@ -384,7 +384,101 @@ body.theme-light .chat-my-status-info strong,
 body.theme-light .chat-status-user-info strong { color: #04101e; }
 body.theme-light .chat-my-status-info p,
 body.theme-light .chat-status-user-info span { color: #64748b; }
-body.theme-light .chat-status-cancel-btn { background: rgba(0, 0, 0, 0.1); color: #04101e; }
+body.theme-light .chat-status-tab-btn { background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.2); color: #2563eb; }
+body.theme-light .chat-status-tab-btn:hover { background: rgba(37, 99, 235, 0.15); }
+body.theme-light .chat-status-tab-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+body.theme-light .chat-status-viewer-meta strong { color: white; }
+body.theme-light .chat-status-viewer-caption p { color: white; }
+body.theme-light .chat-status-viewer-back { color: white; }
+
+/* Status Right Panel */
+.chat-status-panel {
+  width: 380px;
+  background: #04101e;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.chat-status-panel-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-status-panel-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.chat-status-panel-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-status-panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Status View Styles (Adjusted for Right Panel) */
+.chat-status-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.chat-status-viewer {
+  border-radius: 16px;
+  height: 600px; /* Large area */
+}
+
+/* Light Mode Overrides for Status Panel */
+body.theme-light .chat-status-panel {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .chat-status-panel-header {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .chat-status-panel-header h3 {
+  color: #04101e;
+}
+
+body.theme-light .chat-status-panel-close {
+  background: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+body.theme-light .chat-status-panel-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #04101e;
+}
 
 /* Status Viewer */
 .chat-status-viewer {
