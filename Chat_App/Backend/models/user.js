@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "Offline",
     },
+    status: {
+      text: { type: String, default: "" },
+      createdAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );

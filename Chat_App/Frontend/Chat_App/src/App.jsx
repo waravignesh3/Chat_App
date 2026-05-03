@@ -7,6 +7,7 @@ import Signup from "./components/signup";
 import Chat from "./components/chat";
 import { auth } from "./firebase";
 import { requestJson } from "./utils/http";
+import { ToastProvider } from "./components/ToastContext";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -41,6 +42,20 @@ function App() {
       return null;
     }
   });
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("chatapp-theme") || "dark";
+  });
+
+  useEffect(() => {
+    document.body.className = `theme-${theme}`;
+    localStorage.setItem("chatapp-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   // authReady blocks rendering until Firebase has resolved the initial
   // auth state — prevents a flash-redirect to /login on page refresh.
   const [authReady, setAuthReady] = useState(false);
@@ -110,27 +125,29 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
-        />
-        <Route
-          path="/login"
-          element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
-        />
-        <Route
-          path="/signup"
-          element={user ? <Navigate to="/chat" replace /> : <Signup />}
-        />
-        <Route
-          path="/chat"
-          element={user ? <Chat user={user} setUser={setUser} /> : <Navigate to="/login" replace />}
-        />
-        <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
+          />
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
+          />
+          <Route
+            path="/signup"
+            element={user ? <Navigate to="/chat" replace /> : <Signup />}
+          />
+          <Route
+            path="/chat"
+            element={user ? <Chat user={user} setUser={setUser} theme={theme} toggleTheme={toggleTheme} /> : <Navigate to="/login" replace />}
+          />
+          <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

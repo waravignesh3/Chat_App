@@ -118,12 +118,27 @@ const waitForDatabaseConnection = (timeoutMs = 12000) =>
   });
 
 const buildUsersPayload = async () => {
-  const users = await User.find({}, "name email photo lastSeen isOnline").lean();
-  return users.map((u) => ({
-    ...u,
-    isOnline: Boolean(onlineUsers[u.email]),
-    lastSeen: onlineUsers[u.email] ? "Online" : u.lastSeen || "Offline",
-  }));
+  const users = await User.find({}, "name email photo lastSeen isOnline status").lean();
+  const now = new Date();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+
+  return users.map((u) => {
+    let currentStatus = u.status || { text: "", createdAt: null };
+
+    // Check if status is older than 1 day
+    if (currentStatus.createdAt && (now - new Date(currentStatus.createdAt)) > oneDayMs) {
+      currentStatus = { text: "", createdAt: null };
+      // Proactively clear it in DB if expired (optional but good for cleanup)
+      User.updateOne({ _id: u._id }, { $set: { status: currentStatus } }).exec().catch(err => console.error("Error clearing status:", err));
+    }
+
+    return {
+      ...u,
+      status: currentStatus,
+      isOnline: Boolean(onlineUsers[u.email]),
+      lastSeen: onlineUsers[u.email] ? "Online" : u.lastSeen || "Offline",
+    };
+  });
 };
 
 const broadcastUsers = async () => {
@@ -231,6 +246,33 @@ app.post("/api/profile/photo", avatarUpload.single("photo"), async (req, res) =>
   } catch (err) {
     console.error("Profile photo upload error:", err);
     return res.status(500).json({ error: err.message || "Upload failed" });
+  }
+});
+
+// ─── Status update ────────────────────────────────────────────────────────────
+app.post("/api/status", async (req, res) => {
+  try {
+    const { email, text } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      { $set: { status: { text: text || "", createdAt: text ? new Date() : null } } },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Broadcast update to all users
+    await broadcastUsers();
+
+    return res.json({ success: true, status: user.status });
+  } catch (err) {
+    console.error("Status update error:", err);
+    return res.status(500).json({ error: "Failed to update status" });
   }
 });
 

@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
+import { useToast } from "./ToastContext";
 import "../App.css";
 import "../App.enhanced.css";
 import "../chat.profile.css";
@@ -309,7 +310,7 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
-function Chat({ user, setUser }) {
+function Chat({ user, setUser, theme, toggleTheme }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
@@ -334,6 +335,12 @@ function Chat({ user, setUser }) {
   const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
   const [freshMessageId, setFreshMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  // Status state
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [statusText, setStatusText] = useState(user?.status?.text || "");
+
+  const { showToast } = useToast();
 
   const bottomRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -727,7 +734,10 @@ function Chat({ user, setUser }) {
 
   // ── Handlers ────────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    try { await signOut(auth); } catch { /* ignore */ }
+    try {
+      await signOut(auth);
+      showToast("Signed out successfully", "info");
+    } catch { /* ignore */ }
     finally {
       setSelectedUser(null);
       setMessage("");
@@ -735,6 +745,24 @@ function Chat({ user, setUser }) {
       setUnreadMap({});
       setUser(null);
       navigate("/login", { replace: true });
+    }
+  };
+
+  const handleStatusUpdate = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, text: statusText }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update status");
+
+      setUser((prev) => ({ ...prev, status: data.status }));
+      setIsEditingStatus(false);
+      showToast("Status updated successfully", "success");
+    } catch (err) {
+      showToast(err.message || "Failed to update status", "error");
     }
   };
 
@@ -889,6 +917,7 @@ function Chat({ user, setUser }) {
         entry.email === user?.email ? { ...entry, photo: resolvedPhoto } : entry
       )
     );
+    showToast("Profile picture updated", "success");
   };
 
   const handleReaction = (messageId, emoji) => {
@@ -994,6 +1023,17 @@ function Chat({ user, setUser }) {
                   className={`chat-conn-dot chat-conn-dot-${connectionStatus}`}
                   title={connectionStatus === "online" ? "Connected" : connectionStatus === "offline" ? "Disconnected" : "Connecting…"}
                 />
+                <button
+                  type="button"
+                  className="chat-theme-button"
+                  onClick={() => {
+                    toggleTheme();
+                    showToast(`Theme changed to ${theme === "dark" ? "light" : "dark"} mode`, "info");
+                  }}
+                  title="Toggle theme"
+                >
+                  {theme === "dark" ? "☀️" : "🌙"}
+                </button>
                 <button type="button" className="chat-logout-button" onClick={handleLogout}>
                   Logout
                 </button>
@@ -1021,6 +1061,31 @@ function Chat({ user, setUser }) {
               </div>
               <div className="chat-self-info">
                 <strong>{user?.name || "You"}</strong>
+                {isEditingStatus ? (
+                  <div className="chat-status-edit">
+                    <input
+                      type="text"
+                      value={statusText}
+                      onChange={(e) => setStatusText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleStatusUpdate();
+                        if (e.key === "Escape") setIsEditingStatus(false);
+                      }}
+                      autoFocus
+                      placeholder="What's on your mind?"
+                    />
+                    <button onClick={handleStatusUpdate}>Save</button>
+                    <button onClick={() => setIsEditingStatus(false)}>✕</button>
+                  </div>
+                ) : (
+                  <span
+                    className="chat-self-status-text"
+                    onClick={() => setIsEditingStatus(true)}
+                    title="Click to update status"
+                  >
+                    {user?.status?.text || "Set a status"}
+                  </span>
+                )}
                 <span>{user?.email}</span>
               </div>
             </div>
@@ -1107,6 +1172,9 @@ function Chat({ user, setUser }) {
                       <strong style={hasUnread ? { color: "#ffffff", fontWeight: 700 } : {}}>
                         {entry.name || entry.email}
                       </strong>
+                      {entry.status?.text && (
+                        <span className="chat-user-status-preview">{entry.status.text}</span>
+                      )}
                       {hasUnread
                         ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
                         : <span className="chat-user-email">{entry.email}</span>
@@ -1138,6 +1206,9 @@ function Chat({ user, setUser }) {
             <div>
               <span className="chat-chip">Direct Message</span>
               <h3>{activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}</h3>
+              {activeSelectedUser?.status?.text && (
+                <p className="chat-active-user-status">“{activeSelectedUser.status.text}”</p>
+              )}
               <p className={isTyping ? "panel-typing-live" : ""}>
                 {activeSelectedUser
                   ? isTyping

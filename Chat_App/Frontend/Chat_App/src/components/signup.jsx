@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { parseJsonResponse } from "../utils/http";
+import { useToast } from "./ToastContext";
 import "../App.css";
 import "../App.enhanced.css";
 
@@ -16,33 +17,9 @@ function Signup() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({
-    visible: false,
-    variant: "success",
-    title: "",
-    message: "",
-  });
+  const { showToast } = useToast();
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!toast.visible) return undefined;
-
-    const timer = window.setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
-    }, 2600);
-
-    return () => window.clearTimeout(timer);
-  }, [toast.visible]);
-
-  const showToast = (variant, title, message) => {
-    setToast({
-      visible: true,
-      variant,
-      title,
-      message,
-    });
-  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -93,7 +70,7 @@ function Signup() {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      showToast("error", "Fix the highlighted fields", "Please complete the form correctly");
+      showToast("Please complete the form correctly", "error");
       return;
     }
 
@@ -102,9 +79,7 @@ function Signup() {
     try {
       const response = await fetch(`${SERVER_URL}/api/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -116,28 +91,14 @@ function Signup() {
       const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        showToast("error", "Signup failed", data.error || "Unable to create account");
+        showToast(data.error || "Registration failed", "error");
         return;
       }
 
-      showToast(
-        "success",
-        `Welcome ${formData.firstName.trim()}`,
-        "Account created successfully"
-      );
-
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-
-      setTimeout(() => navigate("/login"), 900);
+      showToast("Account created! You can now sign in.", "success");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (error) {
-      console.error(error);
-      showToast("error", "Network error", error.message || "Unable to reach the server");
+      showToast(error.message || "Network error", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -259,16 +220,6 @@ function Signup() {
           </form>
         </div>
       </section>
-
-      <div
-        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
-      >
-        <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
-        <div>
-          <strong>{toast.title || "Signup"}</strong>
-          <p>{toast.message || "Account created"}</p>
-        </div>
-      </div>
     </div>
   );
 }

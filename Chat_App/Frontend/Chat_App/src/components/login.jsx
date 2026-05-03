@@ -8,6 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import { parseJsonResponse } from "../utils/http";
+import { useToast } from "./ToastContext";
 import "../App.css";
 import "../App.enhanced.css";
 
@@ -18,20 +19,7 @@ function Login({ setUser = () => {} }) {
   const [errors, setErrors]       = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [toast, setToast]         = useState({ visible: false, variant: "success", title: "", message: "" });
-
-
-  useEffect(() => {
-    if (!toast.visible) return undefined;
-    const timer = window.setTimeout(
-      () => setToast((prev) => ({ ...prev, visible: false })),
-      2600
-    );
-    return () => window.clearTimeout(timer);
-  }, [toast.visible]);
-
-  const showToast = (variant, title, message) =>
-    setToast({ visible: true, variant, title, message });
+  const { showToast } = useToast();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -80,7 +68,7 @@ function Login({ setUser = () => {} }) {
 
       setUser(data.user);
       setIsSuccess(true);
-      showToast("success", "Welcome", "Signed in! Taking you to chat…");
+      showToast("Welcome! Signed in! Taking you to chat…", "success");
       // App.jsx route guard re-renders automatically when user state updates
     } catch (error) {
       if (
@@ -95,7 +83,7 @@ function Login({ setUser = () => {} }) {
           ? "Add your frontend domain in Firebase → Authentication → Authorized Domains."
           : error?.message || "Unable to continue with Google";
 
-      showToast("error", "Google login failed", message);
+      showToast(message, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -108,7 +96,7 @@ function Login({ setUser = () => {} }) {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      showToast("error", "Check your details", "Please complete all required fields");
+      showToast("Please complete all required fields", "error");
       return;
     }
 
@@ -125,20 +113,19 @@ function Login({ setUser = () => {} }) {
       const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        showToast("error", "Login failed", data.error || "Unable to sign in");
+        showToast(data.error || "Unable to sign in", "error");
         return;
       }
 
       setUser(data.user);
       setIsSuccess(true);
       showToast(
-        "success",
-        `Hi ${data.user?.name?.split(" ")[0] || "there"}`,
-        "Login successful!"
+        `Hi ${data.user?.name?.split(" ")[0] || "there"}, Login successful!`,
+        "success"
       );
       // App.jsx route guard re-renders automatically when user state updates
     } catch (error) {
-      showToast("error", "Network error", error.message || "Unable to login");
+      showToast(error.message || "Unable to login", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -229,16 +216,6 @@ function Login({ setUser = () => {} }) {
           </p>
         </div>
       </section>
-
-      <div
-        className={`auth-toast auth-toast-${toast.variant}${toast.visible ? " auth-toast-visible" : ""}`}
-      >
-        <div className="toast-icon">{toast.variant === "success" ? "OK" : "!"}</div>
-        <div>
-          <strong>{toast.title}</strong>
-          <p>{toast.message}</p>
-        </div>
-      </div>
     </div>
   );
 }
