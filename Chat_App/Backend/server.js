@@ -82,8 +82,9 @@ const upload = multer({
     const allowed = [
       "image/jpeg", "image/png", "image/gif", "image/webp",
       "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+      "audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav",
     ];
-    cb(allowed.includes(file.mimetype) ? null : new Error("Only images and videos are allowed"), allowed.includes(file.mimetype));
+    cb(allowed.includes(file.mimetype) ? null : new Error("Only images, videos and audio are allowed"), allowed.includes(file.mimetype));
   },
 });
 

@@ -113,9 +113,6 @@ function Avatar({ name, email, photo, size = 44, className = "" }) {
 const EMOJI_LIST = [
   "😀","😂","😍","🥰","😎","🤔","😢","😡","🥳","🤩",
   "👍","👎","❤️","🔥","✨","🎉","🙏","💯","😴","🤣",
-  "😊","😇","🤗","😏","🙄","😤","😭","😱","🤯","🥺",
-  "👋","🤝","💪","🫶","✌️","🤞","👀","💀","🎵","🚀",
-  "🌟","💡","📸","🎮","🍕","☕","🌈","🌙","⚡","🎯",
 ];
 
 const REACTION_EMOJIS = ["❤️","😂","👍","😮","😢","🔥"];
@@ -222,6 +219,9 @@ function MediaMessage({ mediaUrl, mediaType }) {
   const absoluteUrl = resolveAssetUrl(mediaUrl);
   if (mediaType === "video") {
     return <video src={absoluteUrl} controls className="chat-media-video" preload="metadata" />;
+  }
+  if (mediaType === "audio") {
+    return <audio src={absoluteUrl} controls className="chat-media-audio" />;
   }
   return (
     <a href={absoluteUrl} target="_blank" rel="noopener noreferrer">
@@ -339,6 +339,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // Status state
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusText, setStatusText] = useState(user?.status?.text || "");
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const { showToast } = useToast();
 
@@ -766,6 +771,41 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
+        sendMediaMessage(file);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      showToast("Recording voice message...", "info");
+    } catch (err) {
+      showToast("Could not access microphone", "error");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
   const handleSelectUser = (entry) => {
     shouldScrollRef.current = true;
     let nextDraft = "";
@@ -1032,7 +1072,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                   }}
                   title="Toggle theme"
                 >
-                  {theme === "dark" ? "☀️" : "🌙"}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {theme === "dark" ? (
+                      <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    ) : (
+                      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                    )}
+                  </svg>
                 </button>
                 <button type="button" className="chat-logout-button" onClick={handleLogout}>
                   Logout
@@ -1057,48 +1103,62 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               >
                 <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={44} className="chat-self-avatar" />
                 <span className="chat-online-ring" />
-                <span className="chat-avatar-edit-hint" aria-hidden="true">📷</span>
+                <span className="chat-avatar-edit-hint" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
               </div>
               <div className="chat-self-info">
                 <strong>{user?.name || "You"}</strong>
-                {isEditingStatus ? (
-                  <div className="chat-status-edit">
-                    <input
-                      type="text"
-                      value={statusText}
-                      onChange={(e) => setStatusText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleStatusUpdate();
-                        if (e.key === "Escape") setIsEditingStatus(false);
-                      }}
-                      autoFocus
-                      placeholder="What's on your mind?"
-                    />
-                    <button onClick={handleStatusUpdate}>Save</button>
-                    <button onClick={() => setIsEditingStatus(false)}>✕</button>
-                  </div>
-                ) : (
-                  <span
-                    className="chat-self-status-text"
-                    onClick={() => setIsEditingStatus(true)}
-                    title="Click to update status"
-                  >
-                    {user?.status?.text || "Set a status"}
-                  </span>
-                )}
                 <span>{user?.email}</span>
               </div>
+            </div>
+
+            {/* Status Section */}
+            <div className="chat-status-section">
+              <div className="chat-status-header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                My Status
+              </div>
+              
+              {isEditingStatus ? (
+                <div className="chat-status-edit">
+                  <input
+                    type="text"
+                    value={statusText}
+                    onChange={(e) => setStatusText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleStatusUpdate();
+                      if (e.key === "Escape") setIsEditingStatus(false);
+                    }}
+                    autoFocus
+                    placeholder="Add a status..."
+                  />
+                  <button onClick={handleStatusUpdate}>Save</button>
+                  <button onClick={() => setIsEditingStatus(false)}>✕</button>
+                </div>
+              ) : (
+                <button 
+                  className="chat-add-status-btn"
+                  onClick={() => setIsEditingStatus(true)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  {user?.status?.text || "Add a status"}
+                </button>
+              )}
             </div>
           </div>
 
           <label className="chat-search">
             <span className="sr-only">Search user</span>
-            <input
-              type="text"
-              placeholder="Search by name or email"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="chat-search-wrap">
+              <svg className="chat-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input
+                type="text"
+                placeholder="Search by name or email"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </label>
 
           <div className="chat-user-list">
@@ -1234,7 +1294,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                   title="Search messages"
                   onClick={() => setShowMsgSearch(true)}
                 >
-                  🔍
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </button>
               </div>
             )}
@@ -1303,7 +1363,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                                 {entry.replyTo.text ? (
                                   <p>{entry.replyTo.text.substring(0, 80)}{entry.replyTo.text.length > 80 ? "..." : ""}</p>
                                 ) : entry.replyTo.mediaUrl ? (
-                                  <span className="chat-reply-media">{entry.replyTo.mediaType === "video" ? "🎥 Video" : "📎 Image"}</span>
+                                  <span className="chat-reply-media">
+                                    {entry.replyTo.mediaType === "video" ? (
+                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Video</>
+                                    ) : entry.replyTo.mediaType === "audio" ? (
+                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Voice</>
+                                    ) : (
+                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image</>
+                                    )}
+                                  </span>
                                 ) : null}
                               </div>
                             </div>
@@ -1364,18 +1432,18 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                               title="Reply"
                               aria-label="Reply to message"
                             >
-                              ↩
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
                             </button>
                             {/* Reaction button */}
                             <div className="chat-reaction-wrap" style={{ position: "relative" }}>
                               <button
-                                type="button"
-                                className="chat-bubble-react-btn"
-                                onClick={(e) => { e.stopPropagation(); setReactionPickerFor(reactionPickerFor === key ? null : key); }}
-                                title="React"
-                              >
-                                😊
-                              </button>
+                                  type="button"
+                                  className="chat-bubble-react-btn"
+                                  onClick={(e) => { e.stopPropagation(); setReactionPickerFor(reactionPickerFor === key ? null : key); }}
+                                  title="React"
+                                >
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                </button>
                               {reactionPickerFor === key && (
                                 <ReactionPicker
                                   onSelect={(emoji) => handleReaction(entry._id, emoji)}
@@ -1432,7 +1500,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                   {replyingTo.text ? (
                     <p>{replyingTo.text.substring(0, 100)}{replyingTo.text.length > 100 ? "..." : ""}</p>
                   ) : replyingTo.mediaUrl ? (
-                    <span className="chat-reply-media-label">{replyingTo.mediaType === "video" ? "🎥 Video" : "📎 Image"}</span>
+                    <span className="chat-reply-media-label">
+                      {replyingTo.mediaType === "video" ? (
+                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Video</>
+                      ) : replyingTo.mediaType === "audio" ? (
+                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Voice</>
+                      ) : (
+                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image</>
+                      )}
+                    </span>
                   ) : null}
                 </div>
               </div>
@@ -1474,10 +1550,27 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 title="Emoji"
                 aria-label="Open emoji picker"
               >
-                😊
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
               </button>
               {showEmojiPicker && <EmojiPicker onSelect={handleEmojiSelect} />}
             </div>
+
+            <button
+              type="button"
+              className={`chat-voice-btn ${isRecording ? "recording" : ""}`}
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              onMouseLeave={stopRecording}
+              disabled={!activeSelectedUser}
+              title="Hold to record voice message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
 
             <button
               type="button"
@@ -1487,7 +1580,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               title="Share photo or video"
               aria-label="Attach photo or video"
             >
-              {mediaUploading ? "⏳" : "📎"}
+              {mediaUploading ? (
+                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              )}
             </button>
             <input
               ref={mediaInputRef}
