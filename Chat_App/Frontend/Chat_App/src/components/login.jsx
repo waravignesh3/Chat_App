@@ -145,14 +145,20 @@ function Login({ setUser = () => {} }) {
           <h1>Connect with your world.</h1>
           <p>Sign in to start chatting with friends and family in real-time.</p>
 
-          <div className="auth-metrics">
-            <div className="metric-card">
-              <strong>Quick access</strong>
-              <span>Pick up direct messages, groups, and shared moments instantly.</span>
+          <div className="auth-chat-preview">
+            <div className="auth-chat-preview-header">
+              <span className="auth-chat-dot online" />
+              <strong>Recent conversation</strong>
             </div>
-            <div className="metric-card">
-              <strong>Secure sign-in</strong>
-              <span>Use your account credentials or jump in with Google.</span>
+            <div className="auth-chat-bubble other">
+              Welcome back. Your latest chats will open right away.
+            </div>
+            <div className="auth-chat-bubble own">
+              Nice. I just want a clean, fast inbox.
+            </div>
+            <div className="auth-chat-preview-footer">
+              <span>Real-time messaging</span>
+              <span>Secure access</span>
             </div>
           </div>
         </div>

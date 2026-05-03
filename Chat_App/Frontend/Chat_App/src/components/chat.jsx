@@ -747,6 +747,27 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     });
   }, [messages, search, unreadMap, user?.email, users]);
 
+  useEffect(() => {
+    if (search.trim() || isLoadingUsers || filteredUsers.length === 0) return;
+    if (selectedUser?.email && users.some((entry) => entry.email === selectedUser.email)) return;
+
+    const nextUser = filteredUsers[0];
+    shouldScrollRef.current = true;
+
+    let nextDraft = "";
+    if (user?.email && nextUser?.email) {
+      const draftKey = `chatapp-draft||${user.email}||${nextUser.email}`;
+      try {
+        nextDraft = localStorage.getItem(draftKey) || "";
+      } catch {
+        nextDraft = "";
+      }
+    }
+
+    setMessage(nextDraft);
+    setSelectedUser(nextUser);
+  }, [filteredUsers, isLoadingUsers, search, selectedUser?.email, user?.email, users]);
+
   const onlineUsersCount = useMemo(
     () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
     [user?.email, users]
@@ -1289,17 +1310,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                     </div>
                   </div>
                 </>
-              ) : (
-                <div className="chat-panel-empty">
-                  <div className="chat-panel-empty-content">
-                    <div className="chat-empty-icon">
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.1 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                ) : (
+                  <div className="chat-panel-empty">
+                    <div className="chat-panel-empty-content">
+                      <div className="chat-empty-icon">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.1 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      </div>
+                      <h2>No conversations yet</h2>
+                      <p>Your latest conversation will open here automatically as soon as messages are available.</p>
                     </div>
-                    <h2>Select a chat to start messaging</h2>
-                    <p>Send and receive messages without keeping your phone online.<br/>Use the app on up to 4 linked devices at the same time.</p>
                   </div>
-                </div>
-              )}
+                )}
             </main>
           </>
         ) : (

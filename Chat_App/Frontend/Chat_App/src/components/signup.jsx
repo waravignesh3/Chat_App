@@ -118,14 +118,24 @@ function Signup() {
           <h1>Create your account</h1>
           <p>Join the community and start chatting instantly.</p>
 
-          <div className="auth-metrics">
-            <div className="metric-card">
-              <strong>Fast onboarding</strong>
-              <span>Create your profile with a clean, guided form.</span>
+          <div className="auth-chat-preview auth-chat-preview-signup">
+            <div className="auth-chat-preview-header">
+              <span className="auth-chat-dot" />
+              <strong>Profile setup</strong>
             </div>
-            <div className="metric-card">
-              <strong>Shared experience</strong>
-              <span>Signup, login, and chat now feel part of one visual system.</span>
+            <div className="auth-contact-card">
+              <div className="auth-contact-avatar">Y</div>
+              <div>
+                <strong>Your profile</strong>
+                <span>Add your name, photo, and start chatting in one flow.</span>
+              </div>
+            </div>
+            <div className="auth-chat-bubble other">
+              Signup, login, and chat now feel like one connected experience.
+            </div>
+            <div className="auth-chat-preview-footer">
+              <span>Chat-first styling</span>
+              <span>Quick onboarding</span>
             </div>
           </div>
         </div>
