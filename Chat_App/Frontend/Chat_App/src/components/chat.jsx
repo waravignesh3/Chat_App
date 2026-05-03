@@ -6,12 +6,7 @@ import { auth } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
 import { useToast } from "./ToastContext";
 import "../App.css";
-import "../App.enhanced.css";
-import "../chat.profile.css";
-import "../chat.media.css";
-import "../chat.unread.css";
-import "../chat.bubble-fix.css";   // after App.enhanced.css
-import "../chat.reactions.fix.css"; // after chat.bubble-fix.css
+// WhatsApp Clone - Consolidated Styles
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -1045,30 +1040,6 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="chat-shell">
-
-      <div className="chat-ambient chat-ambient-left" />
-      <div className="chat-ambient chat-ambient-right" />
-
-      {/* ── Page Indicator / Navigation ── */}
-      <nav className="chat-page-nav">
-        <button 
-          className={`chat-nav-item ${activeTab === 'dm' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dm')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Direct Message
-          {Object.values(unreadMap).some(u => u.count > 0) && <span className="chat-nav-badge" />}
-        </button>
-        <button 
-          className={`chat-nav-item ${activeTab === 'status' ? 'active' : ''}`}
-          onClick={() => setActiveTab('status')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Status
-          {users.some(u => u.email !== user?.email && u.status?.mediaUrl) && <span className="chat-nav-badge" />}
-        </button>
-      </nav>
-
       {showProfileModal && (
         <ProfilePhotoModal
           user={user}
@@ -1088,685 +1059,297 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       )}
 
       <section className="chat-layout">
-        {activeTab === 'dm' ? (
-          <div className="chat-direct-message-section">
-          {/* ── Sidebar ── */}
-          <aside className="chat-sidebar">
-            <div className="chat-sidebar-header">
-            <div className="chat-hello-hub" aria-label="Hello Hub">
-              <span>HELLO HUB</span>
-            </div>
-            <div className="chat-sidebar-topline">
-              <span className="chat-chip">Inbox</span>
-              <div className="chat-sidebar-actions">
-                {/* Connection dot */}
-                <span
-                  className={`chat-conn-dot chat-conn-dot-${connectionStatus}`}
-                  title={connectionStatus === "online" ? "Connected" : connectionStatus === "offline" ? "Disconnected" : "Connecting…"}
-                />
-                {theme === "dark" && (
-                  <button
-                    type="button"
-                    className="chat-theme-button"
-                    onClick={() => {
-                      toggleTheme();
-                      showToast(`Theme changed to light mode`, "info");
-                    }}
-                    title="Toggle theme"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-                    </svg>
-                  </button>
-                )}
-                <button type="button" className="chat-logout-button" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            </div>
-            <div className="chat-live-summary">
-              <span className="chat-live-pill">{onlineUsersCount} online</span>
-              <span className={`chat-live-pill ${connectionStatus === "online" ? "is-live" : "is-waiting"}`}>
-                {connectionStatus === "online" ? "Realtime connected" : connectionStatus === "offline" ? "Realtime paused" : "Realtime syncing"}
-              </span>
+        {/* ── Sidebar ── */}
+        <aside className="chat-sidebar">
+          <div className="chat-sidebar-header">
+            <div
+              className="chat-self-avatar-wrap"
+              title="Update profile photo"
+              onClick={() => setShowProfileModal(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setShowProfileModal(true)}
+              style={{ cursor: "pointer" }}
+            >
+              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={40} className="chat-self-avatar" />
             </div>
 
-            <div className="chat-self-profile">
-              <div
-                className="chat-self-avatar-wrap chat-self-avatar-clickable"
-                title="Update profile photo"
-                onClick={() => setShowProfileModal(true)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && setShowProfileModal(true)}
+            <div className="chat-sidebar-actions">
+              <span
+                className={`chat-conn-dot chat-conn-dot-${connectionStatus}`}
+                title={connectionStatus === "online" ? "Connected" : connectionStatus === "offline" ? "Disconnected" : "Connecting…"}
+                style={{ width: '10px', height: '10px', borderRadius: '50%', background: connectionStatus === 'online' ? '#22c55e' : (connectionStatus === 'offline' ? '#fb7185' : '#f59e0b'), marginRight: '8px' }}
+              />
+              <button
+                type="button"
+                className={`chat-nav-icon-btn ${activeTab === 'dm' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dm')}
+                title="Chats"
               >
-                <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={44} className="chat-self-avatar" />
-                <span className="chat-online-ring" />
-                <span className="chat-avatar-edit-hint" aria-hidden="true">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </span>
-              </div>
-              <div className="chat-self-info">
-                <strong>{user?.name || "You"}</strong>
-                <span>{user?.email}</span>
-              </div>
-            </div>
-
-            <div className="chat-sidebar-tabs">
-              <span className="chat-sidebar-label">Direct Message</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                {Object.values(unreadMap).some(u => u.count > 0) && <span className="chat-nav-badge-small" />}
+              </button>
+              <button
+                type="button"
+                className={`chat-nav-icon-btn ${activeTab === 'status' ? 'active' : ''}`}
+                onClick={() => setActiveTab('status')}
+                title="Status"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {users.some(u => u.email !== user?.email && u.status?.mediaUrl) && <span className="chat-nav-badge-small" />}
+              </button>
+              <button type="button" className="chat-nav-icon-btn" onClick={handleLogout} title="Logout">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </button>
             </div>
           </div>
 
-          <label className="chat-search">
-            <span className="sr-only">Search user</span>
+          <div className="chat-search-container">
             <div className="chat-search-wrap">
               <svg className="chat-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input
                 type="text"
-                placeholder="Search by name or email"
+                placeholder="Search or start new chat"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-          </label>
+          </div>
 
           <div className="chat-user-list">
-            {isLoadingUsers ? (
-              <div className="chat-empty-state">
-                <strong>Loading users…</strong>
-                <p>Please wait while we sync your contacts.</p>
-              </div>
-            ) : usersError ? (
-              <div className="chat-empty-state">
-                <strong>Unable to load users</strong>
-                <p>{usersError}</p>
-              </div>
-            ) : filteredUsers.length > 0 ? (
-              filteredUsers.map((entry) => {
-                const isActive = activeSelectedUser?.email === entry.email;
-                const unread = unreadMap[entry.email];
-                const hasUnread = !isActive && unread?.count > 0;
-                const isFlashing = flashEmail === entry.email;
-
-                const unreadCardStyle = hasUnread ? {
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.16), rgba(110,168,254,0.20), rgba(192,132,252,0.13))",
-                  borderColor: "rgba(110, 168, 254, 0.65)",
-                  boxShadow: "0 0 0 1.5px rgba(34,211,238,0.30), 0 6px 20px rgba(110,168,254,0.18)",
-                } : {};
-
-                const flashStyle = isFlashing ? {
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(110,168,254,0.36), rgba(192,132,252,0.26))",
-                  borderColor: "rgba(34, 211, 238, 0.85)",
-                  boxShadow: "0 0 0 2px rgba(34,211,238,0.55), 0 8px 28px rgba(110,168,254,0.30)",
-                  transition: "none",
-                } : {};
-
-                const cardStyle = { ...unreadCardStyle, ...flashStyle };
-
-                return (
-                  <button
-                    key={entry.email}
-                    type="button"
-                    className={[
-                      "chat-user-card",
-                      isActive ? "chat-user-card-active" : "",
-                      hasUnread ? "chat-user-card-unread" : "",
-                      isFlashing ? "chat-user-card-flash" : "",
-                    ].filter(Boolean).join(" ")}
-                    style={cardStyle}
-                    onClick={() => handleSelectUser(entry)}
-                  >
-                    <div className="chat-avatar-wrap">
-                      <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={44} className="chat-avatar" />
-                      {entry.isOnline && <span className="chat-online-ring" />}
-                      {hasUnread && (
-                        <span
-                          className="chat-unread-dot"
-                          aria-label={`${unread.count} unread`}
-                          style={{
-                            position: "absolute", top: "-4px", right: "-4px",
-                            minWidth: "20px", height: "20px", borderRadius: "10px",
-                            background: "linear-gradient(135deg,#22d3ee,#6ea8fe)",
-                            color: "#04101e", fontSize: "11px", fontWeight: 900,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            padding: "0 5px", border: "2px solid #040d1a",
-                            boxShadow: "0 0 10px rgba(34,211,238,0.8)", zIndex: 5,
-                          }}
-                        >
-                          {unread.count > 99 ? "99+" : unread.count}
-                        </span>
-                      )}
-                    </div>
-                    <span className="chat-user-copy">
-                      <strong style={hasUnread ? { color: "#ffffff", fontWeight: 700 } : {}}>
-                        {entry.name || entry.email}
-                      </strong>
-                      {entry.status?.text && (
-                        <span className="chat-user-status-preview">{entry.status.text}</span>
-                      )}
-                      {hasUnread
-                        ? <span className="chat-unread-preview" style={{ color: "#c7e3ff", fontWeight: 500 }}>{unread.lastText}</span>
-                        : <span className="chat-user-email">{entry.email}</span>
-                      }
-                      <span className={entry.isOnline ? "chat-status online" : "chat-status"}>
-                        {hasUnread
-                          ? <span className="chat-unread-time" style={{ color: "#22d3ee", fontWeight: 700 }}>{unread.lastTime}</span>
-                          : entry.isOnline
-                            ? <><span className="chat-online-dot" />Online</>
-                            : `Last seen: ${formatLastSeen(entry.lastSeen)}`
-                        }
-                      </span>
-                    </span>
-                  </button>
-                );
-              })
+            {activeTab === 'dm' ? (
+              <>
+                {isLoadingUsers ? (
+                  <div className="chat-loading-state">Loading chats...</div>
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map((entry) => {
+                    const isActive = activeSelectedUser?.email === entry.email;
+                    const unread = unreadMap[entry.email];
+                    const hasUnread = !isActive && unread?.count > 0;
+                    return (
+                      <button
+                        key={entry.email}
+                        type="button"
+                        className={`chat-user-card ${isActive ? "active" : ""} ${hasUnread ? "unread" : ""}`}
+                        onClick={() => handleSelectUser(entry)}
+                      >
+                        <div className="chat-avatar-wrap">
+                          <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={48} className="chat-avatar" />
+                          {entry.isOnline && <span className="chat-online-dot-small" />}
+                        </div>
+                        <div className="chat-user-info">
+                          <div className="chat-user-info-top">
+                            <span className="chat-user-name">{entry.name || entry.email}</span>
+                            <span className="chat-user-time">
+                              {hasUnread ? unread.lastTime : (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen))}
+                            </span>
+                          </div>
+                          <div className="chat-user-info-bottom">
+                            <span className="chat-user-message">
+                              {hasUnread ? unread.lastText : (entry.status?.text || entry.email)}
+                            </span>
+                            {hasUnread && <span className="chat-unread-badge">{unread.count}</span>}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="chat-empty-state">No chats found</div>
+                )}
+              </>
             ) : (
-              <div className="chat-empty-state">
-                <strong>No users found</strong>
-                <p>Try a different name or email.</p>
+              <div className="chat-status-list">
+                <div className="chat-my-status-card" onClick={() => user?.status?.mediaUrl && setViewingStatusUser(user)}>
+                  <div className="chat-status-avatar-wrap">
+                    <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={48} />
+                    <button
+                      className="chat-status-add-overlay"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "image/*,video/*";
+                        input.onchange = (e) => {
+                          const file = e.target.files[0];
+                          if (file) { setStatusFile(file); setIsEditingStatus(true); }
+                        };
+                        input.click();
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="chat-status-info">
+                    <strong>My Status</strong>
+                    <p>{user?.status?.mediaUrl ? "Tap to view" : "Add to my status"}</p>
+                  </div>
+                </div>
+
+                <div className="chat-status-label">Recent Updates</div>
+                {users.filter(u => u.email !== user?.email && u.status?.mediaUrl).length > 0 ? (
+                  users.filter(u => u.email !== user?.email && u.status?.mediaUrl).map(u => (
+                    <button key={u.email} className="chat-user-card" onClick={() => setViewingStatusUser(u)}>
+                      <div className="chat-status-avatar-ring">
+                        <Avatar name={u.name} email={u.email} photo={u.photo} size={48} />
+                      </div>
+                      <div className="chat-user-info">
+                        <span className="chat-user-name">{u.name || u.email}</span>
+                        <span className="chat-user-time">{new Date(u.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="chat-empty-state">No status updates</div>
+                )}
               </div>
             )}
           </div>
         </aside>
 
-        {/* ── Chat Panel ── */}
+        {/* ── Main Chat Panel ── */}
         <main className="chat-panel">
-          <div className="chat-panel-header">
-            <div>
-              <span className="chat-chip">Direct Message</span>
-              <h3>{activeSelectedUser ? activeSelectedUser.name || activeSelectedUser.email : "Select a user"}</h3>
-              {activeSelectedUser?.status?.text && (
-                <p className="chat-active-user-status">“{activeSelectedUser.status.text}”</p>
-              )}
-              <p className={isTyping ? "panel-typing-live" : ""}>
-                {activeSelectedUser
-                  ? isTyping
-                    ? <span className="panel-typing-live"><span className="panel-typing-wave" />{panelStatusText}</span>
-                    : activeSelectedUser.isOnline
-                      ? <span className="panel-online-status"><span className="chat-online-dot panel-dot" />{panelStatusText}</span>
-                      : <span className="panel-lastseen">{panelStatusText}</span>
-                  : panelStatusText
-                }
-              </p>
-              {activeSelectedUser && (
-                <p className="chat-panel-meta">
-                  {conversationMessages.length} message{conversationMessages.length === 1 ? "" : "s"} in this conversation
-                </p>
-              )}
-            </div>
-            {/* Header actions */}
-            {activeSelectedUser && (
-              <div className="chat-panel-header-actions">
-                <button
-                  type="button"
-                  className="chat-header-action-btn"
-                  title="Search messages"
-                  onClick={() => setShowMsgSearch(true)}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="chat-messages-wrap">
-            <div
-              className="chat-messages"
-              ref={messagesContainerRef}
-              onScroll={(e) => {
-                const el = e.currentTarget;
-                const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-                setShowScrollBtn(dist > 200);
-              }}
-            >
-              {activeSelectedUser ? (
-                conversationMessages.length > 0 ? (
-                  <>
-                    {messageItems.map((item, itemIdx) => {
-                      if (item.type === "date") {
-                        return (
-                          <div key={`date-${item.label}-${itemIdx}`} className="chat-date-separator">
-                            <span>{item.label}</span>
-                          </div>
-                        );
-                      }
-
-                      const { entry, index } = item;
-                      const isOwn = entry.sender === user?.email;
-                      const isReplying = replyingTo?.index === index;
-                      const isHighlighted = highlightedMsgIndex === index;
-                      const key = getMessageId(entry, index);
-                      const msgReactions = getReactionCountMap(entry.reactions);
-                      const hasReactions = Object.keys(msgReactions).length > 0;
-                      const isLastOwn = isOwn && index === conversationMessages.length - 1;
-                      const isPending = entry.deliveryState === "sending" && !entry._id;
-
-                      return (
-                        <article
-                          key={key}
-                          data-msgindex={index}
-                          className={[
-                            "chat-bubble",
-                            isOwn ? "own" : "",
-                            isReplying ? "replying" : "",
-                            isHighlighted ? "chat-bubble-highlighted" : "",
-                            freshMessageId === key ? "chat-bubble-fresh" : "",
-                          ].filter(Boolean).join(" ")}
-                          onDoubleClick={() => handleCopyMessage(entry, index)}
-                          onMouseEnter={(e) => {
-                            const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
-                            if (replyBtn) replyBtn.style.opacity = "1";
-                          }}
-                          onMouseLeave={(e) => {
-                            const replyBtn = e.currentTarget.querySelector(".chat-bubble-reply-btn");
-                            if (replyBtn) replyBtn.style.opacity = "0";
-                          }}
-                        >
-                          {/* Reply context */}
-                          {entry.replyTo && (entry.replyTo.text || entry.replyTo.mediaUrl) && (
-                            <div className="chat-reply-context">
-                              {entry.replyTo.senderName && (
-                                <span className="chat-reply-sender">{entry.replyTo.senderName}</span>
-                              )}
-                              <div className="chat-reply-preview">
-                                {entry.replyTo.text ? (
-                                  <p>{entry.replyTo.text.substring(0, 80)}{entry.replyTo.text.length > 80 ? "..." : ""}</p>
-                                ) : entry.replyTo.mediaUrl ? (
-                                  <span className="chat-reply-media">
-                                    {entry.replyTo.mediaType === "video" ? (
-                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Video</>
-                                    ) : entry.replyTo.mediaType === "audio" ? (
-                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Voice</>
-                                    ) : (
-                                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image</>
-                                    )}
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-                          )}
-
-                          <span className="chat-bubble-sender">
-                            {isOwn ? "You" : activeSelectedUser.name || activeSelectedUser.email}
-                          </span>
-
-                          {entry.text && <p>{entry.text}</p>}
-                          {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
-
-                          {/* Reactions display */}
-                          {hasReactions && (
-                            <div className="chat-reactions">
-                              {Object.entries(msgReactions).map(([emoji, count]) => {
-                                const reactedUsers = Array.isArray(entry.reactions?.[emoji]) ? entry.reactions[emoji] : [];
-                                const reactedByMe = reactedUsers.includes(user?.email);
-                                return (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    className="chat-reaction-badge"
-                                    onClick={() => handleReaction(entry._id, emoji)}
-                                    title={reactedByMe ? "Remove your reaction" : "React with this emoji"}
-                                    style={reactedByMe ? { borderColor: "rgba(34,211,238,0.7)", boxShadow: "0 0 0 1px rgba(34,211,238,0.35)" } : undefined}
-                                  >
-                                    {emoji} {count > 1 ? count : ""}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          <div className="chat-bubble-footer">
-                            <time>{formatMsgTime(entry.time)}</time>
-                            {copiedMessageId === key && <span className="chat-copy-pill">Copied</span>}
-                            {isOwn && (
-                              <span className={`chat-read-receipt ${isPending ? "sent" : "read"}`} title={isPending ? "Saving to MongoDB" : "Stored"}>
-                                {isPending ? "…" : "DB"}
-                              </span>
-                            )}
-                            {/* Read receipt for own messages */}
-                            {isOwn && isLastOwn && !isPending && (
-                              <span className={`chat-read-receipt ${lastOwnMsgIsRead ? "read" : "sent"}`} title={lastOwnMsgIsRead ? "Seen" : "Sent"}>
-                                {lastOwnMsgIsRead ? "✓✓" : "✓"}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Action buttons */}
-                          <div className="chat-bubble-actions">
-                            {/* Reply button */}
-                            <button
-                              type="button"
-                              className="chat-bubble-reply-btn"
-                              onClick={() => setReplyingTo({ messageId: entry._id, index, sender: entry.sender, text: entry.text, mediaUrl: entry.mediaUrl, mediaType: entry.mediaType })}
-                              title="Reply"
-                              aria-label="Reply to message"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-                            </button>
-                            {/* Reaction button */}
-                            <div className="chat-reaction-wrap" style={{ position: "relative" }}>
-                              <button
-                                  type="button"
-                                  className="chat-bubble-react-btn"
-                                  onClick={(e) => { e.stopPropagation(); setReactionPickerFor(reactionPickerFor === key ? null : key); }}
-                                  title="React"
-                                >
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                                </button>
-                              {reactionPickerFor === key && (
-                                <ReactionPicker
-                                  onSelect={(emoji) => handleReaction(entry._id, emoji)}
-                                  onClose={() => setReactionPickerFor(null)}
-                                  isOwn={isOwn}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                    {isTyping && (
-                      <div className="chat-typing-indicator"><span /><span /><span /></div>
-                    )}
-                  </>
-                ) : (
-                  <div className="chat-empty-state chat-empty-state-large">
-                    <strong>No messages yet</strong>
-                    <p>Send the first message to begin this conversation.</p>
+          {activeSelectedUser ? (
+            <>
+              <div className="chat-panel-header">
+                <div className="chat-panel-header-left">
+                  <Avatar name={activeSelectedUser.name} email={activeSelectedUser.email} photo={activeSelectedUser.photo} size={40} />
+                  <div className="chat-active-user-info">
+                    <h3>{activeSelectedUser.name || activeSelectedUser.email}</h3>
+                    <p className={activeSelectedUser.isOnline ? "online" : ""}>
+                      {isTyping ? "typing..." : (activeSelectedUser.isOnline ? "Online" : `last seen ${formatLastSeen(activeSelectedUser.lastSeen)}`)}
+                    </p>
                   </div>
-                )
-              ) : (
-                <div className="chat-empty-state chat-empty-state-large">
-                  <strong>Your conversation will appear here</strong>
-                  <p>Select a user from the sidebar to open a private chat.</p>
                 </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
-
-            {showScrollBtn && (
-              <button
-                type="button"
-                className="chat-scroll-btn"
-                aria-label="Scroll to latest message"
-                onClick={() => {
-                  shouldScrollRef.current = true;
-                  bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-                  setShowScrollBtn(false);
-                }}
-              >
-                ↓
-              </button>
-            )}
-          </div>
-
-          {/* Reply preview */}
-          {replyingTo && (
-            <div className="chat-reply-preview-section">
-              <div className="chat-reply-preview-content">
-                <span className="chat-reply-label">Replying to:</span>
-                <div className="chat-reply-preview-message">
-                  {replyingTo.text ? (
-                    <p>{replyingTo.text.substring(0, 100)}{replyingTo.text.length > 100 ? "..." : ""}</p>
-                  ) : replyingTo.mediaUrl ? (
-                    <span className="chat-reply-media-label">
-                      {replyingTo.mediaType === "video" ? (
-                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Video</>
-                      ) : replyingTo.mediaType === "audio" ? (
-                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Voice</>
-                      ) : (
-                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image</>
-                      )}
-                    </span>
-                  ) : null}
+                <div className="chat-panel-header-actions">
+                  <button type="button" className="chat-header-icon-btn" onClick={() => setShowMsgSearch(true)} title="Search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                className="chat-reply-cancel"
-                onClick={() => setReplyingTo(null)}
-                aria-label="Cancel reply"
-              >
-                ✕
-              </button>
-            </div>
-          )}
 
-          {/* Compose */}
-          <div className="chat-compose">
-            {composerNotice.text && composerNotice.type === "error" && (
-              <div
-                className="chat-compose-notice"
-                style={{
-                  flexBasis: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  background: "rgba(220, 38, 38, 0.18)",
-                  border: "1px solid rgba(248, 113, 113, 0.4)",
-                  color: "#eaf5ff",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {composerNotice.text}
-              </div>
-            )}
-            <div className="chat-compose-extras" ref={emojiPickerRef}>
-              <button
-                type="button"
-                className="chat-emoji-toggle"
-                onClick={() => setShowEmojiPicker((v) => !v)}
-                disabled={!activeSelectedUser}
-                title="Emoji"
-                aria-label="Open emoji picker"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-              </button>
-              {showEmojiPicker && <EmojiPicker onSelect={handleEmojiSelect} />}
-            </div>
+              <div className="chat-messages-container" ref={messagesContainerRef}>
+                <div className="chat-messages-bg" />
+                <div className="chat-messages-list">
+                  {messageItems.map((item, itemIdx) => {
+                    if (item.type === "date") {
+                      return <div key={`date-${itemIdx}`} className="chat-date-separator"><span>{item.label}</span></div>;
+                    }
+                    const { entry, index } = item;
+                    const isOwn = entry.sender === user?.email;
+                    const key = getMessageId(entry, index);
+                    const isPending = entry.deliveryState === "sending" && !entry._id;
 
-            <button
-              type="button"
-              className={`chat-voice-btn ${isRecording ? "recording" : ""}`}
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onMouseLeave={stopRecording}
-              disabled={!activeSelectedUser}
-              title="Hold to record voice message"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </button>
-
-            <button
-              type="button"
-              className="chat-media-toggle"
-              onClick={() => mediaInputRef.current?.click()}
-              disabled={!activeSelectedUser || mediaUploading}
-              title="Share photo or video"
-              aria-label="Attach photo or video"
-            >
-              {mediaUploading ? (
-                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-              )}
-            </button>
-            <input
-              ref={mediaInputRef}
-              type="file"
-              accept="image/*,video/*"
-              style={{ display: "none" }}
-              onChange={handleMediaFileChange}
-            />
-
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={handleTyping}
-              onKeyDown={handleMessageKeyDown}
-              placeholder={
-                activeSelectedUser
-                  ? `Message ${activeSelectedUser.name || activeSelectedUser.email}`
-                  : "Pick a user to start typing"
-              }
-              disabled={!activeSelectedUser}
-              rows="1"
-              maxLength="2000"
-            />
-            <span
-              style={{
-                alignSelf: "flex-end",
-                fontSize: "0.78rem",
-                color: message.length > 1800 ? "#fbbf24" : "rgba(199,227,255,0.68)",
-                minWidth: "52px",
-                textAlign: "right",
-              }}
-            >
-              {message.length}/2000
-            </span>
-            <button
-              type="button"
-              className="chat-send-button"
-              onClick={sendMessage}
-              disabled={!activeSelectedUser || !message.trim()}
-            >
-              Send
-            </button>
-          </div>
-        </main>
-      </div>
-    ) : (
-      /* ── Status Section (Full Page) ── */
-      <aside className="chat-status-panel full-page">
-        <div className="chat-status-panel-header">
-          <h3>Statuses</h3>
-        </div>
-
-            <div className="chat-status-view">
-              {viewingStatusUser ? (
-                <div className="chat-status-viewer">
-                  <div className="chat-status-viewer-header">
-                    <button className="chat-status-viewer-back" onClick={() => setViewingStatusUser(null)}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                      Back
-                    </button>
-                    <div className="chat-status-viewer-user">
-                      <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={32} />
-                      <div className="chat-status-viewer-meta">
-                        <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
-                        <span>{new Date(viewingStatusUser.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    return (
+                      <div
+                        key={key}
+                        className={`chat-bubble-row ${isOwn ? "own" : ""}`}
+                      >
+                        <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""}`}>
+                          {!isOwn && <span className="chat-bubble-sender">{activeSelectedUser.name || activeSelectedUser.email}</span>}
+                          {entry.replyTo && (
+                            <div className="chat-reply-preview">
+                              <span className="reply-sender">{entry.replyTo.senderName}</span>
+                              <p>{entry.replyTo.text}</p>
+                            </div>
+                          )}
+                          <div className="chat-bubble-content">
+                            {entry.text && <p>{entry.text}</p>}
+                            {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
+                            <div className="chat-bubble-meta">
+                              <time>{formatMsgTime(entry.time)}</time>
+                              {isOwn && (
+                                <span className="chat-status-icon">
+                                  {isPending ? "..." : (lastOwnMsgIsRead && index === conversationMessages.length - 1 ? "✓✓" : "✓")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="chat-status-viewer-content">
-                    {viewingStatusUser.status.mediaType === "video" ? (
-                      <video src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls />
-                    ) : (
-                      <img src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />
-                    )}
-                  </div>
-                  {viewingStatusUser.status.text && (
-                    <div className="chat-status-viewer-caption">
-                      <p>{viewingStatusUser.status.text}</p>
-                    </div>
+                    );
+                  })}
+                  {isTyping && <div className="chat-typing-indicator"><span></span><span></span><span></span></div>}
+                  <div ref={bottomRef} />
+                </div>
+              </div>
+
+              <div className="chat-input-area">
+                <div className="chat-input-wrap">
+                  <button type="button" className="chat-input-icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                  </button>
+                  {showEmojiPicker && <div className="emoji-picker-container" ref={emojiPickerRef}><EmojiPicker onSelect={handleEmojiSelect} /></div>}
+                  <button type="button" className="chat-input-icon-btn" onClick={() => mediaInputRef.current?.click()}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  </button>
+                  <input ref={mediaInputRef} type="file" style={{ display: "none" }} onChange={handleMediaFileChange} />
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={handleTyping}
+                    onKeyDown={handleMessageKeyDown}
+                    placeholder="Type a message"
+                    rows="1"
+                  />
+                  {message.trim() ? (
+                    <button type="button" className="chat-send-btn" onClick={sendMessage}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg>
+                    </button>
+                  ) : (
+                    <button type="button" className={`chat-voice-btn ${isRecording ? "recording" : ""}`} onMouseDown={startRecording} onMouseUp={stopRecording}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </button>
                   )}
                 </div>
-              ) : (
-                <>
-                  <div className="chat-status-view-header">
-                    <h4 className="chat-status-label">My Status</h4>
-                    <div 
-                      className="chat-my-status-card"
-                      onClick={() => {
-                        if (user?.status?.mediaUrl) {
-                          setViewingStatusUser(user);
-                        }
-                      }}
-                      style={{ cursor: user?.status?.mediaUrl ? "pointer" : "default" }}
-                    >
-                      <div className="chat-status-avatar-wrap">
-                        <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={48} />
-                        <button 
-                          className="chat-status-add-overlay"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = "image/*,video/*";
-                            input.onchange = (e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                setStatusFile(file);
-                                setIsEditingStatus(true);
-                              }
-                            };
-                            input.click();
-                          }}
-                          title="Add photo or video"
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        </button>
-                      </div>
-                      <div className="chat-my-status-info">
-                        <strong>{user?.status?.mediaUrl ? "Tap to view your status" : "Add to my status"}</strong>
-                        <p>{user?.status?.createdAt ? `Last updated: ${new Date(user.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Share a photo or video"}</p>
-                      </div>
-                    </div>
-                    
-                    {isEditingStatus && statusFile && (
-                      <div className="chat-status-upload-form">
-                        <div className="chat-status-preview-box">
-                           {statusFile.type.startsWith("video/") ? (
-                             <video src={URL.createObjectURL(statusFile)} controls />
-                           ) : (
-                             <img src={URL.createObjectURL(statusFile)} alt="Preview" />
-                           )}
-                        </div>
-                        <input 
-                          type="text" 
-                          placeholder="Add a caption..." 
-                          value={statusText} 
-                          onChange={(e) => setStatusText(e.target.value)}
-                          className="chat-status-caption-input"
-                        />
-                        <div className="chat-status-upload-actions">
-                          <button className="chat-status-share-btn" onClick={handleStatusUpdate} disabled={statusUploading}>
-                            {statusUploading ? "Uploading..." : "Share"}
-                          </button>
-                          <button className="chat-status-cancel-btn" onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="chat-others-status-section">
-                    <h4 className="chat-status-label">Recent Updates</h4>
-                    {users.filter(u => u.email !== user?.email && u.status?.mediaUrl).length > 0 ? (
-                      users.filter(u => u.email !== user?.email && u.status?.mediaUrl).map(u => (
-                        <button key={u.email} className="chat-status-user-card" onClick={() => setViewingStatusUser(u)}>
-                          <div className="chat-status-avatar-ring">
-                            <Avatar name={u.name} email={u.email} photo={u.photo} size={48} />
-                          </div>
-                          <div className="chat-status-user-info">
-                            <strong>{u.name || u.email}</strong>
-                            <span>{new Date(u.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="chat-empty-state">
-                        <p>No recent updates from your contacts.</p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              </div>
+            </>
+          ) : (
+            <div className="chat-panel-empty">
+              <div className="chat-panel-empty-content">
+                <div className="chat-hello-hub-logo">
+                  <span>HELLO HUB</span>
+                </div>
+                <h2>WhatsApp Web Clone</h2>
+                <p>Send and receive messages without keeping your phone online.<br/>Use WhatsApp on up to 4 linked devices and 1 phone at the same time.</p>
+              </div>
             </div>
-          </aside>
+          )}
+        </main>
+
+        {isEditingStatus && statusFile && (
+          <div className="status-upload-overlay">
+            <div className="status-upload-modal">
+              <h3>Share Status</h3>
+              <div className="status-preview">
+                {statusFile.type.startsWith("video/") ? <video src={URL.createObjectURL(statusFile)} controls /> : <img src={URL.createObjectURL(statusFile)} alt="Status" />}
+              </div>
+              <input type="text" placeholder="Add a caption..." value={statusText} onChange={(e) => setStatusText(e.target.value)} />
+              <div className="status-upload-actions">
+                <button onClick={handleStatusUpdate} disabled={statusUploading}>{statusUploading ? "Sharing..." : "Share"}</button>
+                <button onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {viewingStatusUser && (
+          <div className="status-viewer-overlay" onClick={() => setViewingStatusUser(null)}>
+            <div className="status-viewer-content" onClick={e => e.stopPropagation()}>
+              <div className="status-viewer-header">
+                <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={40} />
+                <div className="status-viewer-meta">
+                  <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
+                  <span>{new Date(viewingStatusUser.status.createdAt).toLocaleTimeString()}</span>
+                </div>
+                <button className="status-viewer-close" onClick={() => setViewingStatusUser(null)}>✕</button>
+              </div>
+              <div className="status-viewer-media">
+                {viewingStatusUser.status.mediaType === "video" ? <video src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls /> : <img src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />}
+              </div>
+              {viewingStatusUser.status.text && <div className="status-viewer-caption">{viewingStatusUser.status.text}</div>}
+            </div>
+          </div>
         )}
       </section>
     </div>
