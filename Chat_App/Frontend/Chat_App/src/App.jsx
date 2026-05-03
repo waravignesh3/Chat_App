@@ -134,7 +134,7 @@ function App() {
       active = false;
       unsubscribe();
     };
-  }, []); // Run once on mount — onAuthStateChanged handles all state transitions
+  }, [user?.id, user?.email, user?.provider]); // Dependencies included to satisfy ESLint and ensure correct sync logic
 
   if (!authReady) {
     return <div className="auth-bootstrap">Loading your session…</div>;
