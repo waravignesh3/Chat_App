@@ -120,147 +120,217 @@
 .profile-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
-  z-index: 500;
+  background: rgba(11, 20, 26, 0.85); /* WhatsApp semi-transparent dark */
+  backdrop-filter: blur(8px);
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 20px;
+  animation: modalFadeIn 0.3s ease-out;
 }
 
-.profile-modal {
-  background: var(--color-surface, #1e1e2e);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.profile-modal-container {
+  background: #202c33; /* WhatsApp dark surface */
   width: 100%;
-  max-width: 360px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  max-width: 450px;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalScaleUp {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .profile-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 24px 30px;
+  background: #2a3942;
 }
 
 .profile-modal-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: var(--color-text, #e2e8f0);
+  color: #e9edef;
 }
 
-.profile-modal-close {
+.profile-modal-close-btn {
   background: transparent;
   border: none;
-  color: var(--color-muted, #94a3b8);
-  font-size: 16px;
+  color: #8696a0;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-
-.profile-modal-close:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-.profile-modal-body {
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.profile-preview-wrap {
-  width: 100px;
-  height: 100px;
+  padding: 8px;
   border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid rgba(99,102,241,0.4);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.profile-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e9edef;
+  transform: rotate(90deg);
+}
+
+.profile-modal-content {
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-image-preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-preview-circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #00a884;
+  background: #111b21;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .profile-preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-.profile-pick-btn {
-  padding: 9px 20px;
-  border-radius: 8px;
-  border: 1.5px solid rgba(99,102,241,0.5);
-  background: transparent;
-  color: var(--color-text, #e2e8f0);
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+.profile-preview-circle:hover .profile-preview-img {
+  transform: scale(1.1);
 }
 
-.profile-pick-btn:hover {
-  background: rgba(99,102,241,0.12);
-  border-color: #6366f1;
-}
-
-.profile-error {
-  color: #f87171;
-  font-size: 13px;
-  margin: 0;
-  text-align: center;
-}
-
-.profile-modal-footer {
-  display: flex;
-  gap: 10px;
-  padding: 14px 20px 18px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  justify-content: flex-end;
-}
-
-.profile-cancel-btn {
-  padding: 9px 18px;
-  border-radius: 8px;
-  border: 1.5px solid rgba(255,255,255,0.1);
-  background: transparent;
-  color: var(--color-muted, #94a3b8);
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.profile-cancel-btn:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-.profile-upload-btn {
-  padding: 9px 20px;
-  border-radius: 8px;
+.profile-edit-overlay-btn {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   border: none;
-  background: #6366f1;
   color: #fff;
-  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.profile-preview-circle:hover .profile-edit-overlay-btn {
+  opacity: 1;
+}
+
+.profile-edit-overlay-btn span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.profile-modal-hint {
+  color: #8696a0;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.profile-modal-error-banner {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: rgba(241, 94, 117, 0.1);
+  border-left: 4px solid #f15e75;
+  color: #f15e75;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.profile-modal-actions {
+  padding: 20px 30px 30px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.profile-action-btn {
+  padding: 12px 24px;
+  border-radius: 30px; /* Shaped buttons */
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: all 0.2s;
+  border: none;
+  min-width: 120px;
 }
 
-.profile-upload-btn:hover:not(:disabled) {
-  background: #4f46e5;
+.profile-action-btn.cancel {
+  background: transparent;
+  color: #00a884;
+  border: 1px solid rgba(0, 168, 132, 0.3);
 }
 
-.profile-upload-btn:disabled {
-  opacity: 0.45;
+.profile-action-btn.cancel:hover {
+  background: rgba(0, 168, 132, 0.05);
+  border-color: #00a884;
+}
+
+.profile-action-btn.save {
+  background: #00a884;
+  color: #111b21;
+}
+
+.profile-action-btn.save:hover:not(:disabled) {
+  background: #008f6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 168, 132, 0.3);
+}
+
+.profile-action-btn.save:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.profile-action-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Own avatar clickable (hover hint) ───────────────────────────────────── */

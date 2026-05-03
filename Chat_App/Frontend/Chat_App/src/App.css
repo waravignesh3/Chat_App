@@ -560,33 +560,21 @@ button {
 
 .chat-direct-message-section {
   display: grid;
-  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+  grid-template-columns: 400px minmax(0, 1fr);
   gap: 0;
   flex: 1;
   min-width: 0;
-}
-
-.chat-sidebar,
-.chat-panel {
-  position: relative;
-  border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0; /* Remove rounded corners */
-  background: #111b21; /* WhatsApp Dark Sidebar */
-  box-shadow: none;
-  backdrop-filter: none;
-  overflow: hidden;
-}
-
-.chat-panel {
-  background: #0b141a; /* WhatsApp Dark Chat Background */
-  border-right: none;
+  width: 100%;
 }
 
 .chat-sidebar {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  padding: 22px;
+  width: 400px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #111b21;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
   animation: slideUp 0.75s ease both;
   min-height: 0;
   overflow: hidden;
@@ -683,13 +671,25 @@ button {
 .chat-user-card {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 0 16px;
+  height: 72px; /* Consistent height like WhatsApp */
   width: 100%;
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 0.2s;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-user-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: calc(100% - 80px); /* Leave room for avatar */
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .chat-user-card:hover {
@@ -720,6 +720,10 @@ button {
 .chat-user-info {
   flex: 1;
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   text-align: left;
 }
 
@@ -1074,6 +1078,40 @@ button {
   height: 100%;
 }
 
+.chat-status-dashboard {
+  display: flex;
+  height: calc(100% - 60px);
+  background: #0b141a;
+}
+
+.chat-status-sidebar {
+  width: 400px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111b21;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-status-main-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b141a;
+}
+
+.chat-status-empty {
+  text-align: center;
+  color: #8696a0;
+}
+
+.chat-status-viewer-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .chat-status-label {
   padding: 16px 20px;
   color: #00a884;
@@ -1174,13 +1212,13 @@ button {
 .chat-user-list {
   position: relative;
   z-index: 1;
-  display: grid;
-  gap: 12px;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
   min-height: 0;
+  flex: 1;
 }
 
 .chat-user-list::-webkit-scrollbar {
@@ -1345,7 +1383,7 @@ button {
 .chat-bubble {
   flex-shrink: 0;
   align-self: flex-start;
-  max-width: 65%;
+  max-width: 60%; /* Wrap to roughly half page width */
   padding: 6px 12px 8px;
   border-radius: 0 8px 8px 8px; /* WhatsApp style */
   background: #202c33; /* WhatsApp other bubble */
@@ -1355,6 +1393,7 @@ button {
   position: relative;
   overflow: visible;
   margin-top: 2px;
+  word-wrap: break-word; /* Ensure wrapping */
 }
 
 .chat-bubble.own {
