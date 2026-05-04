@@ -1629,7 +1629,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   const settingsStats = useMemo(() => ({
     unreadCount: Object.values(unreadMap).reduce((sum, entry) => sum + (entry?.count || 0), 0),
-    statusCount: users.filter((entry) => entry.email !== user?.email && entry.status?.mediaUrl).length,
+    statusCount: users.filter((entry) => 
+      entry.email !== user?.email && 
+      entry.statuses?.some(s => !s.views?.includes(user?.email))
+    ).length,
     blockedCount: user?.blockedUsers?.length || 0,
     pinnedCount: user?.pinnedChats?.length || 0,
   }), [unreadMap, user?.blockedUsers?.length, user?.email, user?.pinnedChats?.length, users]);
@@ -2624,7 +2627,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         onChange={setActiveTab}
         unreadCount={settingsStats.unreadCount}
         statusCount={settingsStats.statusCount}
-        callCount={callRecords.length}
+        callCount={0}
       />
       
       <IncomingCallModal 
