@@ -2387,6 +2387,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         </div>
       )}
+
+      <BottomNav
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        unreadCount={settingsStats.unreadCount}
+        statusCount={settingsStats.statusCount}
+        callCount={callRecords.length}
+      />
+      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
     </div>
 
   );
