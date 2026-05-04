@@ -24,6 +24,7 @@ const StatusViewer = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showViewersSheet, setShowViewersSheet] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const progressTimerRef = useRef(null);
   const videoRef = useRef(null);
@@ -90,9 +91,9 @@ const StatusViewer = ({
     }
   }, [currentStoryIndex, currentUserIndex, statusUsers]);
 
-  // Progress animation — pauses during delete confirm
+  // Progress animation — pauses during delete confirm or viewers sheet
   useEffect(() => {
-    if (isPaused || isLoading || showDeleteConfirm) return;
+    if (isPaused || isLoading || showDeleteConfirm || showViewersSheet) return;
 
     const duration = currentStory?.mediaType === 'video'
       ? (videoRef.current?.duration || 10) * 1000
@@ -112,7 +113,7 @@ const StatusViewer = ({
     }, interval);
 
     return () => clearInterval(progressTimerRef.current);
-  }, [isPaused, isLoading, currentStory, handleNext, showDeleteConfirm]);
+  }, [isPaused, isLoading, currentStory, handleNext, showDeleteConfirm, showViewersSheet]);
 
   // View tracking
   useEffect(() => {
@@ -138,6 +139,7 @@ const StatusViewer = ({
       if (e.key === 'ArrowLeft') handlePrev();
       if (e.key === 'Escape') {
         if (showDeleteConfirm) { setShowDeleteConfirm(false); return; }
+        if (showViewersSheet) { setShowViewersSheet(false); return; }
         onClose();
       }
       if (e.key === ' ') setIsPaused(p => !p);
@@ -319,7 +321,10 @@ const StatusViewer = ({
         {/* Footer — own status: likes + views + delete confirm; others: like button */}
         <div className="status-v3-footer">
           {isOwnStatus ? (
-            <div className="status-v3-own-stats">
+            <div 
+              className="status-v3-own-stats clickable" 
+              onClick={(e) => { e.stopPropagation(); setShowViewersSheet(true); }}
+            >
               <div className="status-v3-stat">
                 <Eye size={18} />
                 <span>{viewCount} view{viewCount !== 1 ? 's' : ''}</span>
@@ -327,6 +332,9 @@ const StatusViewer = ({
               <div className="status-v3-stat">
                 <Heart size={18} fill={likeCount > 0 ? '#f43f5e' : 'none'} color={likeCount > 0 ? '#f43f5e' : 'currentColor'} />
                 <span>{likeCount} like{likeCount !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="status-v3-stat-hint">
+                <ChevronRight size={14} />
               </div>
             </div>
           ) : (
@@ -382,6 +390,72 @@ const StatusViewer = ({
                   </button>
                 </div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Viewers Sheet Overlay */}
+        <AnimatePresence>
+          {showViewersSheet && (
+            <motion.div
+              className="status-v3-viewers-sheet-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowViewersSheet(false)}
+            >
+              <motion.div
+                className="status-v3-viewers-sheet"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="status-v3-sheet-handle" />
+                <div className="status-v3-sheet-header">
+                  <h3>Viewed by {viewCount}</h3>
+                  <button onClick={() => setShowViewersSheet(false)} className="status-v3-sheet-close">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="status-v3-sheet-body">
+                  {currentStory.views?.length > 0 ? (
+                    <div className="status-v3-viewer-list">
+                      {currentStory.views.map(viewerEmail => {
+                        const viewer = users.find(u => u.email === viewerEmail) || { email: viewerEmail };
+                        const hasLiked = currentStory.likes?.includes(viewerEmail);
+                        return (
+                          <div key={viewerEmail} className="status-v3-viewer-item">
+                            <div className="status-v3-viewer-info">
+                              <img 
+                                src={resolveAssetUrl(viewer.photo) || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"} 
+                                alt="" 
+                                className="status-v3-viewer-avatar" 
+                              />
+                              <div className="status-v3-viewer-meta">
+                                <span className="status-v3-viewer-name">{viewer.name || viewer.email}</span>
+                                <span className="status-v3-viewer-email">{viewer.email}</span>
+                              </div>
+                            </div>
+                            {hasLiked && (
+                              <div className="status-v3-viewer-action">
+                                <Heart size={16} fill="#f43f5e" color="#f43f5e" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="status-v3-sheet-empty">
+                      <Eye size={40} className="opacity-20 mb-2" />
+                      <p>No views yet</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
