@@ -1068,7 +1068,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const ICE_SERVERS = useMemo(() => ({
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" }
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" },
     ]
   }), []);
   const [isRecording, setIsRecording] = useState(false);
@@ -1097,6 +1100,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const usersRef = useRef([]);
   const freshMessageTimerRef = useRef(null);
   const copiedMessageTimerRef = useRef(null);
+  const iceCandidateQueueRef = useRef([]); // NEW: Queue for ICE candidates before remoteDesc is set
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
@@ -1257,8 +1261,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
     socket.on("call_answer", async ({ answer }) => {
       try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        const pc = peerConnectionRef.current;
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          // Process any queued candidates
+          while (iceCandidateQueueRef.current.length > 0) {
+            const candidate = iceCandidateQueueRef.current.shift();
+            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error(e));
+          }
         }
       } catch (err) {
         console.error("Failed to set remote description:", err);
@@ -1267,8 +1277,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
     socket.on("ice_candidate", async ({ candidate }) => {
       try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        const pc = peerConnectionRef.current;
+        if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          // Queue candidate if remote description is not yet set
+          iceCandidateQueueRef.current.push(candidate);
         }
       } catch (err) {
         console.error("Failed to add ICE candidate:", err);
@@ -1284,6 +1298,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         callStreamRef.current.getTracks().forEach((track) => track.stop());
         callStreamRef.current = null;
       }
+      iceCandidateQueueRef.current = []; // Clear queue
       setRemoteStream(null);
       setIncomingCall(null);
       setActiveCall(null);
@@ -2023,13 +2038,30 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       
       pc.ontrack = (event) => {
-        setRemoteStream(event.streams[0]);
+        console.log("Track received:", event.track.kind);
+        setRemoteStream((prev) => {
+          if (prev) {
+            prev.addTrack(event.track);
+            return new MediaStream(prev.getTracks()); // Force new object for state update
+          }
+          const stream = event.streams[0] || new MediaStream([event.track]);
+          return new MediaStream(stream.getTracks());
+        });
         setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
       };
       
       pc.onicecandidate = (event) => {
         if (event.candidate) {
           socketRef.current?.emit("ice_candidate", { to: contact.email, from: user.email, candidate: event.candidate });
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log("PC Connection State:", pc.connectionState);
+        if (pc.connectionState === "connected") {
+          setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
+        } else if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+          handleEndCall("ended", true);
         }
       };
       
@@ -2042,6 +2074,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       setIsCallMuted(false);
       setIsCallVideoOff(false);
       setActiveCall({ type, target: contact, startedAt: Date.now(), phase: "connecting" });
+      iceCandidateQueueRef.current = []; // Reset queue for new call
     } catch (error) {
       showToast(error?.message || "Microphone or camera permission was denied", "error");
     }
@@ -2063,7 +2096,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       
       pc.ontrack = (event) => {
-        setRemoteStream(event.streams[0]);
+        console.log("Track received:", event.track.kind);
+        setRemoteStream((prev) => {
+          if (prev) {
+            prev.addTrack(event.track);
+            return new MediaStream(prev.getTracks()); // Force new object for state update
+          }
+          const stream = event.streams[0] || new MediaStream([event.track]);
+          return new MediaStream(stream.getTracks());
+        });
       };
       
       pc.onicecandidate = (event) => {
@@ -2071,8 +2112,24 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           socketRef.current?.emit("ice_candidate", { to: incomingCall.from, from: user.email, candidate: event.candidate });
         }
       };
+
+      pc.onconnectionstatechange = () => {
+        console.log("PC Connection State:", pc.connectionState);
+        if (pc.connectionState === "connected") {
+          setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
+        } else if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+          handleEndCall("ended", true);
+        }
+      };
       
       await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      
+      // Process any queued candidates
+      while (iceCandidateQueueRef.current.length > 0) {
+        const candidate = iceCandidateQueueRef.current.shift();
+        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error(e));
+      }
+
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       
