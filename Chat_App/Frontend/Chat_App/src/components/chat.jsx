@@ -613,55 +613,8 @@ function StatusPage({
   );
 }
 
-{/* ── Media Share Modal (overlay) ── */}
-      {isEditingStatus && statusFile && (
-        <div className="status-share-overlay" onClick={(e) => e.target === e.currentTarget && setIsEditingStatus(false)}>
-          <div className="status-share-modal">
-            <div className="status-share-header">
-              <button type="button" className="status-share-close" onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-              <h3>Share Status</h3>
-            </div>
-            <div className="status-share-preview">
-              {statusFile.type.startsWith("video/")
-                ? <video src={URL.createObjectURL(statusFile)} controls className="status-share-media" />
-                : <img src={URL.createObjectURL(statusFile)} alt="Preview" className="status-share-media" />
-              }
-            </div>
-            <div className="status-share-caption-row">
-              <input
-                type="text"
-                placeholder="Add a caption…"
-                value={statusText}
-                onChange={(e) => setStatusText(e.target.value)}
-                className="status-share-caption-input"
-                maxLength={200}
-              />
-            </div>
-            <div className="status-share-footer">
-              <button
-                type="button"
-                className="status-share-submit-btn"
-                onClick={() => handleStatusUpdate()}
-                disabled={statusUploading}
-              >
-                {statusUploading
-                  ? <><span className="status-share-spinner" /> Sharing…</>
-                  : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg> Share Now</>
-                }
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
-
-// BottomNav is now a dedicated component — imported above
-
 // ─── Calls Panel ─────────────────────────────────────────────────────────────
+
 
 function CallsPanel({ contacts, callHistory, onStartCall }) {
   return (
@@ -2327,16 +2280,42 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       </section>
 
       {isEditingStatus && statusFile && (
-        <div className="status-upload-overlay">
-          <div className="status-upload-modal">
-            <h3>Share Status</h3>
-            <div className="status-preview">
-              {statusFile.type.startsWith("video/") ? <video src={URL.createObjectURL(statusFile)} controls /> : <img src={URL.createObjectURL(statusFile)} alt="Status" />}
+        <div className="status-share-overlay" onClick={(e) => e.target === e.currentTarget && setIsEditingStatus(false)}>
+          <div className="status-share-modal">
+            <div className="status-share-header">
+              <button type="button" className="status-share-close" onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h3>Share Status</h3>
             </div>
-            <input type="text" placeholder="Add a caption..." value={statusText} onChange={(e) => setStatusText(e.target.value)} />
-            <div className="status-upload-actions">
-              <button onClick={handleStatusUpdate} disabled={statusUploading}>{statusUploading ? "Sharing..." : "Share"}</button>
-              <button onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>Cancel</button>
+            <div className="status-share-preview">
+              {statusFile.type.startsWith("video/")
+                ? <video src={URL.createObjectURL(statusFile)} controls className="status-share-media" />
+                : <img src={URL.createObjectURL(statusFile)} alt="Preview" className="status-share-media" />
+              }
+            </div>
+            <div className="status-share-caption-row">
+              <input
+                type="text"
+                placeholder="Add a caption…"
+                value={statusText}
+                onChange={(e) => setStatusText(e.target.value)}
+                className="status-share-caption-input"
+                maxLength={200}
+              />
+            </div>
+            <div className="status-share-footer">
+              <button
+                type="button"
+                className="status-share-submit-btn"
+                onClick={() => handleStatusUpdate()}
+                disabled={statusUploading}
+              >
+                {statusUploading
+                  ? <><span className="status-share-spinner" /> Sharing…</>
+                  : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg> Share Now</>
+                }
+              </button>
             </div>
           </div>
         </div>

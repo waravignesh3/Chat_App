@@ -343,7 +343,6 @@
 }
 
 /* Status overlays */
-.status-upload-overlay,
 .status-viewer-overlay {
   position: fixed;
   inset: 0;
@@ -371,71 +370,150 @@
   animation: fadeIn 0.3s ease both;
 }
 
-.status-upload-modal {
+/* ─── Status Share Modal (Premium) ─── */
+.status-share-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.status-share-modal {
   background: var(--wa-panel, #202c33);
-  width: min(90vw, 500px);
-  padding: 24px;
-  border-radius: var(--wa-radius-xl, 24px);
+  width: 100%;
+  max-width: 440px;
+  border-radius: 28px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: var(--wa-shadow-lg);
-  animation: slideUp 0.2s ease both;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.status-upload-modal h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--wa-text, #e9edef);
+
+.status-share-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-share-header h3 {
+  flex: 1;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
   margin: 0;
 }
 
-.status-preview {
+.status-share-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.status-share-close:hover { background: rgba(255, 255, 255, 0.12); }
+
+.status-share-preview {
   width: 100%;
-  aspect-ratio: 9/16;
-  max-height: 300px;
   background: #000;
-  border-radius: var(--wa-radius-md, 12px);
+  aspect-ratio: 4/5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
-.status-preview img,
-.status-preview video {
+
+.status-share-media {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.status-upload-modal input[type="text"] {
-  background: var(--wa-input-bg, #2a3942);
-  border: 1.5px solid transparent;
-  border-radius: var(--wa-radius-md, 12px);
-  padding: 10px 14px;
-  color: var(--wa-text, #e9edef);
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color var(--wa-transition-fast);
+.status-share-caption-row {
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.2);
 }
-.status-upload-modal input[type="text"]:focus { border-color: var(--wa-teal, #00a884); }
 
-.status-upload-actions { display: flex; gap: 10px; }
-.status-upload-actions button {
-  flex: 1;
-  height: 42px;
-  border-radius: var(--wa-radius-md, 12px);
-  font-size: 0.88rem;
-  font-weight: 600;
-  transition: background var(--wa-transition-fast), transform var(--wa-transition-fast);
+.status-share-caption-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 18px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
 }
-.status-upload-actions button:first-child {
+.status-share-caption-input:focus {
+  border-color: var(--wa-teal, #00a884);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(0, 168, 132, 0.15);
+}
+
+.status-share-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+}
+
+.status-share-submit-btn {
+  width: 100%;
+  height: 52px;
   background: var(--wa-teal, #00a884);
   color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 8px 20px rgba(0, 168, 132, 0.3);
 }
-.status-upload-actions button:first-child:hover { background: var(--wa-teal-dark, #008f6f); }
-.status-upload-actions button:last-child {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: var(--wa-text, #e9edef);
+
+.status-share-submit-btn:hover:not(:disabled) {
+  background: var(--wa-teal-dark, #008f6f);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 168, 132, 0.4);
 }
-.status-upload-actions button:last-child:hover { background: rgba(255,255,255,0.1); }
+
+.status-share-submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.status-share-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.status-share-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 
 /* ─── Status Like Button ─── */
 .status-like-btn {
