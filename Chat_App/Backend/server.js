@@ -525,12 +525,13 @@ app.post("/api/media/upload", upload.single("file"), async (req, res) => {
     });
 
     const isVideo  = req.file.mimetype.startsWith("video/");
+    const isAudio  = req.file.mimetype.startsWith("audio/");
     const mediaUrl = `/api/media/${uploadStream.id}`;
 
     return res.json({
       success:   true,
       mediaUrl,
-      mediaType: isVideo ? "video" : "image",
+      mediaType: isVideo ? "video" : isAudio ? "audio" : "image",
       filename:  req.file.originalname,
       size:      req.file.size,
     });

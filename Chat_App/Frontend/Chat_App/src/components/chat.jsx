@@ -607,56 +607,58 @@ function StatusPage({
           )}
         </div>
 
-        {/* ── Status Viewer (inline when a contact is selected) ── */}
+        {/* ── Status Viewer (Overlay) ── */}
         {viewingStatusUser && (
-          <div className="status-viewer-panel">
-            <div className="status-viewer-topbar">
-              <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={38} />
-              <div className="status-viewer-meta">
-                <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
-                <span>{new Date(viewingStatusUser.status?.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          <div className="status-viewer-overlay" onClick={() => setViewingStatusUser(null)}>
+            <div className="status-viewer-content" onClick={(e) => e.stopPropagation()}>
+              <div className="status-viewer-topbar">
+                <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={40} />
+                <div className="status-viewer-meta">
+                  <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
+                  <span>{new Date(viewingStatusUser.status?.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+                <button type="button" className="status-viewer-close-btn" onClick={() => setViewingStatusUser(null)} aria-label="Close">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
-              <button type="button" className="status-viewer-close-btn" onClick={() => setViewingStatusUser(null)} aria-label="Close">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
 
-            <div className="status-viewer-media-wrap">
-              {viewingStatusUser.status?.mediaType === "video"
-                ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls className="status-viewer-img" />
-                : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" className="status-viewer-img" />
-              }
-              
-              {/* Like Button Overlay */}
-              <button 
-                type="button" 
-                className={`status-like-btn ${viewingStatusUser.status?.likes?.includes(user?.email) ? "liked" : ""}`}
-                onClick={(e) => { e.stopPropagation(); onStatusLike(viewingStatusUser.email); }}
-                title={viewingStatusUser.status?.likes?.includes(user?.email) ? "Unlike status" : "Like status"}
-              >
-                <div className="status-like-icon-wrap">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill={viewingStatusUser.status?.likes?.includes(user?.email) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                </div>
-                {viewingStatusUser.status?.likes?.length > 0 && (
-                  <span className="status-like-count">{viewingStatusUser.status.likes.length}</span>
+              <div className="status-viewer-media-wrap">
+                {viewingStatusUser.status?.mediaType === "video"
+                  ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls className="status-viewer-img" />
+                  : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" className="status-viewer-img" />
+                }
+                
+                {/* Like Button Overlay */}
+                <button 
+                  type="button" 
+                  className={`status-like-btn ${viewingStatusUser.status?.likes?.includes(user?.email) ? "liked" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); onStatusLike(viewingStatusUser.email); }}
+                  title={viewingStatusUser.status?.likes?.includes(user?.email) ? "Unlike status" : "Like status"}
+                >
+                  <div className="status-like-icon-wrap">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill={viewingStatusUser.status?.likes?.includes(user?.email) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                  </div>
+                  {viewingStatusUser.status?.likes?.length > 0 && (
+                    <span className="status-like-count">{viewingStatusUser.status.likes.length}</span>
+                  )}
+                </button>
+
+                {/* View Count Overlay (Only for owner) */}
+                {user?.email === viewingStatusUser.email && viewingStatusUser.status?.views?.length > 0 && (
+                  <div className="status-viewer-views">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>{viewingStatusUser.status.views.length}</span>
+                  </div>
                 )}
-              </button>
-
-              {/* View Count Overlay (Only for owner) */}
-              {user?.email === viewingStatusUser.email && viewingStatusUser.status?.views?.length > 0 && (
-                <div className="status-viewer-views">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
-                  <span>{viewingStatusUser.status.views.length}</span>
-                </div>
+              </div>
+              {viewingStatusUser.status?.text && (
+                <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
               )}
             </div>
-            {viewingStatusUser.status?.text && (
-              <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
-            )}
           </div>
         )}
       </div>
@@ -1343,6 +1345,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       }
     }
   }, [users, viewingStatusUser]);
+
+  // Clear viewing status when switching tabs
+  useEffect(() => {
+    if (activeTab !== "status") {
+      setViewingStatusUser(null);
+    }
+  }, [activeTab]);
 
   // ── Smart scroll ──────────────────────────────────────────────────────────────
   useEffect(() => {
