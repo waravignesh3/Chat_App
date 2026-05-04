@@ -270,21 +270,21 @@
 }
 
 .status-viewer-media-wrap {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 5;
+  display: grid;
+  place-items: center;
   background: #000;
+  overflow: hidden;
 }
 
 .status-viewer-media {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
 }
 
 .status-viewer-media img,
@@ -295,7 +295,8 @@
   width: auto;
   height: auto;
   object-fit: contain;
-  box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  margin: auto; /* Force centering in grid */
+  box-shadow: 0 0 60px rgba(0,0,0,0.8);
 }
 
 .status-viewer-caption {
