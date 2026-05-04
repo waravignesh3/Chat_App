@@ -874,6 +874,32 @@ io.on("connection", (socket) => {
     if (targetSocketId) io.to(targetSocketId).emit("message_pinned", { messageId, isPinned, by });
   });
 
+  // ── WebRTC Calling Signaling ──────────────────────────────────────────────────
+  socket.on("call_offer", ({ to, from, offer, type }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("call_offer", { from, offer, type });
+  });
+
+  socket.on("call_answer", ({ to, from, answer }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("call_answer", { from, answer });
+  });
+
+  socket.on("ice_candidate", ({ to, from, candidate }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("ice_candidate", { from, candidate });
+  });
+
+  socket.on("call_rejected", ({ to, from }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("call_rejected", { from });
+  });
+
+  socket.on("call_ended", ({ to, from }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("call_ended", { from });
+  });
+
   socket.on("disconnect", async () => {
     const email = Object.keys(onlineUsers).find((e) => onlineUsers[e] === socket.id);
     if (email) {

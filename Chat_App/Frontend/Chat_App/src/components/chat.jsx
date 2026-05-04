@@ -887,24 +887,80 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
   );
 }
 
-function ActiveCallOverlay({ call, onEnd }) {
+function IncomingCallModal({ call, onAccept, onDecline }) {
   if (!call) return null;
   return (
-    <div className="chat-call-overlay">
+    <div className="chat-call-overlay incoming">
       <div className="chat-call-modal">
-        <div className="chat-call-avatar-wrap">
+        <div className="chat-call-avatar-wrap pulse-ring">
           <Avatar name={call.target.name} email={call.target.email} photo={call.target.photo} size={92} className="chat-call-avatar" />
         </div>
         <h3>{call.target.name || call.target.email}</h3>
+        <p>Incoming {call.type === "video" ? "Video" : "Voice"} Call...</p>
+        <div className="chat-call-controls">
+          <button type="button" className="chat-mini-action-btn success" onClick={onAccept}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/></svg>
+            Accept
+          </button>
+          <button type="button" className="chat-mini-action-btn danger" onClick={onDecline}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+            Decline
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActiveCallOverlay({ call, localStream, remoteStream, onEnd, toggleMute, toggleVideo, isMuted, isVideoOff }) {
+  if (!call) return null;
+  
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  return (
+    <div className={`chat-call-overlay ${call.type === 'video' ? 'video-mode' : ''}`}>
+      {call.type === "video" && (
+        <div className="chat-call-video-container">
+          <video ref={remoteVideoRef} className="chat-call-video remote" autoPlay playsInline />
+          <div className="chat-call-video-local-wrap">
+            <video ref={localVideoRef} className="chat-call-video local" autoPlay playsInline muted />
+          </div>
+        </div>
+      )}
+      
+      <div className={`chat-call-modal ${call.type === 'video' ? 'floating-controls' : ''}`}>
+        {call.type !== "video" && (
+          <>
+            <div className="chat-call-avatar-wrap">
+              <Avatar name={call.target.name} email={call.target.email} photo={call.target.photo} size={92} className="chat-call-avatar" />
+            </div>
+            <h3>{call.target.name || call.target.email}</h3>
+          </>
+        )}
         <p>{call.type === "video" ? "Video calling" : "Voice calling"} · {call.phaseLabel}</p>
         <strong>{call.durationLabel}</strong>
-        <div className="chat-call-chip-row">
-          <span className="chat-call-chip">Encrypted</span>
-          <span className="chat-call-chip">{call.type === "video" ? "Camera active" : "Mic active"}</span>
-          <span className="chat-call-chip">{call.target.isOnline ? "Reachable" : "Trying to connect"}</span>
-        </div>
         <div className="chat-call-controls">
-          <button type="button" className="chat-mini-action-btn" onClick={() => onEnd("muted")}>Mute</button>
+          <button type="button" className={`chat-mini-action-btn ${isMuted ? 'danger' : ''}`} onClick={toggleMute}>
+            {isMuted ? "Unmute" : "Mute"}
+          </button>
+          {call.type === "video" && (
+            <button type="button" className={`chat-mini-action-btn ${isVideoOff ? 'danger' : ''}`} onClick={toggleVideo}>
+              {isVideoOff ? "Start Video" : "Stop Video"}
+            </button>
+          )}
           <button type="button" className="chat-mini-action-btn danger" onClick={() => onEnd("ended")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
             End
@@ -986,6 +1042,20 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   });
   const [activeCall, setActiveCall] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
+  
+  // WebRTC Call State
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+  const [isCallVideoOff, setIsCallVideoOff] = useState(false);
+  
+  const peerConnectionRef = useRef(null);
+  const ICE_SERVERS = useMemo(() => ({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ]
+  }), []);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
 
@@ -1153,6 +1223,52 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         )
       );
     });
+
+    // ── WebRTC Signaling ──
+    socket.on("call_offer", ({ from, offer, type }) => {
+      const callerUser = usersRef.current.find(u => u.email === from) || { email: from, name: from };
+      setIncomingCall({ from, target: callerUser, offer, type });
+    });
+
+    socket.on("call_answer", async ({ answer }) => {
+      try {
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      } catch (err) {
+        console.error("Failed to set remote description:", err);
+      }
+    });
+
+    socket.on("ice_candidate", async ({ candidate }) => {
+      try {
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } catch (err) {
+        console.error("Failed to add ICE candidate:", err);
+      }
+    });
+
+    const cleanupCallState = () => {
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+      if (callStreamRef.current) {
+        callStreamRef.current.getTracks().forEach((track) => track.stop());
+        callStreamRef.current = null;
+      }
+      setRemoteStream(null);
+      setIncomingCall(null);
+      setActiveCall(null);
+      setCallDuration(0);
+      setIsCallMuted(false);
+      setIsCallVideoOff(false);
+    };
+
+    socket.on("call_ended", cleanupCallState);
+    socket.on("call_rejected", cleanupCallState);
 
     return () => {
       clearTimeout(typingTimeoutRef.current);
@@ -1843,30 +1959,136 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     if (!contact?.email) { showToast("Select a contact to start a call", "info"); return; }
     try {
       if (callStreamRef.current) { callStreamRef.current.getTracks().forEach((track) => track.stop()); callStreamRef.current = null; }
+      if (peerConnectionRef.current) { peerConnectionRef.current.close(); }
+      
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       callStreamRef.current = stream;
-      setCallDuration(0);
-      setActiveCall({ type, target: contact, startedAt: Date.now(), phase: "connecting" });
-      clearTimeout(callPhaseTimerRef.current);
-      callPhaseTimerRef.current = window.setTimeout(() => {
+      
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      peerConnectionRef.current = pc;
+      
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      
+      pc.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
         setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
-      }, 1200);
+      };
+      
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socketRef.current?.emit("ice_candidate", { to: contact.email, from: user.email, candidate: event.candidate });
+        }
+      };
+      
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      
+      socketRef.current?.emit("call_offer", { to: contact.email, from: user.email, offer, type });
+      
+      setCallDuration(0);
+      setIsCallMuted(false);
+      setIsCallVideoOff(false);
+      setActiveCall({ type, target: contact, startedAt: Date.now(), phase: "connecting" });
     } catch (error) {
       showToast(error?.message || "Microphone or camera permission was denied", "error");
     }
   };
 
-  const handleEndCall = (status = "ended") => {
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return;
+    try {
+      const type = incomingCall.type;
+      const contact = incomingCall.target;
+      
+      const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      callStreamRef.current = stream;
+      
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      peerConnectionRef.current = pc;
+      
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      
+      pc.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+      
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socketRef.current?.emit("ice_candidate", { to: incomingCall.from, from: user.email, candidate: event.candidate });
+        }
+      };
+      
+      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      
+      socketRef.current?.emit("call_answer", { to: incomingCall.from, from: user.email, answer });
+      
+      setCallDuration(0);
+      setIsCallMuted(false);
+      setIsCallVideoOff(false);
+      setActiveCall({ type, target: contact, startedAt: Date.now(), phase: "live" });
+      setIncomingCall(null);
+    } catch (error) {
+      showToast("Could not access camera/microphone to accept call.", "error");
+      socketRef.current?.emit("call_rejected", { to: incomingCall.from, from: user.email });
+      setIncomingCall(null);
+    }
+  };
+
+  const handleDeclineCall = () => {
+    if (incomingCall) {
+      socketRef.current?.emit("call_rejected", { to: incomingCall.from, from: user.email });
+      setIncomingCall(null);
+    }
+  };
+
+  const handleEndCall = (status = "ended", emit = true) => {
     setCallHistory((prev) => {
       if (!activeCall) return prev;
       const nextEntry = { id: `call-${Date.now()}`, name: activeCall.target.name || activeCall.target.email, email: activeCall.target.email, type: activeCall.type, status, duration: callDuration, startedAt: activeCall.startedAt };
       return [nextEntry, ...prev].slice(0, 20);
     });
-    clearTimeout(callPhaseTimerRef.current);
-    if (callStreamRef.current) { callStreamRef.current.getTracks().forEach((track) => track.stop()); callStreamRef.current = null; }
+    
+    if (emit && activeCall?.target?.email) {
+      socketRef.current?.emit("call_ended", { to: activeCall.target.email, from: user.email });
+    }
+    
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    if (callStreamRef.current) {
+      callStreamRef.current.getTracks().forEach((track) => track.stop());
+      callStreamRef.current = null;
+    }
+    setRemoteStream(null);
     setActiveCall(null);
     setCallDuration(0);
+    setIsCallMuted(false);
+    setIsCallVideoOff(false);
+  };
+  
+  const toggleMuteCall = () => {
+    if (callStreamRef.current) {
+      const audioTrack = callStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsCallMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
+  const toggleVideoCall = () => {
+    if (callStreamRef.current) {
+      const videoTrack = callStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsCallVideoOff(!videoTrack.enabled);
+      }
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -2288,14 +2510,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         )}
       </section>
 
-      <BottomNav
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        unreadCount={settingsStats.unreadCount}
-        statusCount={settingsStats.statusCount}
-        callCount={callRecords.length}
-      />
-      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
+
 
       {/* ── Status Overlays (Relocated to root for absolute full-screen coverage) ── */}
       {isEditingStatus && statusFile && (
@@ -2360,7 +2575,23 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         statusCount={settingsStats.statusCount}
         callCount={callRecords.length}
       />
-      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
+      
+      <IncomingCallModal 
+        call={incomingCall} 
+        onAccept={handleAcceptCall} 
+        onDecline={handleDeclineCall} 
+      />
+      
+      <ActiveCallOverlay 
+        call={activeCallView} 
+        localStream={callStreamRef.current}
+        remoteStream={remoteStream}
+        onEnd={handleEndCall}
+        toggleMute={toggleMuteCall}
+        toggleVideo={toggleVideoCall}
+        isMuted={isCallMuted}
+        isVideoOff={isCallVideoOff}
+      />
     </div>
 
   );
