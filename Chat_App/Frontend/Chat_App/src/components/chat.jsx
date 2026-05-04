@@ -15,6 +15,7 @@ import "../chat.bubble-fix.css";
 import "../chat.reactions.fix.css";
 import "../chat.unread.css";
 import "../chat-overrides.css";
+import "../chat.status.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -372,7 +373,227 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
   );
 }
 
+// ─── Status Page ─────────────────────────────────────────────────────────────
+function StatusPage({
+  user, users, statusText, setStatusText,
+  statusFile, setStatusFile, isEditingStatus, setIsEditingStatus,
+  statusUploading, handleStatusUpdate, viewingStatusUser, setViewingStatusUser,
+  SERVER_URL,
+}) {
+  const statusInputRef = useRef(null);
+  const [postMode, setPostMode] = useState(null); // 'text' | 'media' | null
+
+  const openMediaPicker = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,video/*";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) { setStatusFile(file); setIsEditingStatus(true); setPostMode("media"); }
+    };
+    input.click();
+  };
+
+  const contactsWithStatus = users.filter(u => u.email !== user?.email && u.status?.mediaUrl);
+
+  return (
+    <main className="status-page">
+
+      {/* ── Fixed header ── */}
+      <div className="status-page-header">
+        <h3>Status</h3>
+        <span>Updates from your network</span>
+      </div>
+
+      <div className="status-page-body">
+
+        {/* ── My Status Card ── */}
+        <div className="status-my-card">
+          <div className="status-my-avatar-col">
+            <div className="status-my-avatar-wrap">
+              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={54} />
+              {user?.status?.mediaUrl && <span className="status-ring-active" />}
+            </div>
+          </div>
+          <div className="status-my-info">
+            <strong>My Status</strong>
+            <p>{user?.status?.mediaUrl ? "Tap to view your status" : "Share a photo, video, or text update"}</p>
+          </div>
+          <div className="status-my-actions">
+            <button
+              type="button"
+              className="status-action-btn media-btn"
+              onClick={openMediaPicker}
+              title="Add photo or video"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="status-action-btn text-btn"
+              onClick={() => setPostMode(postMode === "text" ? null : "text")}
+              title="Add text status"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Text Status Composer ── */}
+        {postMode === "text" && (
+          <div className="status-text-composer">
+            <textarea
+              ref={statusInputRef}
+              placeholder="What's on your mind? (max 280 chars)"
+              maxLength={280}
+              value={statusText}
+              onChange={(e) => setStatusText(e.target.value)}
+              autoFocus
+              rows={3}
+            />
+            <div className="status-composer-footer">
+              <span className="status-char-count">{statusText.length}/280</span>
+              <div className="status-composer-actions">
+                <button
+                  type="button"
+                  className="status-cancel-btn"
+                  onClick={() => { setPostMode(null); setStatusText(""); }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="status-post-btn"
+                  onClick={() => { handleStatusUpdate(); setPostMode(null); }}
+                  disabled={!statusText.trim() || statusUploading}
+                >
+                  {statusUploading ? "Posting…" : "Post Status"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Contact Status List ── */}
+        <div className="status-contacts-section">
+          <div className="status-section-label">Recent updates</div>
+
+          {contactsWithStatus.length === 0 ? (
+            <div className="status-empty-state">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.18 }}>
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <p>No recent updates from your contacts</p>
+              <span>Status updates disappear after 24 hours</span>
+            </div>
+          ) : (
+            <div className="status-contact-list">
+              {contactsWithStatus.map((u) => (
+                <button
+                  key={u.email}
+                  type="button"
+                  className={`status-contact-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
+                  onClick={() => setViewingStatusUser(viewingStatusUser?.email === u.email ? null : u)}
+                >
+                  <div className="status-avatar-ring-wrap">
+                    <Avatar name={u.name} email={u.email} photo={u.photo} size={50} />
+                    <span className="status-ring" />
+                  </div>
+                  <div className="status-contact-info">
+                    <strong>{u.name || u.email}</strong>
+                    <span>{new Date(u.status.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                  {u.status.text && (
+                    <p className="status-contact-preview">{u.status.text.slice(0, 50)}{u.status.text.length > 50 ? "…" : ""}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Status Viewer (inline when a contact is selected) ── */}
+        {viewingStatusUser && (
+          <div className="status-viewer-panel">
+            <div className="status-viewer-topbar">
+              <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={38} />
+              <div className="status-viewer-meta">
+                <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
+                <span>{new Date(viewingStatusUser.status?.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              <button type="button" className="status-viewer-close-btn" onClick={() => setViewingStatusUser(null)} aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div className="status-viewer-media-wrap">
+              {viewingStatusUser.status?.mediaType === "video"
+                ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls className="status-viewer-img" />
+                : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" className="status-viewer-img" />
+              }
+            </div>
+            {viewingStatusUser.status?.text && (
+              <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Media Share Modal (overlay) ── */}
+      {isEditingStatus && statusFile && (
+        <div className="status-share-overlay" onClick={(e) => e.target === e.currentTarget && setIsEditingStatus(false)}>
+          <div className="status-share-modal">
+            <div className="status-share-header">
+              <button type="button" className="status-share-close" onClick={() => { setIsEditingStatus(false); setStatusFile(null); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h3>Share Status</h3>
+            </div>
+            <div className="status-share-preview">
+              {statusFile.type.startsWith("video/")
+                ? <video src={URL.createObjectURL(statusFile)} controls className="status-share-media" />
+                : <img src={URL.createObjectURL(statusFile)} alt="Preview" className="status-share-media" />
+              }
+            </div>
+            <div className="status-share-caption-row">
+              <input
+                type="text"
+                placeholder="Add a caption…"
+                value={statusText}
+                onChange={(e) => setStatusText(e.target.value)}
+                className="status-share-caption-input"
+                maxLength={200}
+              />
+            </div>
+            <div className="status-share-footer">
+              <button
+                type="button"
+                className="status-share-submit-btn"
+                onClick={() => handleStatusUpdate()}
+                disabled={statusUploading}
+              >
+                {statusUploading
+                  ? <><span className="status-share-spinner" /> Sharing…</>
+                  : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg> Share Now</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
 // BottomNav is now a dedicated component — imported above
+
+// ─── Calls Panel ─────────────────────────────────────────────────────────────
 
 function CallsPanel({ contacts, callHistory, onStartCall }) {
   return (
@@ -1857,91 +2078,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             </main>
           </>
         ) : activeTab === "status" ? (
-          <main className="chat-panel full-height">
-            <div className="chat-panel-header">
-              <div className="chat-panel-header-left">
-                <div className="chat-active-user-info">
-                  <h3>Status</h3>
-                  <p>Stories and disappearing updates from your network.</p>
-                </div>
-              </div>
-            </div>
+          <StatusPage
+            user={user}
+            users={users}
+            statusText={statusText}
+            setStatusText={setStatusText}
+            statusFile={statusFile}
+            setStatusFile={setStatusFile}
+            isEditingStatus={isEditingStatus}
+            setIsEditingStatus={setIsEditingStatus}
+            statusUploading={statusUploading}
+            handleStatusUpdate={handleStatusUpdate}
+            viewingStatusUser={viewingStatusUser}
+            setViewingStatusUser={setViewingStatusUser}
+            SERVER_URL={SERVER_URL}
+          />
 
-            <div className="chat-status-dashboard">
-              <div className="chat-status-sidebar">
-                <div className="chat-my-status-card" onClick={() => user?.status?.mediaUrl && setViewingStatusUser(user)}>
-                  <div className="chat-status-avatar-wrap">
-                    <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={48} />
-                    <button
-                      className="chat-status-add-overlay"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const input = document.createElement("input");
-                        input.type = "file";
-                        input.accept = "image/*,video/*";
-                        input.onchange = (e) => {
-                          const file = e.target.files[0];
-                          if (file) { setStatusFile(file); setIsEditingStatus(true); }
-                        };
-                        input.click();
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="chat-status-info">
-                    <strong>My Status</strong>
-                    <p>{user?.status?.mediaUrl ? "Tap to view" : "Add to my status"}</p>
-                  </div>
-                </div>
-
-                <div className="chat-status-label">Recent Updates</div>
-                <div className="chat-user-list">
-                  {users.filter(u => u.email !== user?.email && u.status?.mediaUrl).length > 0 ? (
-                    users.filter(u => u.email !== user?.email && u.status?.mediaUrl).map(u => (
-                      <button key={u.email} className={`chat-user-card ${viewingStatusUser?.email === u.email ? "active" : ""}`} onClick={() => setViewingStatusUser(u)}>
-                        <div className="chat-status-avatar-ring">
-                          <Avatar name={u.name} email={u.email} photo={u.photo} size={48} />
-                        </div>
-                        <div className="chat-user-info">
-                          <span className="chat-user-name">{u.name || u.email}</span>
-                          <span className="chat-user-time">{new Date(u.status.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="chat-empty-state">No status updates</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="chat-status-main-view">
-                {viewingStatusUser ? (
-                  <div className="chat-status-viewer-content">
-                    <div className="status-viewer-header">
-                      <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={40} />
-                      <div className="status-viewer-meta">
-                        <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
-                        <span>{new Date(viewingStatusUser.status.createdAt).toLocaleTimeString()}</span>
-                      </div>
-                    </div>
-                    <div className="status-viewer-media">
-                      {viewingStatusUser.status.mediaType === "video"
-                        ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls />
-                        : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />
-                      }
-                    </div>
-                    {viewingStatusUser.status.text && <div className="status-viewer-caption">{viewingStatusUser.status.text}</div>}
-                  </div>
-                ) : (
-                  <div className="chat-status-empty">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: "20px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <p>Click on a contact to view their status update</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </main>
         ) : activeTab === "calls" ? (
           <CallsPanel contacts={callContacts} callHistory={callRecords} onStartCall={handleStartCall} />
         ) : (
