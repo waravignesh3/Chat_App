@@ -569,6 +569,39 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 </div>
                 <input type="checkbox" checked={draft.privacy.readReceipts} onChange={(e) => onDraftChange("privacy.readReceipts", e.target.checked)} />
               </label>
+              
+              <div className="chat-settings-field">
+                <span>Restrict users (Emails)</span>
+                <div className="chat-restriction-input-row">
+                  <input 
+                    type="email" 
+                    placeholder="Enter email to restrict" 
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.target.value.trim()) {
+                        const email = e.target.value.trim();
+                        if (!draft.privacy.restrictedEmails.includes(email)) {
+                          onDraftChange("privacy.restrictedEmails", [...draft.privacy.restrictedEmails, email]);
+                        }
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </div>
+                <div className="chat-restricted-list">
+                  {draft.privacy.restrictedEmails.map((email) => (
+                    <span key={email} className="chat-restricted-tag">
+                      {email}
+                      <button 
+                        type="button" 
+                        onClick={() => onDraftChange("privacy.restrictedEmails", draft.privacy.restrictedEmails.filter(e => e !== email))}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  {draft.privacy.restrictedEmails.length === 0 && <p className="chat-field-hint">No users restricted.</p>}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -705,6 +738,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       lastSeen: user?.privacy?.lastSeen || "everyone",
       profilePhoto: user?.privacy?.profilePhoto || "everyone",
       readReceipts: user?.privacy?.readReceipts !== false,
+      restrictedEmails: user?.privacy?.restrictedEmails || [],
     },
     notifications: {
       messagePreview: user?.notifications?.messagePreview !== false,
@@ -762,6 +796,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           lastSeen: user?.privacy?.lastSeen || "everyone",
           profilePhoto: user?.privacy?.profilePhoto || "everyone",
           readReceipts: user?.privacy?.readReceipts !== false,
+          restrictedEmails: user?.privacy?.restrictedEmails || [],
         },
         notifications: {
           messagePreview: user?.notifications?.messagePreview !== false,
@@ -1816,10 +1851,46 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         return (
                           <div
                             key={key}
-                            className={`chat-bubble-row ${isOwn ? "own" : ""}`}
+                            className={`chat-bubble-row ${isOwn ? "own" : "received"}`}
                           >
                             <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""}`}>
                               {!isOwn && <span className="chat-bubble-sender">{activeSelectedUser.name || activeSelectedUser.email}</span>}
+                              
+                              <div className="chat-message-actions-trigger">
+                                <button 
+                                  type="button" 
+                                  className="chat-bubble-action-btn"
+                                  onClick={() => setReplyingTo({ 
+                                    sender: entry.sender, 
+                                    senderName: isOwn ? "You" : (activeSelectedUser.name || activeSelectedUser.email),
+                                    text: entry.text || (entry.mediaUrl ? "📎 Media" : "") 
+                                  })}
+                                  title="Reply"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                                </button>
+                                <button 
+                                  type="button" 
+                                  className="chat-bubble-action-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReactionPickerFor(reactionPickerFor === key ? null : key);
+                                  }}
+                                  title="React"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                </button>
+                                {reactionPickerFor === key && (
+                                  <div className="chat-bubble-reaction-picker">
+                                    <ReactionPicker 
+                                      onSelect={(emoji) => handleReaction(entry._id || key, emoji)} 
+                                      onClose={() => setReactionPickerFor(null)} 
+                                      isOwn={isOwn} 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
                               {entry.replyTo && (
                                 <div className="chat-reply-preview">
                                   <span className="reply-sender">{entry.replyTo.senderName}</span>
@@ -1838,6 +1909,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                                   )}
                                 </div>
                               </div>
+                              {entry.reactions && Object.keys(entry.reactions).length > 0 && (
+                                <div className="chat-bubble-reactions-list">
+                                  {Object.entries(entry.reactions).map(([emoji, count]) => (
+                                    <span key={emoji} className="chat-reaction-pill">{emoji} {count > 1 && count}</span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
