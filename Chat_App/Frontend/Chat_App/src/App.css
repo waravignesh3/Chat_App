@@ -1682,9 +1682,14 @@ button {
 }
 
 .chat-panel-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  padding: 12px 20px;
+  background: #202c33;
   gap: 16px;
   border-bottom: none;
+  min-height: 64px;
 }
 
 /* Wrapper occupies the middle grid row and clips overflow */
@@ -3261,11 +3266,17 @@ body.theme-light .chat-user-status-preview {
 }
 
 .profile-preview-circle {
-  width: 220px;
-  height: 220px;
+  width: 250px;
+  height: 250px;
   margin: 0 auto;
   border: 4px solid rgba(0, 168, 132, 0.35);
   box-shadow: 0 0 0 10px rgba(0, 168, 132, 0.08);
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-edit-overlay-btn {

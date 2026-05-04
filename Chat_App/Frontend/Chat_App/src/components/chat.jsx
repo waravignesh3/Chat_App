@@ -140,14 +140,17 @@ function ReactionPicker({ onSelect, onClose, isOwn }) {
 }
 
 // ─── Profile Photo Modal ──────────────────────────────────────────────────────
-function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
+function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit = true }) {
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
 
+  const displayUser = targetUser || user;
+
   const handleFileChange = (e) => {
+    if (!canEdit) return;
     const f = e.target.files[0];
     if (!f) return;
     if (!f.type.startsWith("image/")) { setError("Only image files are allowed."); return; }
@@ -160,7 +163,7 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !canEdit) return;
     setUploading(true);
     setError("");
     try {
@@ -183,7 +186,7 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
     <div className="profile-modal-overlay" onClick={onClose}>
       <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="profile-modal-header">
-          <h3>Update Profile Photo</h3>
+          <h3>{canEdit ? "Update Profile Photo" : "Profile Photo"}</h3>
           <button type="button" className="profile-modal-close-btn" onClick={onClose} aria-label="Close">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -194,18 +197,20 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
             <div className="profile-preview-circle">
               {preview
                 ? <img src={preview} alt="New profile preview" className="profile-preview-img" />
-                : <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={150} />}
-              <button 
-                type="button" 
-                className="profile-edit-overlay-btn" 
-                onClick={() => inputRef.current?.click()}
-                title="Change Photo"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <span>CHANGE</span>
-              </button>
+                : <Avatar name={displayUser?.name} email={displayUser?.email} photo={displayUser?.photo} size={250} />}
+              {canEdit && (
+                <button 
+                  type="button" 
+                  className="profile-edit-overlay-btn" 
+                  onClick={() => inputRef.current?.click()}
+                  title="Change Photo"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span>CHANGE</span>
+                </button>
+              )}
             </div>
-            <p className="profile-modal-hint">JPG, PNG or GIF. Max 5MB.</p>
+            {canEdit && <p className="profile-modal-hint">JPG, PNG or GIF. Max 5MB.</p>}
           </div>
           
           <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
@@ -218,24 +223,26 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated }) {
           )}
         </div>
 
-        <div className="profile-modal-actions">
-          <button type="button" className="profile-action-btn cancel" onClick={onClose}>
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            className="profile-action-btn save" 
-            onClick={handleUpload} 
-            disabled={!file || uploading}
-          >
-            {uploading ? (
-              <span className="btn-loading-state">
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"></path></svg>
-                Saving...
-              </span>
-            ) : "Save Photo"}
-          </button>
-        </div>
+        {canEdit && (
+          <div className="profile-modal-actions">
+            <button type="button" className="profile-action-btn cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              className="profile-action-btn save" 
+              onClick={handleUpload} 
+              disabled={!file || uploading}
+            >
+              {uploading ? (
+                <span className="btn-loading-state">
+                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"></path></svg>
+                  Saving...
+                </span>
+              ) : "Save Photo"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -659,6 +666,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [_usersError, setUsersError] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [modalUser, setModalUser] = useState(null);
+  const [canEditProfile, setCanEditProfile] = useState(true);
+
+  const handleOpenProfileModal = (target = null, edit = false) => {
+    setModalUser(target);
+    setCanEditProfile(edit);
+    setShowProfileModal(true);
+  };
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [_mediaUploading, setMediaUploading] = useState(false);
   const [_highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
@@ -1621,6 +1636,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       {showProfileModal && (
         <ProfilePhotoModal
           user={user}
+          targetUser={modalUser}
+          canEdit={canEditProfile}
           onClose={() => setShowProfileModal(false)}
           onPhotoUpdated={handlePhotoUpdated}
         />
@@ -1645,10 +1662,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 <div
                   className="chat-self-avatar-wrap"
                   title="Update profile photo"
-                  onClick={() => setShowProfileModal(true)}
+                  onClick={() => handleOpenProfileModal(user, true)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && setShowProfileModal(true)}
+                  onKeyDown={(e) => e.key === "Enter" && handleOpenProfileModal(user, true)}
                   style={{ cursor: "pointer" }}
                 >
                   <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={40} className="chat-self-avatar" />
@@ -1713,7 +1730,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         className={`chat-user-card ${isActive ? "active" : ""} ${hasUnread ? "unread" : ""}`}
                         onClick={() => handleSelectUser(entry)}
                       >
-                        <div className="chat-avatar-wrap">
+                        <div 
+                          className="chat-avatar-wrap" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenProfileModal(entry, false);
+                          }}
+                          title="View profile photo"
+                        >
                           <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={56} className="chat-avatar" />
                           {entry.isOnline && <span className="chat-online-dot-small" />}
                         </div>
@@ -1749,7 +1773,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 <>
                   <div className="chat-panel-header">
                     <div className="chat-panel-header-left">
-                      <Avatar name={activeSelectedUser.name} email={activeSelectedUser.email} photo={activeSelectedUser.photo} size={40} />
+                      <div 
+                        className="chat-avatar-clickable" 
+                        onClick={() => handleOpenProfileModal(activeSelectedUser, false)}
+                        title="View profile photo"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Avatar name={activeSelectedUser.name} email={activeSelectedUser.email} photo={activeSelectedUser.photo} size={40} />
+                      </div>
                       <div className="chat-active-user-info">
                         <h3>{activeSelectedUser.name || activeSelectedUser.email}</h3>
                         <p className={activeSelectedUser.isOnline ? "online" : ""}>
@@ -1955,7 +1986,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             draft={settingsDraft}
             onDraftChange={handleDraftChange}
             onSave={handleSaveSettings}
-            onOpenProfile={() => setShowProfileModal(true)}
+            onOpenProfile={() => handleOpenProfileModal(user, true)}
             onLogout={handleLogout}
             saving={settingsSaving}
             theme={theme}
