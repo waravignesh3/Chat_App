@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "firebase/auth";
+import { AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
@@ -504,7 +505,7 @@ function StatusPage({
             <div className="status-my-avatar-wrap">
               <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={54} />
               {user?.statuses?.length > 0 && (
-                <span className={`status-ring ${user.statuses.every(s => s.views?.includes(user.email)) ? "seen" : ""}`} />
+                <span className={`status-ring ${user.statuses?.every(s => s.views?.includes(user.email)) ? "seen" : ""}`} />
               )}
             </div>
           </div>
@@ -596,7 +597,7 @@ function StatusPage({
                 >
                   <div className="status-avatar-ring-wrap">
                     <Avatar name={u.name} email={u.email} photo={u.photo} size={50} />
-                    <span className={`status-ring ${u.statuses.every(s => s.views?.includes(user?.email)) ? "seen" : ""}`} />
+                    <span className={`status-ring ${u.statuses?.every(s => s.views?.includes(user?.email)) ? "seen" : ""}`} />
                   </div>
                   <div className="status-contact-info">
                     <strong>{u.name || u.email}</strong>
