@@ -109,6 +109,12 @@
   animation: none;
 }
 
+.status-ring.active {
+  border-color: #00a884;
+  animation: status-pulse 2s infinite;
+  box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.25);
+}
+
 @keyframes status-pulse {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.7; }
@@ -276,4 +282,166 @@
   padding: 0 20px;
   color: rgba(255,255,255,0.6);
   font-size: 14px;
+}
+
+/* ─── Delete button in header ─── */
+.status-v3-delete-btn {
+  color: #ff4b4b !important;
+  opacity: 0.85 !important;
+}
+.status-v3-delete-btn:hover {
+  background: rgba(255, 75, 75, 0.15) !important;
+  opacity: 1 !important;
+}
+
+/* ─── Own-status stats bar ─── */
+.status-v3-own-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.status-v3-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-v3-stat svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+/* ─── Text-only status card ─── */
+.status-v3-text-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d1f3c 100%);
+}
+
+.status-v3-text-card p {
+  color: #fff;
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  word-break: break-word;
+  margin: 0;
+}
+
+/* ─── Delete Confirmation Panel ─── */
+.status-v3-delete-confirm {
+  position: absolute;
+  bottom: 70px; /* sits above the footer */
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.status-v3-delete-confirm-inner {
+  pointer-events: all;
+  background: rgba(15, 15, 15, 0.96);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 75, 75, 0.3);
+  border-radius: 20px;
+  padding: 24px 28px;
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.6);
+  width: calc(100% - 32px);
+  max-width: 360px;
+}
+
+.status-v3-delete-icon-big {
+  color: #ff4b4b;
+  margin-bottom: 4px;
+}
+
+.status-v3-delete-confirm-inner p {
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status-v3-delete-confirm-inner span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.status-v3-delete-confirm-btns {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.status-v3-delete-cancel-btn,
+.status-v3-delete-confirm-btn {
+  flex: 1;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.status-v3-delete-cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.status-v3-delete-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.status-v3-delete-confirm-btn {
+  background: #ff4b4b;
+  color: #fff;
+}
+.status-v3-delete-confirm-btn:hover:not(:disabled) {
+  background: #e63636;
+  transform: scale(1.03);
+}
+.status-v3-delete-confirm-btn:disabled,
+.status-v3-delete-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── My Status card hover when clickable ─── */
+.status-my-card.clickable {
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.status-my-card.clickable:hover {
+  background: rgba(255,255,255,0.05);
+  transform: translateX(2px);
+}
+.status-my-card.clickable:focus-visible {
+  outline: 2px solid #00a884;
+  outline-offset: 2px;
 }

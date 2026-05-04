@@ -470,6 +470,30 @@ app.post("/api/status/:email/view", async (req, res) => {
   }
 });
 
+// ─── Delete a single status ───────────────────────────────────────────────────
+app.delete("/api/status/:email/:statusId", async (req, res) => {
+  try {
+    const { email, statusId } = req.params;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const user = await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      { $pull: { statuses: { _id: new mongoose.Types.ObjectId(statusId) } } },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    await broadcastUsers();
+    return res.json({ success: true, statuses: user.statuses });
+  } catch (err) {
+    console.error("Delete status error:", err);
+    return res.status(500).json({ error: "Delete failed" });
+  }
+});
+
 // ─── Serve avatar ─────────────────────────────────────────────────────────────
 app.get("/api/avatar/:id", async (req, res) => {
   try {

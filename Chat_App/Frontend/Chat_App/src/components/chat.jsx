@@ -464,7 +464,7 @@ function StatusPage({
   user, users, statusText, setStatusText,
   statusFile, setStatusFile, isEditingStatus, setIsEditingStatus,
   statusUploading, handleStatusUpdate, viewingStatusUser, setViewingStatusUser,
-  SERVER_URL, onStatusLike, onStatusView,
+  SERVER_URL, onStatusLike, onStatusView, onViewMyStatus,
 }) {
   const statusInputRef = useRef(null);
   const [postMode, setPostMode] = useState(null); // 'text' | 'media' | null
@@ -500,20 +500,33 @@ function StatusPage({
       <div className="status-page-body">
 
         {/* ── My Status Card ── */}
-        <div className="status-my-card">
+        <div
+          className={`status-my-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
+          onClick={() => user?.statuses?.length > 0 && onViewMyStatus()}
+          role={user?.statuses?.length > 0 ? "button" : undefined}
+          tabIndex={user?.statuses?.length > 0 ? 0 : undefined}
+          onKeyDown={(e) => e.key === "Enter" && user?.statuses?.length > 0 && onViewMyStatus()}
+          style={user?.statuses?.length > 0 ? { cursor: "pointer" } : {}}
+        >
           <div className="status-my-avatar-col">
             <div className="status-my-avatar-wrap">
               <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={54} />
               {user?.statuses?.length > 0 && (
-                <span className={`status-ring ${user.statuses?.every(s => s.views?.includes(user.email)) ? "seen" : ""}`} />
+                <span className="status-ring active" />
               )}
             </div>
           </div>
           <div className="status-my-info">
             <strong>My Status</strong>
-            <p>{user?.statuses?.length > 0 ? "Tap to view your status" : "Share a photo, video, or text update"}</p>
+            {user?.statuses?.length > 0 ? (
+              <p>
+                {user.statuses.length} update{user.statuses.length !== 1 ? "s" : ""} · Tap to view
+              </p>
+            ) : (
+              <p>Share a photo, video, or text update</p>
+            )}
           </div>
-          <div className="status-my-actions">
+          <div className="status-my-actions" onClick={e => e.stopPropagation()}>
             <button
               type="button"
               className="status-action-btn media-btn"
@@ -1706,6 +1719,30 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
   };
 
+  const handleStatusDelete = async (statusId) => {
+    if (!user?.email || !statusId) return;
+    // Optimistic update
+    const prevUser = user;
+    const prevUsers = users;
+    const nextStatuses = (user.statuses || []).filter(s => s._id?.toString() !== statusId.toString());
+    setUser(prev => ({ ...prev, statuses: nextStatuses }));
+    setUsers(prev => prev.map(u => u.email === user.email ? { ...u, statuses: nextStatuses } : u));
+    try {
+      const res = await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(user.email)}/${statusId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      showToast("Status deleted", "success");
+      // If no more statuses, close the viewer
+      if (nextStatuses.length === 0) setViewingStatusUser(null);
+    } catch (err) {
+      setUser(prevUser);
+      setUsers(prevUsers);
+      showToast(err.message || "Failed to delete status", "error");
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2491,6 +2528,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             SERVER_URL={SERVER_URL}
             onStatusLike={handleStatusLike}
             onStatusView={handleStatusView}
+            onViewMyStatus={() => setViewingStatusUser(user)}
           />
 
         ) : activeTab === "calls" ? (
@@ -2560,12 +2598,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         {viewingStatusUser && (
           <StatusViewer 
             user={user}
-            users={users}
+            users={[...users.filter(u => u.email !== user?.email), ...(user ? [user] : [])]}
             activeUser={viewingStatusUser}
             onClose={() => setViewingStatusUser(null)}
             resolveAssetUrl={resolveAssetUrl}
             onLike={handleStatusLike}
             onView={handleStatusView}
+            onDelete={handleStatusDelete}
           />
         )}
       </AnimatePresence>

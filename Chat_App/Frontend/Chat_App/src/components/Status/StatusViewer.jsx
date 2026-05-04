@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Loader2, Heart } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Loader2, Heart, Trash2, Eye } from 'lucide-react';
 
 /**
  * StatusViewer Component
- * A high-performance, WhatsApp-style story viewer with segmented progress,
- * gesture support, and smooth Framer Motion transitions.
+ * WhatsApp-style story viewer with segmented progress, gesture support,
+ * like/view counts for own statuses, and per-story delete.
  */
 const StatusViewer = ({ 
   user, 
@@ -14,7 +14,8 @@ const StatusViewer = ({
   onClose, 
   resolveAssetUrl,
   onLike,
-  onView 
+  onView,
+  onDelete,
 }) => {
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
@@ -22,6 +23,8 @@ const StatusViewer = ({
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const progressTimerRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -42,6 +45,16 @@ const StatusViewer = ({
 
   const currentUser = statusUsers[currentUserIndex];
   const currentStory = currentUser?.statuses[currentStoryIndex];
+  const isOwnStatus = currentUser?.email === user?.email;
+
+  // Auto-clear loading for text-only statuses
+  useEffect(() => {
+    if (currentStory && !currentStory.mediaUrl) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [currentStory?._id]);
 
   // Advance logic
   const handleNext = useCallback(() => {
@@ -49,11 +62,13 @@ const StatusViewer = ({
       setCurrentStoryIndex(prev => prev + 1);
       setProgress(0);
       setIsLoading(true);
+      setShowDeleteConfirm(false);
     } else if (currentUserIndex < statusUsers.length - 1) {
       setCurrentUserIndex(prev => prev + 1);
       setCurrentStoryIndex(0);
       setProgress(0);
       setIsLoading(true);
+      setShowDeleteConfirm(false);
     } else {
       onClose();
     }
@@ -64,21 +79,25 @@ const StatusViewer = ({
       setCurrentStoryIndex(prev => prev - 1);
       setProgress(0);
       setIsLoading(true);
+      setShowDeleteConfirm(false);
     } else if (currentUserIndex > 0) {
       const prevUser = statusUsers[currentUserIndex - 1];
       setCurrentUserIndex(prev => prev - 1);
       setCurrentStoryIndex(prevUser.statuses.length - 1);
       setProgress(0);
       setIsLoading(true);
+      setShowDeleteConfirm(false);
     }
   }, [currentStoryIndex, currentUserIndex, statusUsers]);
 
-  // Progress animation
+  // Progress animation — pauses during delete confirm
   useEffect(() => {
-    if (isPaused || isLoading) return;
+    if (isPaused || isLoading || showDeleteConfirm) return;
 
-    const duration = currentStory?.mediaType === 'video' ? (videoRef.current?.duration || 10) * 1000 : 5000;
-    const interval = 30; // 33fps
+    const duration = currentStory?.mediaType === 'video'
+      ? (videoRef.current?.duration || 10) * 1000
+      : 5000;
+    const interval = 30;
     const increment = (interval / duration) * 100;
 
     progressTimerRef.current = setInterval(() => {
@@ -93,7 +112,7 @@ const StatusViewer = ({
     }, interval);
 
     return () => clearInterval(progressTimerRef.current);
-  }, [isPaused, isLoading, currentStory, handleNext]);
+  }, [isPaused, isLoading, currentStory, handleNext, showDeleteConfirm]);
 
   // View tracking
   useEffect(() => {
@@ -107,14 +126,50 @@ const StatusViewer = ({
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') handleNext();
       if (e.key === 'ArrowLeft') handlePrev();
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (showDeleteConfirm) { setShowDeleteConfirm(false); return; }
+        onClose();
+      }
       if (e.key === ' ') setIsPaused(p => !p);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrev, onClose]);
+  }, [handleNext, handlePrev, onClose, showDeleteConfirm]);
+
+  // Handle delete
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    setIsPaused(true);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async (e) => {
+    e.stopPropagation();
+    if (!currentStory?._id || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(currentStory._id);
+      // The parent will update statuses; close if nothing left
+    } catch {
+      // parent handles errors
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setIsPaused(false);
+    }
+  };
+
+  const handleDeleteCancel = (e) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(false);
+    setIsPaused(false);
+  };
 
   if (!currentUser || !currentStory) return null;
+
+  const likeCount = currentStory.likes?.length || 0;
+  const viewCount = currentStory.views?.length || 0;
+  const isLiked = currentStory.likes?.includes(user?.email);
 
   return (
     <motion.div 
@@ -147,7 +202,9 @@ const StatusViewer = ({
           <div className="status-v3-user-info">
             <img src={resolveAssetUrl(currentUser.photo)} alt="" className="status-v3-avatar" />
             <div className="status-v3-meta">
-              <span className="status-v3-name">{currentUser.name}</span>
+              <span className="status-v3-name">
+                {isOwnStatus ? 'My Status' : currentUser.name}
+              </span>
               <span className="status-v3-time">
                 {new Date(currentStory.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -160,6 +217,16 @@ const StatusViewer = ({
             <button onClick={() => setIsMuted(!isMuted)} className="status-v3-icon-btn">
               {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
+            {/* Delete button — only for own statuses */}
+            {isOwnStatus && (
+              <button
+                className="status-v3-icon-btn status-v3-delete-btn"
+                onClick={handleDeleteClick}
+                title="Delete this status"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
             <button onClick={onClose} className="status-v3-icon-btn close">
               <X size={24} />
             </button>
@@ -177,9 +244,9 @@ const StatusViewer = ({
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
               className="status-v3-media-content"
               onMouseDown={() => setIsPaused(true)}
-              onMouseUp={() => setIsPaused(false)}
+              onMouseUp={() => !showDeleteConfirm && setIsPaused(false)}
               onTouchStart={() => setIsPaused(true)}
-              onTouchEnd={() => setIsPaused(false)}
+              onTouchEnd={() => !showDeleteConfirm && setIsPaused(false)}
             >
               {/* Blurred Background */}
               <div 
@@ -199,16 +266,21 @@ const StatusViewer = ({
                   onPlaying={() => setIsLoading(false)}
                   className="status-v3-main-media"
                 />
-              ) : (
+              ) : currentStory.mediaUrl ? (
                 <img
                   src={resolveAssetUrl(currentStory.mediaUrl)}
                   alt=""
                   onLoad={() => setIsLoading(false)}
                   className="status-v3-main-media"
                 />
+              ) : (
+                /* Text-only status */
+                <div className="status-v3-text-card" onLoad={() => setIsLoading(false)}>
+                  <p>{currentStory.text}</p>
+                </div>
               )}
 
-              {isLoading && (
+              {isLoading && currentStory.mediaUrl && (
                 <div className="status-v3-loader">
                   <Loader2 className="animate-spin text-white opacity-80" size={48} />
                 </div>
@@ -223,8 +295,8 @@ const StatusViewer = ({
           </div>
         </div>
 
-        {/* Footer / Caption */}
-        {currentStory.text && (
+        {/* Caption */}
+        {currentStory.text && currentStory.mediaUrl && (
           <motion.div 
             className="status-v3-caption-bar"
             initial={{ opacity: 0, y: 20 }}
@@ -234,19 +306,76 @@ const StatusViewer = ({
           </motion.div>
         )}
 
-        {/* Interaction Footer */}
+        {/* Footer — own status: likes + views + delete confirm; others: like button */}
         <div className="status-v3-footer">
-          <button 
-            className={`status-v3-like-btn ${currentStory.likes?.includes(user?.email) ? 'active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); onLike(currentUser.email, currentStory._id); }}
-          >
-            <Heart size={24} fill={currentStory.likes?.includes(user?.email) ? "currentColor" : "none"} />
-            {currentStory.likes?.length > 0 && <span>{currentStory.likes.length}</span>}
-          </button>
-          <div className="status-v3-reply-mock">
-            <span>Reply...</span>
-          </div>
+          {isOwnStatus ? (
+            <div className="status-v3-own-stats">
+              <div className="status-v3-stat">
+                <Eye size={18} />
+                <span>{viewCount} view{viewCount !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="status-v3-stat">
+                <Heart size={18} fill={likeCount > 0 ? '#f43f5e' : 'none'} color={likeCount > 0 ? '#f43f5e' : 'currentColor'} />
+                <span>{likeCount} like{likeCount !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          ) : (
+            <button 
+              className={`status-v3-like-btn ${isLiked ? 'active' : ''}`}
+              onClick={(e) => { e.stopPropagation(); onLike(currentUser.email, currentStory._id); }}
+            >
+              <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
+              {likeCount > 0 && <span>{likeCount}</span>}
+            </button>
+          )}
+
+          {!isOwnStatus && (
+            <div className="status-v3-reply-mock">
+              <span>Reply...</span>
+            </div>
+          )}
         </div>
+
+        {/* Delete Confirmation Overlay */}
+        <AnimatePresence>
+          {showDeleteConfirm && (
+            <motion.div
+              className="status-v3-delete-confirm"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="status-v3-delete-confirm-inner">
+                <Trash2 size={28} className="status-v3-delete-icon-big" />
+                <p>Delete this status?</p>
+                <span>This status will be removed permanently.</span>
+                <div className="status-v3-delete-confirm-btns">
+                  <button
+                    className="status-v3-delete-cancel-btn"
+                    onClick={handleDeleteCancel}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="status-v3-delete-confirm-btn"
+                    onClick={handleDeleteConfirm}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      'Delete'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </motion.div>
   );
