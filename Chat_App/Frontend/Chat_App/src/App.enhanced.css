@@ -31,15 +31,15 @@
 ═══════════════════════════════════════════════════════════════════ */
 .chat-avatar-wrap {
   position: relative;
-  /* Match the Avatar component's rendered size (size=44) exactly */
-  width: 44px;
-  height: 44px;
+  /* Match the Avatar component's rendered size (size=56) exactly */
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
   border-radius: 50%;
 }
 .chat-avatar-wrap .chat-avatar {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
   display: block;

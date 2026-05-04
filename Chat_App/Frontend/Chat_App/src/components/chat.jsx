@@ -79,7 +79,7 @@ function Avatar({ name, email, photo, size = 44, className = "" }) {
         src={resolvedPhoto}
         alt={name || email}
         className={className}
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block" }}
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block", flexShrink: 0 }}
         onError={(e) => {
           e.currentTarget.style.display = "none";
           const sibling = e.currentTarget.nextSibling;
@@ -1104,14 +1104,18 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   }, [activeSelectedUser?.email, message, user?.email]);
 
   const filteredUsers = useMemo(() => {
-    const latestMessageTimeByEmail = new Map();
+    const userMetadata = new Map();
     for (const entry of messages) {
       const otherEmail = entry.sender === user?.email ? entry.receiver : entry.sender;
       if (!otherEmail || otherEmail === user?.email) continue;
       const entryTime = new Date(entry.createdAt || entry.updatedAt || entry.time || 0).getTime() || 0;
-      const currentLatest = latestMessageTimeByEmail.get(otherEmail) || 0;
-      if (entryTime > currentLatest) {
-        latestMessageTimeByEmail.set(otherEmail, entryTime);
+      const current = userMetadata.get(otherEmail);
+      if (!current || entryTime > current.time) {
+        userMetadata.set(otherEmail, {
+          time: entryTime,
+          text: entry.text || (entry.mediaUrl ? "📎 Media" : ""),
+          formattedTime: formatMsgTime(entry.createdAt || entry.time),
+        });
       }
     }
 
@@ -1121,13 +1125,16 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
     });
 
-    return [...base].sort((a, b) => {
+    return base.map(u => ({
+      ...u,
+      lastMsg: userMetadata.get(u.email)
+    })).sort((a, b) => {
       const aHasUnread = (unreadMap[a.email]?.count || 0) > 0;
       const bHasUnread = (unreadMap[b.email]?.count || 0) > 0;
       if (aHasUnread !== bHasUnread) return aHasUnread ? -1 : 1;
 
-      const at = latestMessageTimeByEmail.get(a.email) || 0;
-      const bt = latestMessageTimeByEmail.get(b.email) || 0;
+      const at = a.lastMsg?.time || 0;
+      const bt = b.lastMsg?.time || 0;
       if (at !== bt) return bt - at;
       return (a.name || a.email).localeCompare(b.name || b.email);
     });
@@ -1707,14 +1714,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         onClick={() => handleSelectUser(entry)}
                       >
                         <div className="chat-avatar-wrap">
-                          <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={48} className="chat-avatar" />
+                          <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={56} className="chat-avatar" />
                           {entry.isOnline && <span className="chat-online-dot-small" />}
                         </div>
                         <div className="chat-user-info">
                           <div className="chat-user-info-top">
                             <span className="chat-user-name">{entry.name || entry.email}</span>
                             <span className="chat-user-time">
-                              {hasUnread ? unread.lastTime : (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen))}
+                              {hasUnread ? unread.lastTime : (entry.lastMsg?.formattedTime || (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen)))}
                             </span>
                           </div>
                           <div className="chat-user-email">
@@ -1722,7 +1729,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                           </div>
                           <div className="chat-user-info-bottom">
                             <span className="chat-user-message">
-                              {hasUnread ? unread.lastText : (entry.status?.text || "")}
+                              {hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Chat App.")}
                             </span>
                             {hasUnread && <span className="chat-unread-badge">{unread.count}</span>}
                           </div>
