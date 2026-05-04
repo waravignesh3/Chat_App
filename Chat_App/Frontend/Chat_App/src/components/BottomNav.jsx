@@ -85,6 +85,7 @@ export default function BottomNav({ activeTab, onChange, unreadCount = 0, status
   }, [activeTab]);
 
   const getBadge = (id) => {
+    if (activeTab === id) return null; // already on this page — badge cleared
     if (id === "chats" && unreadCount > 0) return unreadCount > 99 ? "99+" : unreadCount;
     if (id === "status" && statusCount > 0) return statusCount > 9 ? "9+" : statusCount;
     if (id === "calls" && callCount > 0) return callCount > 9 ? "9+" : callCount;

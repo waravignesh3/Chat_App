@@ -121,6 +121,16 @@ const StatusViewer = ({
     }
   }, [currentUser?.email, currentStory?._id, user?.email, onView]);
 
+  // Handle index adjustment if statuses change (e.g., after deletion)
+  useEffect(() => {
+    if (currentUser) {
+      if (currentStoryIndex >= currentUser.statuses.length) {
+        // Current story was deleted and it was the last one, go back one
+        setCurrentStoryIndex(Math.max(0, currentUser.statuses.length - 1));
+      }
+    }
+  }, [currentUser?.statuses?.length]);
+
   // Keyboard support
   useEffect(() => {
     const handleKeyDown = (e) => {

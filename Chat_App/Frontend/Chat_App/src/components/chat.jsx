@@ -1149,7 +1149,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     socket.on("connect_error", () => setConnectionStatus("offline"));
     if (socket.connected) register();
 
-    socket.on("users_update", (data) => { setUsers(Array.isArray(data) ? data : []); });
+    socket.on("users_update", (data) => { 
+      const nextUsers = Array.isArray(data) ? data : [];
+      setUsers(nextUsers); 
+      // Also sync the local 'user' state if we find ourselves in the update
+      if (userRef.current?.email) {
+        const self = nextUsers.find(u => u.email.toLowerCase() === userRef.current.email.toLowerCase());
+        if (self) {
+          setUser(prev => ({ ...prev, ...self }));
+        }
+      }
+    });
 
     // ── Real-time online/offline presence ──────────────────────────────────────
     socket.on("user_online", ({ email }) => {

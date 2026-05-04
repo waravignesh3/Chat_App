@@ -399,7 +399,7 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
     // Broadcast update to all users
     await broadcastUsers();
 
-    return res.json({ success: true, status: user.status });
+    return res.json({ success: true, statuses: user.statuses });
   } catch (err) {
     console.error("Status update error:", err);
     return res.status(500).json({ error: "Failed to update status" });
