@@ -24,7 +24,7 @@ const messageSchema = new mongoose.Schema(
     },
     mediaType: {
       type: String,
-      enum: ["image", "video", null],
+      enum: ["image", "video", "audio", null],
       default: null,
     },
     filename: {
