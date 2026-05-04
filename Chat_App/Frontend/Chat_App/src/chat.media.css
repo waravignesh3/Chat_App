@@ -168,11 +168,35 @@
   line-height: 1;
 }
 
-.chat-status-avatar-ring {
-  padding: 2px;
-  border: 2px solid var(--wa-teal, #00a884);
-  border-radius: 50%;
+.status-avatar-ring-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.status-ring {
+  position: absolute;
+  inset: -3px;
+  border: 2.5px solid var(--wa-teal, #00a884);
+  border-radius: 50%;
+  transition: border-color 0.3s ease;
+}
+
+.status-ring.seen {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.theme-light .status-ring.seen {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.status-my-avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chat-status-info strong {
