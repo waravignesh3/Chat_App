@@ -1963,14 +1963,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     // Optimistic UI update
     setMessages((prev) =>
       prev.map((entry) => {
-        if (entry._id !== messageId) return entry;
+        const isMatch = (entry._id && entry._id === messageId) || 
+                        (entry.clientTempId && entry.clientTempId === messageId);
+        if (!isMatch) return entry;
+
         const reactions = { ...(entry.reactions || {}) };
-        const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
-        if (users.includes(user.email)) {
-          reactions[emoji] = users.filter((e) => e !== user.email);
+        const reactors = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+        if (reactors.includes(user.email)) {
+          reactions[emoji] = reactors.filter((e) => e !== user.email);
           if (!reactions[emoji].length) delete reactions[emoji];
         } else {
-          reactions[emoji] = [...users, user.email];
+          reactions[emoji] = [...reactors, user.email];
         }
         return { ...entry, reactions };
       })
@@ -2401,7 +2404,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
                         return (
                           <div key={key} data-msgindex={index} className={`chat-bubble-row ${isOwn ? "own" : "received"}`}>
-                            <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""}`}>
+                            <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""} ${entry.mediaUrl ? "media-bubble" : ""}`}>
                               {!isOwn && <span className="chat-bubble-sender">{activeSelectedUser.name || activeSelectedUser.email}</span>}
 
                               {/* ── Action buttons (reply + react) ── */}

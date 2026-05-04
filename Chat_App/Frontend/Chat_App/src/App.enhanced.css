@@ -141,6 +141,11 @@
   transform: scale(1.12);
 }
 
+/* Ensure media bubbles trigger actions reliably */
+.chat-bubble.media-bubble {
+  min-height: 48px;
+}
+
 /* Reaction picker wrap — positioned relative to bubble */
 .chat-reaction-wrap {
   position: absolute;
