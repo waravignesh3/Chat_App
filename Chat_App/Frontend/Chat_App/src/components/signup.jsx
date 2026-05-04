@@ -100,7 +100,7 @@ function Signup() {
                   fill="#fff"
                 />
               </svg>
-              <span>WhatsApp</span>
+              <span>Hello Hub</span>
             </div>
 
             <h1>Create your account.</h1>

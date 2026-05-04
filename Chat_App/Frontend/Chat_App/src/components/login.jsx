@@ -129,7 +129,7 @@ function Login({ setUser = () => {} }) {
                   fill="#fff"
                 />
               </svg>
-              <span>WhatsApp</span>
+              <span>Hello Hub</span>
             </div>
 
             <h1>Connect with your world.</h1>
