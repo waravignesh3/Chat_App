@@ -2280,6 +2280,16 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         )}
       </section>
 
+      <BottomNav
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        unreadCount={settingsStats.unreadCount}
+        statusCount={settingsStats.statusCount}
+        callCount={callRecords.length}
+      />
+      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
+
+      {/* ── Status Overlays (Relocated to root for absolute full-screen coverage) ── */}
       {isEditingStatus && statusFile && (
         <div className="status-share-overlay" onClick={(e) => e.target === e.currentTarget && setIsEditingStatus(false)}>
           <div className="status-share-modal">
@@ -2322,7 +2332,6 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         </div>
       )}
 
-      {/* ── Global Status Viewer (Full Screen) ── */}
       {viewingStatusUser && (
         <div className="status-viewer-overlay" onClick={() => setViewingStatusUser(null)}>
           <div className="status-viewer-content" onClick={(e) => e.stopPropagation()}>
@@ -2338,10 +2347,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             </div>
 
             <div className="status-viewer-media-wrap">
-              {viewingStatusUser.status?.mediaType === "video"
-                ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls className="status-viewer-img" />
-                : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" className="status-viewer-img" />
-              }
+              <div className="status-viewer-media">
+                {viewingStatusUser.status?.mediaType === "video"
+                  ? <video key={viewingStatusUser.status.mediaUrl} src={resolveAssetUrl(viewingStatusUser.status.mediaUrl)} autoPlay controls className="status-viewer-img" />
+                  : <img key={viewingStatusUser.status.mediaUrl} src={resolveAssetUrl(viewingStatusUser.status.mediaUrl)} alt="Status" className="status-viewer-img" />
+                }
+              </div>
               
               {/* Like Button Overlay */}
               <button 
@@ -2376,16 +2387,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         </div>
       )}
-
-      <BottomNav
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        unreadCount={settingsStats.unreadCount}
-        statusCount={settingsStats.statusCount}
-        callCount={callRecords.length}
-      />
-      <ActiveCallOverlay call={activeCallView} onEnd={handleEndCall} />
     </div>
+
   );
 }
 
