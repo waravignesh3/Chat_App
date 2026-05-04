@@ -1804,7 +1804,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         </div>
       )}
 
-      <section className="chat-layout">
+      <section className={`chat-layout ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
         {activeTab === "chats" ? (
           <>
             {/* ── Sidebar ── */}

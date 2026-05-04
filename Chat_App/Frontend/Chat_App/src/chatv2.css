@@ -22,6 +22,11 @@
   overflow: hidden;
 }
 
+.chat-layout.full-page-layout {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ─── Sidebar ─── */
 .chat-sidebar {
   display: flex;
