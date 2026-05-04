@@ -265,6 +265,88 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
   );
 }
 
+// ─── Voice Player (Custom) ───────────────────────────────────────────────────
+function VoicePlayer({ url }) {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const onTimeUpdate = () => {
+    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const onLoadedMetadata = () => {
+    if (audioRef.current) setDuration(audioRef.current.duration);
+  };
+
+  const onEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
+  const handleSeek = (e) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const formatTime = (time) => {
+    if (isNaN(time)) return "0:00";
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="voice-player-container">
+      <audio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={onTimeUpdate}
+        onLoadedMetadata={onLoadedMetadata}
+        onEnded={onEnded}
+      />
+      <button type="button" className="voice-play-btn" onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>
+        {isPlaying ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        )}
+      </button>
+      <div className="voice-progress-wrap">
+        <input
+          type="range"
+          min="0"
+          max={duration || 0}
+          step="0.1"
+          value={currentTime}
+          onChange={handleSeek}
+          className="voice-seekbar"
+        />
+        <div className="voice-time-row">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+      <div className="voice-avatar-mini">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Media Message ────────────────────────────────────────────────────────────
 function MediaMessage({ mediaUrl, mediaType }) {
   const absoluteUrl = resolveAssetUrl(mediaUrl);
@@ -272,7 +354,7 @@ function MediaMessage({ mediaUrl, mediaType }) {
     return <video src={absoluteUrl} controls className="chat-media-video" preload="metadata" />;
   }
   if (mediaType === "audio") {
-    return <audio src={absoluteUrl} controls className="chat-media-audio" />;
+    return <VoicePlayer url={absoluteUrl} />;
   }
   return (
     <a href={absoluteUrl} target="_blank" rel="noopener noreferrer">
@@ -379,7 +461,7 @@ function StatusPage({
   user, users, statusText, setStatusText,
   statusFile, setStatusFile, isEditingStatus, setIsEditingStatus,
   statusUploading, handleStatusUpdate, viewingStatusUser, setViewingStatusUser,
-  SERVER_URL,
+  SERVER_URL, onStatusLike,
 }) {
   const statusInputRef = useRef(null);
   const [postMode, setPostMode] = useState(null); // 'text' | 'media' | null
@@ -538,6 +620,23 @@ function StatusPage({
                 ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls className="status-viewer-img" />
                 : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" className="status-viewer-img" />
               }
+              
+              {/* Like Button Overlay */}
+              <button 
+                type="button" 
+                className={`status-like-btn ${viewingStatusUser.status?.likes?.includes(user?.email) ? "liked" : ""}`}
+                onClick={(e) => { e.stopPropagation(); onStatusLike(viewingStatusUser.email); }}
+                title={viewingStatusUser.status?.likes?.includes(user?.email) ? "Unlike status" : "Like status"}
+              >
+                <div className="status-like-icon-wrap">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill={viewingStatusUser.status?.likes?.includes(user?.email) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </div>
+                {viewingStatusUser.status?.likes?.length > 0 && (
+                  <span className="status-like-count">{viewingStatusUser.status.likes.length}</span>
+                )}
+              </button>
             </div>
             {viewingStatusUser.status?.text && (
               <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
@@ -1223,12 +1322,24 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    const nearBottom = distFromBottom < 120;
-    if (shouldScrollRef.current || nearBottom) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-    shouldScrollRef.current = false;
+
+    // Use a small timeout to ensure DOM has rendered new messages
+    const timer = setTimeout(() => {
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const nearBottom = distFromBottom < 120;
+      
+      if (shouldScrollRef.current || nearBottom) {
+        // Use "auto" (instant) scroll when switching users/opening chat
+        // Use "smooth" scroll when receiving new messages while already at bottom
+        bottomRef.current?.scrollIntoView({ 
+          behavior: shouldScrollRef.current ? "auto" : "smooth", 
+          block: "end" 
+        });
+      }
+      shouldScrollRef.current = false;
+    }, 60);
+
+    return () => clearTimeout(timer);
   }, [messages, selectedUser, isTyping]);
 
   // ── Scroll-to-bottom FAB visibility ──────────────────────────────────────────
@@ -1480,6 +1591,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       showToast(err.message || "Failed to update status", "error");
     } finally {
       setStatusUploading(false);
+    }
+  };
+
+  const handleStatusLike = async (targetUserEmail) => {
+    if (!user?.email) return;
+    try {
+      const response = await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(targetUserEmail)}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ likerEmail: user.email }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to like status");
+      // socket UsersUpdate will handle the UI refresh across all clients
+    } catch (err) {
+      showToast(err.message, "error");
     }
   };
 
@@ -2160,6 +2287,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             viewingStatusUser={viewingStatusUser}
             setViewingStatusUser={setViewingStatusUser}
             SERVER_URL={SERVER_URL}
+            onStatusLike={handleStatusLike}
           />
 
         ) : activeTab === "calls" ? (

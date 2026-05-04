@@ -124,11 +124,11 @@ const buildUsersPayload = async () => {
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   return users.map((u) => {
-    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null };
+    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [] };
 
     // Check if status is older than 1 day
     if (currentStatus.createdAt && (now - new Date(currentStatus.createdAt)) > oneDayMs) {
-      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null };
+      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [] };
       // Proactively clear it in DB if expired (optional but good for cleanup)
       User.updateOne({ _id: u._id }, { $set: { status: currentStatus } }).exec().catch(err => console.error("Error clearing status:", err));
     }
@@ -365,13 +365,13 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
     if (!email) return res.status(400).json({ error: "Email is required" });
 
     if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
-
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
     let statusUpdate = { 
       text: text || "", 
       mediaUrl: "",
       mediaType: "",
-      createdAt: new Date() 
+      createdAt: new Date(),
+      likes: []
     };
 
     if (req.file) {
@@ -397,8 +397,7 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
       { $set: { status: statusUpdate } },
       { new: true }
     );
-
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     // Broadcast update to all users
     await broadcastUsers();
@@ -407,6 +406,40 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
   } catch (err) {
     console.error("Status update error:", err);
     return res.status(500).json({ error: "Failed to update status" });
+  }
+});
+
+// ─── Status Like Toggle ───────────────────────────────────────────────────────
+app.post("/api/status/:email/like", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { likerEmail } = req.body;
+    if (!email || !likerEmail) return res.status(400).json({ error: "Emails required" });
+
+    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedLiker = likerEmail.toLowerCase().trim();
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.status?.createdAt) return res.status(400).json({ error: "No active status" });
+
+    if (!user.status.likes) user.status.likes = [];
+    
+    if (user.status.likes.includes(normalizedLiker)) {
+      user.status.likes = user.status.likes.filter(e => e !== normalizedLiker);
+    } else {
+      user.status.likes = [...user.status.likes, normalizedLiker];
+    }
+
+    await user.save();
+    await broadcastUsers();
+
+    return res.json({ success: true, likes: user.status.likes });
+  } catch (err) {
+    console.error("Status like error:", err);
+    return res.status(500).json({ error: "Failed to like status" });
   }
 });
 

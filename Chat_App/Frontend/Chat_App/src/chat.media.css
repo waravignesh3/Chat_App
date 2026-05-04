@@ -27,16 +27,94 @@
   margin-top: 4px;
 }
 
-/* ─── Audio ─── */
-.chat-media-audio {
-  width: 100%;
-  min-width: 220px;
+/* ─── Voice Player (Custom) ─── */
+.voice-player-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 8px 12px;
+  border-radius: 14px;
+  min-width: 240px;
   max-width: 320px;
-  height: 40px;
-  border-radius: 999px;
-  display: block;
-  margin-top: 4px;
-  accent-color: var(--wa-teal, #00a884);
+  margin-top: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.theme-light .voice-player-container {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.voice-play-btn {
+  background: transparent;
+  border: none;
+  color: var(--wa-teal, #00a884);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  transition: transform 0.1s ease, color 0.2s ease;
+}
+.voice-play-btn:hover { color: var(--wa-teal-light, #00d4a8); }
+.voice-play-btn:active { transform: scale(0.92); }
+
+.voice-progress-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.voice-seekbar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  margin: 0;
+}
+.theme-light .voice-seekbar { background: rgba(0, 0, 0, 0.1); }
+
+.voice-seekbar::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--wa-teal, #00a884);
+  border-radius: 50%;
+  border: 2px solid var(--wa-panel, #202c33);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.theme-light .voice-seekbar::-webkit-slider-thumb { border-color: #fff; }
+
+.voice-seekbar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--wa-teal, #00a884);
+  border-radius: 50%;
+  border: 2px solid var(--wa-panel, #202c33);
+}
+
+.voice-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--wa-text-muted, #8696a0);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.voice-avatar-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wa-text-muted, #8696a0);
+  opacity: 0.7;
 }
 
 /* ─── Status Panel ─── */
@@ -292,3 +370,70 @@
   color: var(--wa-text, #e9edef);
 }
 .status-upload-actions button:last-child:hover { background: rgba(255,255,255,0.1); }
+
+/* ─── Status Like Button ─── */
+.status-like-btn {
+  position: absolute;
+  bottom: 80px; /* Above caption bar if present */
+  right: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 40px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+  z-index: 25;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.status-like-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.status-like-btn.liked {
+  background: rgba(255, 43, 85, 0.15);
+  border-color: rgba(255, 43, 85, 0.3);
+  color: #ff2b55;
+}
+
+.status-like-btn.liked svg {
+  fill: #ff2b55;
+  stroke: #ff2b55;
+}
+
+.status-like-btn.liked .status-like-icon-wrap {
+  animation: wa-heart-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes wa-heart-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+.status-like-count {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-like-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the media wrap is relative for positioning */
+.status-viewer-media-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
