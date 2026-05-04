@@ -2261,8 +2261,23 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             onStatusView={handleStatusView}
           />
 
+        ) : activeTab === "calls" ? (
+          <CallsPanel contacts={callContacts} callHistory={callRecords} onStartCall={handleStartCall} />
+        ) : (
+          <SettingsPanel
+            user={user}
+            draft={settingsDraft}
+            onDraftChange={handleDraftChange}
+            onSave={handleSaveSettings}
+            onOpenProfile={() => handleOpenProfileModal(user, true)}
+            onLogout={handleLogout}
+            saving={settingsSaving}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            stats={settingsStats}
+            onBack={() => setActiveTab("chats")}
           />
-        ) : null}
+        )}
       </section>
 
       {isEditingStatus && statusFile && (
