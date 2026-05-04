@@ -137,8 +137,6 @@ const buildUsersPayload = async () => {
     };
   });
 };
-  });
-};
 
 const broadcastUsers = async () => {
   const users = await buildUsersPayload();
@@ -414,12 +412,11 @@ app.post("/api/status/:email/like", async (req, res) => {
     const { email } = req.params;
     const { statusId } = req.body;
     const normalizedEmail = email.toLowerCase();
-    const likerEmail = req.body.likerEmail; // In a real app, this comes from auth middleware
+    const likerEmail = req.body.likerEmail;
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Find the specific status by ID or the latest one if no ID provided
     const statusIdx = statusId 
       ? user.statuses.findIndex(s => s._id.toString() === statusId)
       : user.statuses.length - 1;
@@ -442,39 +439,6 @@ app.post("/api/status/:email/like", async (req, res) => {
   } catch (err) {
     console.error("Like error:", err);
     return res.status(500).json({ error: "Like failed" });
-  }
-});
-
-    const normalizedEmail = email.toLowerCase().trim();
-    const normalizedLiker = likerEmail.toLowerCase().trim();
-
-    const targetUser = await User.findOne({ email: normalizedEmail });
-    if (!targetUser) return res.status(404).json({ error: "User not found" });
-
-    // Ensure status object exists
-    if (!targetUser.status) {
-      targetUser.status = { text: "", mediaUrl: "", mediaType: "", createdAt: new Date(), likes: [] };
-    }
-    
-    if (!targetUser.status.likes) targetUser.status.likes = [];
-
-    const isLiked = targetUser.status.likes.includes(normalizedLiker);
-    
-    if (isLiked) {
-      targetUser.status.likes = targetUser.status.likes.filter(e => e !== normalizedLiker);
-    } else {
-      targetUser.status.likes = [...targetUser.status.likes, normalizedLiker];
-    }
-
-    // CRITICAL: Mongoose needs to know the nested object changed
-    targetUser.markModified("status");
-    await targetUser.save();
-    
-    await broadcastUsers();
-    return res.json({ success: true, likes: targetUser.status.likes });
-  } catch (err) {
-    console.error("Status like error:", err);
-    return res.status(500).json({ error: "Failed to like status" });
   }
 });
 
@@ -503,31 +467,6 @@ app.post("/api/status/:email/view", async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: "View failed" });
-  }
-});
-
-    const normalizedEmail = email.toLowerCase().trim();
-    const normalizedViewer = viewerEmail.toLowerCase().trim();
-
-    // Don't count self-view as a new view
-    if (normalizedEmail === normalizedViewer) return res.json({ success: true });
-
-    const targetUser = await User.findOne({ email: normalizedEmail });
-    if (!targetUser || !targetUser.status?.createdAt) return res.status(404).json({ error: "No active status" });
-
-    if (!targetUser.status.views) targetUser.status.views = [];
-    
-    if (!targetUser.status.views.includes(normalizedViewer)) {
-      targetUser.status.views.push(normalizedViewer);
-      targetUser.markModified("status");
-      await targetUser.save();
-      await broadcastUsers();
-    }
-
-    return res.json({ success: true, views: targetUser.status.views });
-  } catch (err) {
-    console.error("Status view error:", err);
-    return res.status(500).json({ error: "Failed to record view" });
   }
 });
 
