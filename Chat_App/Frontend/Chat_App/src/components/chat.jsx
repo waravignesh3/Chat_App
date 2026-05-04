@@ -454,16 +454,20 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
 }
 
 // ─── Settings panel — photo edit only here ────────────────────────────────────
-function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLogout, saving, theme, toggleTheme, stats }) {
+function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLogout, saving, theme, toggleTheme, stats, onBack }) {
   return (
-    <main className="chat-panel full-height">
-      <div className="chat-panel-header">
-        <div className="chat-panel-header-left">
-          <div className="chat-active-user-info">
-            <h3>Settings</h3>
-            <p>Profile, privacy, notifications, and app preferences.</p>
-          </div>
+    <main className="settings-fullpage">
+      <div className="settings-header">
+        <button type="button" className="settings-back-btn" onClick={onBack} aria-label="Back to chats">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div className="settings-header-info">
+          <h3>Settings</h3>
+          <p>Profile, privacy, notifications &amp; preferences</p>
         </div>
+        <button type="button" className="settings-save-quick-btn" onClick={onSave} disabled={saving}>
+          {saving ? "Saving…" : "Save"}
+        </button>
       </div>
 
       <div className="chat-feature-panel settings-panel-view">
@@ -812,6 +816,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
     socket.on("users_update", (data) => { setUsers(Array.isArray(data) ? data : []); });
 
+    // ── Real-time online/offline presence ──────────────────────────────────────
+    socket.on("user_online", ({ email }) => {
+      setUsers((prev) => prev.map((u) => u.email === email ? { ...u, isOnline: true, lastSeen: "Online" } : u));
+    });
+    socket.on("user_offline", ({ email, lastSeen }) => {
+      setUsers((prev) => prev.map((u) => u.email === email ? { ...u, isOnline: false, lastSeen } : u));
+    });
+
     socket.on("private_message", (incomingMessage) => {
       setMessages((prev) => {
         const normalizedIncoming = normalizeMessage(incomingMessage);
@@ -994,6 +1006,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     copiedMessageTimerRef.current = window.setTimeout(() => setCopiedMessageId(null), 1400);
     return () => window.clearTimeout(copiedMessageTimerRef.current);
   }, [copiedMessageId]);
+
+  // ── Live browser-tab title badge (unread count) ────────────────────────────
+  useEffect(() => {
+    const totalUnread = Object.values(unreadMap).reduce((sum, v) => sum + (v?.count || 0), 0);
+    document.title = totalUnread > 0 ? `(${totalUnread}) Chat App` : "Chat App";
+    return () => { document.title = "Chat App"; };
+  }, [unreadMap]);
 
   useEffect(() => {
     if (!activeCall) return undefined;
@@ -1621,7 +1640,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                       <div className="chat-active-user-info">
                         <h3>{activeSelectedUser.name || activeSelectedUser.email}</h3>
                         <p className={activeSelectedUser.isOnline ? "online" : ""}>
-                          {isTyping ? "typing..." : (activeSelectedUser.isOnline ? "Online" : `last seen ${formatLastSeen(activeSelectedUser.lastSeen)}`)}
+                          {isTyping
+                            ? <span className="typing-status"><span className="typing-dots-mini"><span/><span/><span/></span> typing…</span>
+                            : activeSelectedUser.isOnline
+                            ? <span className="online-now-status"><span className="online-pulse-dot"/>Online</span>
+                            : `last seen ${formatLastSeen(activeSelectedUser.lastSeen)}`}
                         </p>
                       </div>
                     </div>
@@ -1773,12 +1796,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                     {composerNotice.text && (
                       <div className={`chat-composer-notice ${composerNotice.type}`}>{composerNotice.text}</div>
                     )}
+                    {/* Emoji picker — rendered ABOVE the wrap so it's never clipped */}
+                    {showEmojiPicker && (
+                      <div className="emoji-picker-container" ref={emojiPickerRef}>
+                        <EmojiPicker onSelect={handleEmojiSelect} />
+                      </div>
+                    )}
                     <div className="chat-input-wrap">
                       {/* Emoji picker button */}
                       <button type="button" className="chat-input-icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={showEmojiPicker ? "#00a884" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                       </button>
-                      {showEmojiPicker && <div className="emoji-picker-container" ref={emojiPickerRef}><EmojiPicker onSelect={handleEmojiSelect} /></div>}
 
                       {/* Attachment button */}
                       <button type="button" className="chat-input-icon-btn" onClick={() => mediaInputRef.current?.click()} title="Attach file">
@@ -1928,6 +1956,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             theme={theme}
             toggleTheme={toggleTheme}
             stats={settingsStats}
+            onBack={() => setActiveTab("chats")}
           />
         )}
 

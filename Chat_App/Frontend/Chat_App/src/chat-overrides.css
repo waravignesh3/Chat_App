@@ -223,3 +223,172 @@ body.theme-light .chat-messages-container {
 .auth-toast {
   z-index: var(--wa-z-toast, 300);
 }
+
+/* ═══════════════════════════════════════════════════════
+   SETTINGS FULL-PAGE LAYOUT
+═══════════════════════════════════════════════════════ */
+.settings-fullpage {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--wa-bg, #0b141a);
+  animation: fadeIn 0.2s ease both;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--wa-panel, #202c33);
+  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.07));
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 60px;
+  flex-shrink: 0;
+}
+
+.settings-back-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wa-teal, #00a884);
+  flex-shrink: 0;
+  transition: background var(--wa-transition-fast), transform var(--wa-transition-fast);
+}
+.settings-back-btn:hover {
+  background: rgba(0,168,132,0.12);
+  transform: translateX(-2px);
+}
+
+.settings-header-info {
+  flex: 1;
+  min-width: 0;
+}
+.settings-header-info h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--wa-text, #e9edef);
+  margin: 0 0 2px;
+}
+.settings-header-info p {
+  font-size: 0.78rem;
+  color: var(--wa-text-muted, #8696a0);
+  margin: 0;
+}
+
+.settings-save-quick-btn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: var(--wa-teal, #00a884);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background var(--wa-transition-fast), transform var(--wa-transition-fast);
+}
+.settings-save-quick-btn:hover:not(:disabled) {
+  background: var(--wa-teal-dark, #008f6f);
+  transform: translateY(-1px);
+}
+.settings-save-quick-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.settings-fullpage .chat-feature-panel {
+  max-width: 920px;
+  width: 100%;
+  align-self: center;
+  padding: 24px;
+}
+
+.settings-fullpage .settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 20px;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .settings-fullpage .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Light mode */
+body.theme-light .settings-fullpage { background: #f0f2f5; }
+body.theme-light .settings-header { background: #fff; border-bottom-color: #e9edef; }
+
+/* ═══════════════════════════════════════════════════════
+   EMOJI PICKER — FIXED POSITIONING
+═══════════════════════════════════════════════════════ */
+
+/* Input area must be relative so picker can escape it upward */
+.chat-input-area {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Picker sits above the entire input bar */
+.emoji-picker-container {
+  position: absolute;
+  bottom: 100%;
+  left: 8px;
+  z-index: 200;
+  margin-bottom: 4px;
+  animation: slideUp 0.15s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════
+   REAL-TIME STATUS INDICATORS
+═══════════════════════════════════════════════════════ */
+
+/* Online "Online" label with animated green dot in panel header */
+.online-now-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wa-teal, #00a884);
+  font-size: 0.78rem;
+}
+
+.online-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wa-green, #25D366);
+  flex-shrink: 0;
+  animation: pulseOnline 2s ease-in-out infinite;
+}
+
+/* Typing "typing…" with mini bouncing dots in panel header */
+.typing-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wa-teal, #00a884);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.typing-dots-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.typing-dots-mini span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wa-teal, #00a884);
+  display: inline-block;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+.typing-dots-mini span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots-mini span:nth-child(3) { animation-delay: 0.4s; }
