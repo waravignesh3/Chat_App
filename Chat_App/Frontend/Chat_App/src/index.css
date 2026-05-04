@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   WHATSAPP-INSPIRED DESIGN SYSTEM — index.css
+   Hello Hub-INSPIRED DESIGN SYSTEM — index.css
    Global tokens, resets, typography
 ═══════════════════════════════════════════════════════ */
 
@@ -7,7 +7,7 @@
 
 /* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
-  /* WhatsApp Brand Colors */
+  /* Hello Hub Brand Colors */
   --wa-green:        #25D366;
   --wa-green-dark:   #128C7E;
   --wa-green-deeper: #075E54;

@@ -118,7 +118,7 @@ function Login({ setUser = () => {} }) {
         <div className="auth-panel auth-intro" aria-hidden="true">
           <div>
             <div className="auth-brand">
-              {/* WhatsApp-style speech bubble logo */}
+              {/* Hello Hub-style speech bubble logo */}
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.58A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.22-3.48-8.52z"
@@ -146,7 +146,7 @@ function Login({ setUser = () => {} }) {
               Hey! Did you try the new app yet? It's super fast 🚀
             </div>
             <div className="auth-chat-bubble own">
-              Just signed in. This feels exactly like WhatsApp 😍
+              Just signed in. This feels exactly like Hello Hub 😍
             </div>
             <div className="auth-chat-preview-footer">
               <span>Real-time messaging</span>

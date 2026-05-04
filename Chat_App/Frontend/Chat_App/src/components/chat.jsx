@@ -376,7 +376,7 @@ function getMessageId(message, fallbackIndex = null) {
   return message?._id || message?.clientTempId || `${message?.sender}:${message?.receiver}:${message?.time}:${fallbackIndex ?? "x"}`;
 }
 
-// ─── WhatsApp-style Reply Preview Banner ─────────────────────────────────────
+// ─── Hello Hub-style Reply Preview Banner ─────────────────────────────────────
 function ReplyBanner({ replyingTo, onCancel }) {
   if (!replyingTo) return null;
   return (
@@ -633,7 +633,7 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
           <div>
             <span className="chat-feature-kicker">Fast calling</span>
             <h2>Start a voice or video conversation in one tap.</h2>
-            <p>Calls are prepared with microphone and camera permissions for a smooth WhatsApp-style launch flow.</p>
+            <p>Calls are prepared with microphone and camera permissions for a smooth Hello Hub-style launch flow.</p>
           </div>
         </section>
 
@@ -1313,8 +1313,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // ── Live browser-tab title badge (unread count) ────────────────────────────
   useEffect(() => {
     const totalUnread = Object.values(unreadMap).reduce((sum, v) => sum + (v?.count || 0), 0);
-    document.title = totalUnread > 0 ? `(${totalUnread}) Chat App` : "Chat App";
-    return () => { document.title = "Chat App"; };
+    document.title = totalUnread > 0 ? `(${totalUnread}) Hello Hub` : "Hello Hub";
+    return () => { document.title = "Hello Hub"; };
   }, [unreadMap]);
 
   useEffect(() => {
@@ -1982,7 +1982,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                           </div>
                           <div className="chat-user-info-bottom">
                             <span className="chat-user-message">
-                              {hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Chat App.")}
+                              {hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Hello Hub.")}
                             </span>
                             {hasUnread && <span className="chat-unread-badge">{unread.count > 9 ? "9+" : unread.count}</span>}
                           </div>
@@ -2067,7 +2067,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
                               {/* ── Action buttons (reply + react) ── */}
                               <div className="chat-message-actions-trigger">
-                                {/* Reply button — WhatsApp style */}
+                                {/* Reply button — Hello Hub style */}
                                 <button
                                   type="button"
                                   className="chat-bubble-action-btn chat-reply-action-btn"
@@ -2104,7 +2104,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                                 )}
                               </div>
 
-                              {/* ── WhatsApp-style quoted reply preview ── */}
+                              {/* ── Hello Hub-style quoted reply preview ── */}
                               {entry.replyTo?.text || entry.replyTo?.mediaUrl ? (
                                 <div className={`chat-reply-quote ${isOwn ? "own" : "other"}`}>
                                   <div className="chat-reply-quote-bar" />
@@ -2177,7 +2177,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
                   {/* ── Composer ── */}
                   <div className="chat-input-area">
-                    {/* WhatsApp-style reply banner above input */}
+                    {/* Hello Hub-style reply banner above input */}
                     <ReplyBanner replyingTo={replyingTo} onCancel={() => setReplyingTo(null)} />
                     {composerNotice.text && (
                       <div className={`chat-composer-notice ${composerNotice.type}`}>{composerNotice.text}</div>
