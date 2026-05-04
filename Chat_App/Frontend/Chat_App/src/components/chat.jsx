@@ -7,6 +7,7 @@ import { parseJsonResponse, requestJson } from "../utils/http";
 import { useToast } from "./ToastContext";
 import BottomNav from "./BottomNav";
 import { useNotifications } from "../utils/useNotifications";
+import StatusViewer from "./Status/StatusViewer";
 import "../App.css";
 import "../App.enhanced.css";
 import "../chatv2.css";
@@ -17,6 +18,7 @@ import "../chat.reactions.fix.css";
 import "../chat.unread.css";
 import "../chat-overrides.css";
 import "../chat.status.css";
+import "../status.v3.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -483,7 +485,7 @@ function StatusPage({
     input.click();
   };
 
-  const contactsWithStatus = users.filter(u => u.email !== user?.email && u.status?.mediaUrl);
+  const contactsWithStatus = users.filter(u => u.email !== user?.email && u.statuses?.length > 0);
 
   return (
     <main className="status-page">
@@ -501,14 +503,14 @@ function StatusPage({
           <div className="status-my-avatar-col">
             <div className="status-my-avatar-wrap">
               <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={54} />
-              {user?.status?.mediaUrl && (
-                <span className={`status-ring ${user.status.views?.includes(user.email) ? "seen" : ""}`} />
+              {user?.statuses?.length > 0 && (
+                <span className={`status-ring ${user.statuses.every(s => s.views?.includes(user.email)) ? "seen" : ""}`} />
               )}
             </div>
           </div>
           <div className="status-my-info">
             <strong>My Status</strong>
-            <p>{user?.status?.mediaUrl ? "Tap to view your status" : "Share a photo, video, or text update"}</p>
+            <p>{user?.statuses?.length > 0 ? "Tap to view your status" : "Share a photo, video, or text update"}</p>
           </div>
           <div className="status-my-actions">
             <button
@@ -594,14 +596,14 @@ function StatusPage({
                 >
                   <div className="status-avatar-ring-wrap">
                     <Avatar name={u.name} email={u.email} photo={u.photo} size={50} />
-                    <span className={`status-ring ${u.status.views?.includes(user?.email) ? "seen" : ""}`} />
+                    <span className={`status-ring ${u.statuses.every(s => s.views?.includes(user?.email)) ? "seen" : ""}`} />
                   </div>
                   <div className="status-contact-info">
                     <strong>{u.name || u.email}</strong>
-                    <span>{new Date(u.status.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span>{u.statuses?.length > 0 ? new Date(u.statuses[u.statuses.length - 1].createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
                   </div>
-                  {u.status.text && (
-                    <p className="status-contact-preview">{u.status.text.slice(0, 50)}{u.status.text.length > 50 ? "…" : ""}</p>
+                  {u.statuses?.length > 0 && u.statuses[u.statuses.length - 1].text && (
+                    <p className="status-contact-preview">{u.statuses[u.statuses.length - 1].text.slice(0, 50)}{u.statuses[u.statuses.length - 1].text.length > 50 ? "…" : ""}</p>
                   )}
                 </button>
               ))}
@@ -1520,7 +1522,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const response = await fetch(`${SERVER_URL}/api/status`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to update status");
-      setUser((prev) => ({ ...prev, status: data.status }));
+      setUser((prev) => ({ ...prev, statuses: data.statuses }));
       setIsEditingStatus(false);
       setStatusFile(null);
       setStatusText("");
@@ -1532,19 +1534,24 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
   };
 
-  const handleStatusLike = async (targetUserEmail) => {
+  const handleStatusLike = async (targetUserEmail, statusId) => {
     if (!user?.email) return;
 
     // --- OPTIMISTIC UPDATE ---
     const oldUsers = [...users];
     setUsers(prev => prev.map(u => {
       if (u.email === targetUserEmail) {
-        const currentLikes = u.status?.likes || [];
-        const isLiked = currentLikes.includes(user.email);
-        const nextLikes = isLiked 
-          ? currentLikes.filter(e => e !== user.email)
-          : [...currentLikes, user.email];
-        return { ...u, status: { ...u.status, likes: nextLikes } };
+        const nextStatuses = (u.statuses || []).map(s => {
+          if (s._id === statusId || (!statusId && s === u.statuses[u.statuses.length - 1])) {
+            const isLiked = s.likes?.includes(user.email);
+            const nextLikes = isLiked 
+              ? s.likes.filter(e => e !== user.email)
+              : [...(s.likes || []), user.email];
+            return { ...s, likes: nextLikes };
+          }
+          return s;
+        });
+        return { ...u, statuses: nextStatuses };
       }
       return u;
     }));
@@ -1554,7 +1561,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const response = await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(targetUserEmail)}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ likerEmail: user.email }),
+        body: JSON.stringify({ likerEmail: user.email, statusId }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -1567,13 +1574,13 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
   };
 
-  const handleStatusView = async (targetUserEmail) => {
+  const handleStatusView = async (targetUserEmail, statusId) => {
     if (!user?.email || !targetUserEmail || user.email === targetUserEmail) return;
     try {
       await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(targetUserEmail)}/view`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ viewerEmail: user.email }),
+        body: JSON.stringify({ viewerEmail: user.email, statusId }),
       });
     } catch (err) {
       console.error("View track error:", err);
@@ -2331,62 +2338,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         </div>
       )}
-
-      {viewingStatusUser && (
-        <div className="status-viewer-overlay" onClick={() => setViewingStatusUser(null)}>
-          <div className="status-viewer-content" onClick={(e) => e.stopPropagation()}>
-            <div className="status-viewer-topbar">
-              <Avatar name={viewingStatusUser.name} email={viewingStatusUser.email} photo={viewingStatusUser.photo} size={40} />
-              <div className="status-viewer-meta">
-                <strong>{viewingStatusUser.name || viewingStatusUser.email}</strong>
-                <span>{viewingStatusUser.status?.createdAt ? new Date(viewingStatusUser.status.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
-              </div>
-              <button type="button" className="status-viewer-close-btn" onClick={() => setViewingStatusUser(null)} aria-label="Close">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-
-            <div className="status-viewer-media-wrap">
-              <div className="status-viewer-media">
-                {viewingStatusUser.status?.mediaType === "video"
-                  ? <video key={viewingStatusUser.status.mediaUrl} src={resolveAssetUrl(viewingStatusUser.status.mediaUrl)} autoPlay controls className="status-viewer-img" />
-                  : <img key={viewingStatusUser.status.mediaUrl} src={resolveAssetUrl(viewingStatusUser.status.mediaUrl)} alt="Status" className="status-viewer-img" />
-                }
-              </div>
-              
-              {/* Like Button Overlay */}
-              <button 
-                type="button" 
-                className={`status-like-btn ${viewingStatusUser.status?.likes?.includes(user?.email) ? "liked" : ""}`}
-                onClick={(e) => { e.stopPropagation(); handleStatusLike(viewingStatusUser.email); }}
-                title={viewingStatusUser.status?.likes?.includes(user?.email) ? "Unlike status" : "Like status"}
-              >
-                <div className="status-like-icon-wrap">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill={viewingStatusUser.status?.likes?.includes(user?.email) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                </div>
-                {viewingStatusUser.status?.likes?.length > 0 && (
-                  <span className="status-like-count">{viewingStatusUser.status.likes.length}</span>
-                )}
-              </button>
-
-              {/* View Count Overlay (Only for owner) */}
-              {user?.email === viewingStatusUser.email && viewingStatusUser.status?.views?.length > 0 && (
-                <div className="status-viewer-views">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
-                  <span>{viewingStatusUser.status.views.length}</span>
-                </div>
-              )}
-            </div>
-            {viewingStatusUser.status?.text && (
-              <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
-            )}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {viewingStatusUser && (
+          <StatusViewer 
+            user={user}
+            users={users}
+            activeUser={viewingStatusUser}
+            onClose={() => setViewingStatusUser(null)}
+            resolveAssetUrl={resolveAssetUrl}
+            onLike={handleStatusLike}
+            onView={handleStatusView}
+          />
+        )}
+      </AnimatePresence>
 
       <BottomNav
         activeTab={activeTab}

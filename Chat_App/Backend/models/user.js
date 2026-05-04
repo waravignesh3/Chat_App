@@ -50,14 +50,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "Offline",
     },
-    status: {
+    statuses: [{
       text: { type: String, default: "" },
       mediaUrl: { type: String, default: "" },
       mediaType: { type: String, default: "" },
-      createdAt: { type: Date, default: null },
+      createdAt: { type: Date, default: Date.now },
       likes: { type: [String], default: [] },
       views: { type: [String], default: [] },
-    },
+    }],
     privacy: {
       lastSeen: {
         type: String,

@@ -119,26 +119,24 @@ const waitForDatabaseConnection = (timeoutMs = 12000) =>
   });
 
 const buildUsersPayload = async () => {
-  const users = await User.find({}, "name email photo bio lastSeen isOnline status privacy notifications pinnedChats archivedChats blockedUsers").lean();
+  const users = await User.find({}, "name email photo bio lastSeen isOnline statuses privacy notifications pinnedChats archivedChats blockedUsers").lean();
   const now = new Date();
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   return users.map((u) => {
-    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [], views: [] };
-
-    // Check if status is older than 1 day
-    if (currentStatus.createdAt && (now - new Date(currentStatus.createdAt)) > oneDayMs) {
-      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [], views: [] };
-      // Proactively clear it in DB if expired (optional but good for cleanup)
-      User.updateOne({ _id: u._id }, { $set: { status: currentStatus } }).exec().catch(err => console.error("Error clearing status:", err));
-    }
+    const activeStatuses = (u.statuses || []).filter(s => 
+      s.createdAt && (now - new Date(s.createdAt)) < oneDayMs
+    );
 
     return {
       ...u,
-      status: currentStatus,
+      statuses: activeStatuses,
+      status: activeStatuses[activeStatuses.length - 1] || { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [], views: [] },
       isOnline: Boolean(onlineUsers[u.email]),
       lastSeen: onlineUsers[u.email] ? "Online" : u.lastSeen || "Offline",
     };
+  });
+};
   });
 };
 
@@ -395,7 +393,7 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
 
     const user = await User.findOneAndUpdate(
       { email: normalizedEmail },
-      { $set: { status: statusUpdate } },
+      { $push: { statuses: statusUpdate } },
       { new: true }
     );
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -414,8 +412,38 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
 app.post("/api/status/:email/like", async (req, res) => {
   try {
     const { email } = req.params;
-    const { likerEmail } = req.body;
-    if (!email || !likerEmail) return res.status(400).json({ error: "Emails required" });
+    const { statusId } = req.body;
+    const normalizedEmail = email.toLowerCase();
+    const likerEmail = req.body.likerEmail; // In a real app, this comes from auth middleware
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Find the specific status by ID or the latest one if no ID provided
+    const statusIdx = statusId 
+      ? user.statuses.findIndex(s => s._id.toString() === statusId)
+      : user.statuses.length - 1;
+
+    if (statusIdx === -1) return res.status(404).json({ error: "Status not found" });
+
+    const status = user.statuses[statusIdx];
+    const liked = status.likes.includes(likerEmail);
+
+    if (liked) {
+      status.likes = status.likes.filter((e) => e !== likerEmail);
+    } else {
+      status.likes.push(likerEmail);
+    }
+
+    await user.save();
+    await broadcastUsers();
+
+    return res.json({ success: true, statuses: user.statuses });
+  } catch (err) {
+    console.error("Like error:", err);
+    return res.status(500).json({ error: "Like failed" });
+  }
+});
 
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedLiker = likerEmail.toLowerCase().trim();
@@ -453,8 +481,30 @@ app.post("/api/status/:email/like", async (req, res) => {
 app.post("/api/status/:email/view", async (req, res) => {
   try {
     const { email } = req.params;
-    const { viewerEmail } = req.body;
-    if (!email || !viewerEmail) return res.status(400).json({ error: "Emails required" });
+    const { statusId, viewerEmail } = req.body;
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const statusIdx = statusId 
+      ? user.statuses.findIndex(s => s._id.toString() === statusId)
+      : user.statuses.length - 1;
+
+    if (statusIdx === -1) return res.status(404).json({ error: "Status not found" });
+
+    const status = user.statuses[statusIdx];
+    if (!status.views.includes(viewerEmail)) {
+      status.views.push(viewerEmail);
+      await user.save();
+      await broadcastUsers();
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "View failed" });
+  }
+});
 
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedViewer = viewerEmail.toLowerCase().trim();
