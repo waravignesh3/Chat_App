@@ -1318,6 +1318,16 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     };
   }, [selectedUser]);
 
+  // ── Sync viewingStatusUser with users array ─────────────────────────────────
+  useEffect(() => {
+    if (viewingStatusUser) {
+      const match = users.find(u => u.email === viewingStatusUser.email);
+      if (match && JSON.stringify(match.status) !== JSON.stringify(viewingStatusUser.status)) {
+        setViewingStatusUser(match);
+      }
+    }
+  }, [users, viewingStatusUser]);
+
   // ── Smart scroll ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const container = messagesContainerRef.current;

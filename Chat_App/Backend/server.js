@@ -416,27 +416,33 @@ app.post("/api/status/:email/like", async (req, res) => {
     const { likerEmail } = req.body;
     if (!email || !likerEmail) return res.status(400).json({ error: "Emails required" });
 
-    if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
-
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedLiker = likerEmail.toLowerCase().trim();
 
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    if (!user.status?.createdAt) return res.status(400).json({ error: "No active status" });
+    const targetUser = await User.findOne({ email: normalizedEmail });
+    if (!targetUser) return res.status(404).json({ error: "User not found" });
 
-    if (!user.status.likes) user.status.likes = [];
+    // Ensure status object exists
+    if (!targetUser.status) {
+      targetUser.status = { text: "", mediaUrl: "", mediaType: "", createdAt: new Date(), likes: [] };
+    }
     
-    if (user.status.likes.includes(normalizedLiker)) {
-      user.status.likes = user.status.likes.filter(e => e !== normalizedLiker);
+    if (!targetUser.status.likes) targetUser.status.likes = [];
+
+    const isLiked = targetUser.status.likes.includes(normalizedLiker);
+    
+    if (isLiked) {
+      targetUser.status.likes = targetUser.status.likes.filter(e => e !== normalizedLiker);
     } else {
-      user.status.likes = [...user.status.likes, normalizedLiker];
+      targetUser.status.likes = [...targetUser.status.likes, normalizedLiker];
     }
 
-    await user.save();
+    // CRITICAL: Mongoose needs to know the nested object changed
+    targetUser.markModified("status");
+    await targetUser.save();
+    
     await broadcastUsers();
-
-    return res.json({ success: true, likes: user.status.likes });
+    return res.json({ success: true, likes: targetUser.status.likes });
   } catch (err) {
     console.error("Status like error:", err);
     return res.status(500).json({ error: "Failed to like status" });
