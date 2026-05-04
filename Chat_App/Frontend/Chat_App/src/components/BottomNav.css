@@ -139,26 +139,21 @@
   font-weight: 700;
 }
 
-/* ─── Show on ALL screen sizes (always fixed) ─── */
+/* ─── Always Visible on ALL Screen Sizes ─── */
+.bottom-nav {
+  display: flex;   /* visible everywhere — not just mobile */
+}
+
+/* Ensure content never hides behind the fixed nav */
+.chat-shell {
+  padding-bottom: 62px;
+}
+
 @media (max-width: 768px) {
-  .bottom-nav {
-    display: flex;
-  }
-  /* ensure content above doesn't hide behind nav */
-  .chat-shell {
-    padding-bottom: 62px;
-  }
   .chat-bottom-nav {
     display: none !important;
   }
 }
-
-/* Also show on desktop if you want (optional — remove if desktop-only sidebar preferred) */
-/* Uncomment the block below to show nav on all screen sizes:
-@media (min-width: 769px) {
-  .bottom-nav { display: flex; }
-}
-*/
 
 /* ─── Light Theme ─── */
 body.theme-light .bottom-nav {
@@ -170,3 +165,98 @@ body.theme-light .bottom-nav {
 body.theme-light .bottom-nav-item       { color: #8696a0; }
 body.theme-light .bottom-nav-item.active { color: var(--wa-green, #25D366); }
 body.theme-light .bottom-nav-badge      { border-color: #fff; }
+
+/* ═══════════════════════════════════════════════════════
+   OFFLINE / RECONNECTING BANNER
+═══════════════════════════════════════════════════════ */
+.conn-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  position: relative;
+  z-index: 90;
+  animation: slideDown 0.25s ease both;
+}
+
+.conn-banner-offline {
+  background: #d32f2f;
+  color: #fff;
+}
+
+.conn-banner-connecting {
+  background: #e65100;
+  color: #fff;
+}
+
+.conn-banner-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin 0.75s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL-TO-BOTTOM FAB
+═══════════════════════════════════════════════════════ */
+.scroll-to-bottom-fab {
+  position: absolute;
+  bottom: 80px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--wa-panel, #202c33);
+  border: 1.5px solid var(--wa-border, rgba(255,255,255,0.12));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  color: var(--wa-teal, #00a884);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 30;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+  animation: fadeIn 0.2s ease both;
+}
+
+.scroll-to-bottom-fab:hover {
+  transform: scale(1.12) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.scroll-fab-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--wa-green, #25D366);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--wa-panel, #202c33);
+  animation: badgePop 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* Light mode FAB */
+body.theme-light .scroll-to-bottom-fab {
+  background: #fff;
+  border-color: #e9edef;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+body.theme-light .scroll-fab-badge {
+  border-color: #fff;
+}
+

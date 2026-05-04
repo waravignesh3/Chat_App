@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { auth } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
 import { useToast } from "./ToastContext";
 import BottomNav from "./BottomNav";
+import { useNotifications } from "../utils/useNotifications";
 import "../App.css";
 import "../App.enhanced.css";
 import "../chatv2.css";
@@ -902,6 +903,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [_usersError, setUsersError] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   // Photo modal only opened from Settings (canEditProfile = true)
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [modalUser, setModalUser] = useState(null);
@@ -971,6 +973,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const recordingTimerRef = useRef(null);
 
   const { showToast } = useToast();
+  const { notify } = useNotifications({ soundEnabled: settingsDraft?.notifications?.sound !== false });
   const bottomRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -983,9 +986,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const navigate = useNavigate();
   const activeSelectedUserRef = useRef(null);
   const userRef = useRef(user);
+  const usersRef = useRef([]);
   const freshMessageTimerRef = useRef(null);
   const copiedMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { usersRef.current = users; }, [users]);
 
   useEffect(() => {
     if (user?.email) {
@@ -1032,6 +1037,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
     socket.on("connect", register);
     socket.on("disconnect", () => setConnectionStatus("offline"));
+    socket.on("reconnecting", () => setConnectionStatus("connecting"));
     socket.on("connect_error", () => setConnectionStatus("offline"));
     if (socket.connected) register();
 
@@ -1063,6 +1069,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const senderEmail = incomingMessage.sender;
       if (senderEmail && senderEmail !== userRef.current?.email) {
         const isViewingConversation = activeSelectedUserRef.current?.email === senderEmail;
+        // ── Push notification + bleep on every incoming message ──
+        const senderName = incomingMessage.senderName ||
+          [...(usersRef.current || [])].find(u => u.email === senderEmail)?.name ||
+          senderEmail.split("@")[0];
+        const msgPreview = incomingMessage.text ||
+          (incomingMessage.mediaUrl ? "📎 Media" : "New message");
+        notify({
+          title: senderName,
+          body: msgPreview,
+          tag: `msg-${senderEmail}`,
+        });
         if (isViewingConversation) {
           shouldScrollRef.current = true;
           socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
@@ -1213,6 +1230,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
     shouldScrollRef.current = false;
   }, [messages, selectedUser, isTyping]);
+
+  // ── Scroll-to-bottom FAB visibility ──────────────────────────────────────────
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const dist = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollBtn(dist > 200);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [selectedUser]);
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
 
   useEffect(() => {
     if (!freshMessageId) return undefined;
@@ -1754,6 +1787,23 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         />
       )}
 
+      {/* ── Offline / Reconnecting Banner ── */}
+      {connectionStatus !== "online" && (
+        <div className={`conn-banner conn-banner-${connectionStatus}`} role="alert">
+          {connectionStatus === "offline" ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+              <span>No internet connection — messages will be sent once you're back online</span>
+            </>
+          ) : (
+            <>
+              <span className="conn-banner-spinner" />
+              <span>Reconnecting…</span>
+            </>
+          )}
+        </div>
+      )}
+
       <section className="chat-layout">
         {activeTab === "chats" ? (
           <>
@@ -1884,6 +1934,24 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
                   <div className="chat-messages-container" ref={messagesContainerRef}>
                     <div className="chat-messages-bg" />
+
+                    {/* ── Scroll-to-bottom FAB ── */}
+                    {showScrollBtn && (
+                      <button
+                        type="button"
+                        className="scroll-to-bottom-fab"
+                        onClick={scrollToBottom}
+                        aria-label="Scroll to latest message"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        {settingsStats.unreadCount > 0 && (
+                          <span className="scroll-fab-badge">{settingsStats.unreadCount}</span>
+                        )}
+                      </button>
+                    )}
+
                     <div className="chat-messages-list">
                       {messageItems.map((item, itemIdx) => {
                         if (item.type === "date") {
