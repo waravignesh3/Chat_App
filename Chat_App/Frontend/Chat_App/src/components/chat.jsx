@@ -461,10 +461,16 @@ function StatusPage({
   user, users, statusText, setStatusText,
   statusFile, setStatusFile, isEditingStatus, setIsEditingStatus,
   statusUploading, handleStatusUpdate, viewingStatusUser, setViewingStatusUser,
-  SERVER_URL, onStatusLike,
+  SERVER_URL, onStatusLike, onStatusView,
 }) {
   const statusInputRef = useRef(null);
   const [postMode, setPostMode] = useState(null); // 'text' | 'media' | null
+
+  useEffect(() => {
+    if (viewingStatusUser && viewingStatusUser.email !== user?.email) {
+      onStatusView(viewingStatusUser.email);
+    }
+  }, [viewingStatusUser?.email]);
 
   const openMediaPicker = () => {
     const input = document.createElement("input");
@@ -637,6 +643,16 @@ function StatusPage({
                   <span className="status-like-count">{viewingStatusUser.status.likes.length}</span>
                 )}
               </button>
+
+              {/* View Count Overlay (Only for owner) */}
+              {user?.email === viewingStatusUser.email && viewingStatusUser.status?.views?.length > 0 && (
+                <div className="status-viewer-views">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span>{viewingStatusUser.status.views.length}</span>
+                </div>
+              )}
             </div>
             {viewingStatusUser.status?.text && (
               <div className="status-viewer-caption-bar">{viewingStatusUser.status.text}</div>
@@ -1606,6 +1622,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   const handleStatusLike = async (targetUserEmail) => {
     if (!user?.email) return;
+
+    // --- OPTIMISTIC UPDATE ---
+    const oldUsers = [...users];
+    setUsers(prev => prev.map(u => {
+      if (u.email === targetUserEmail) {
+        const currentLikes = u.status?.likes || [];
+        const isLiked = currentLikes.includes(user.email);
+        const nextLikes = isLiked 
+          ? currentLikes.filter(e => e !== user.email)
+          : [...currentLikes, user.email];
+        return { ...u, status: { ...u.status, likes: nextLikes } };
+      }
+      return u;
+    }));
+    // -------------------------
+
     try {
       const response = await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(targetUserEmail)}/like`, {
         method: "POST",
@@ -1613,10 +1645,26 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         body: JSON.stringify({ likerEmail: user.email }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to like status");
-      // socket UsersUpdate will handle the UI refresh across all clients
+      if (!response.ok) {
+        setUsers(oldUsers);
+        throw new Error(data.error || "Failed to like status");
+      }
     } catch (err) {
+      setUsers(oldUsers);
       showToast(err.message, "error");
+    }
+  };
+
+  const handleStatusView = async (targetUserEmail) => {
+    if (!user?.email || !targetUserEmail || user.email === targetUserEmail) return;
+    try {
+      await fetch(`${SERVER_URL}/api/status/${encodeURIComponent(targetUserEmail)}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewerEmail: user.email }),
+      });
+    } catch (err) {
+      console.error("View track error:", err);
     }
   };
 
@@ -2298,6 +2346,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             setViewingStatusUser={setViewingStatusUser}
             SERVER_URL={SERVER_URL}
             onStatusLike={handleStatusLike}
+            onStatusView={handleStatusView}
           />
 
         ) : activeTab === "calls" ? (

@@ -124,11 +124,11 @@ const buildUsersPayload = async () => {
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   return users.map((u) => {
-    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [] };
+    let currentStatus = u.status || { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [], views: [] };
 
     // Check if status is older than 1 day
     if (currentStatus.createdAt && (now - new Date(currentStatus.createdAt)) > oneDayMs) {
-      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [] };
+      currentStatus = { text: "", mediaUrl: "", mediaType: "", createdAt: null, likes: [], views: [] };
       // Proactively clear it in DB if expired (optional but good for cleanup)
       User.updateOne({ _id: u._id }, { $set: { status: currentStatus } }).exec().catch(err => console.error("Error clearing status:", err));
     }
@@ -371,7 +371,8 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
       mediaUrl: "",
       mediaType: "",
       createdAt: new Date(),
-      likes: []
+      likes: [],
+      views: []
     };
 
     if (req.file) {
@@ -446,6 +447,37 @@ app.post("/api/status/:email/like", async (req, res) => {
   } catch (err) {
     console.error("Status like error:", err);
     return res.status(500).json({ error: "Failed to like status" });
+  }
+});
+
+app.post("/api/status/:email/view", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { viewerEmail } = req.body;
+    if (!email || !viewerEmail) return res.status(400).json({ error: "Emails required" });
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedViewer = viewerEmail.toLowerCase().trim();
+
+    // Don't count self-view as a new view
+    if (normalizedEmail === normalizedViewer) return res.json({ success: true });
+
+    const targetUser = await User.findOne({ email: normalizedEmail });
+    if (!targetUser || !targetUser.status?.createdAt) return res.status(404).json({ error: "No active status" });
+
+    if (!targetUser.status.views) targetUser.status.views = [];
+    
+    if (!targetUser.status.views.includes(normalizedViewer)) {
+      targetUser.status.views.push(normalizedViewer);
+      targetUser.markModified("status");
+      await targetUser.save();
+      await broadcastUsers();
+    }
+
+    return res.json({ success: true, views: targetUser.status.views });
+  } catch (err) {
+    console.error("Status view error:", err);
+    return res.status(500).json({ error: "Failed to record view" });
   }
 });
 

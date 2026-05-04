@@ -56,6 +56,7 @@ const userSchema = new mongoose.Schema(
       mediaType: { type: String, default: "" },
       createdAt: { type: Date, default: null },
       likes: { type: [String], default: [] },
+      views: { type: [String], default: [] },
     },
     privacy: {
       lastSeen: {

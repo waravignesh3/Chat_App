@@ -431,6 +431,25 @@
   justify-content: center;
 }
 
+.status-viewer-views {
+  position: absolute;
+  top: 80px; /* Below header */
+  right: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 25;
+}
+
 /* Ensure the media wrap is relative for positioning */
 .status-viewer-media-wrap {
   position: relative;
