@@ -932,13 +932,15 @@ function ActiveCallOverlay({ call, localStream, remoteStream, onEnd, toggleMute,
 
   return (
     <div className={`chat-call-overlay ${call.type === 'video' ? 'video-mode' : ''}`}>
-      {call.type === "video" && (
+      {call.type === "video" ? (
         <div className="chat-call-video-container">
           <video ref={remoteVideoRef} className="chat-call-video remote" autoPlay playsInline />
           <div className="chat-call-video-local-wrap">
             <video ref={localVideoRef} className="chat-call-video local" autoPlay playsInline muted />
           </div>
         </div>
+      ) : (
+        <audio ref={remoteVideoRef} autoPlay />
       )}
       
       <div className={`chat-call-modal ${call.type === 'video' ? 'floating-controls' : ''}`}>
