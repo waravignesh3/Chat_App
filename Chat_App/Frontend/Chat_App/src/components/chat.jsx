@@ -6,7 +6,14 @@ import { auth } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
 import { useToast } from "./ToastContext";
 import "../App.css";
-// WhatsApp Clone - Consolidated Styles
+import "../App.enhanced.css";
+import "../chatv2.css";
+import "../chat.profile.css";
+import "../chat.media.css";
+import "../chat.bubble-fix.css";
+import "../chat.reactions.fix.css";
+import "../chat.unread.css";
+import "../chat-overrides.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -24,21 +31,17 @@ function formatLastSeen(raw) {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays === 1) return "Yesterday";
-  // Format: 27 Apr 2025
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-// ─── Format message time ──────────────────────────────────────────────────────
 function formatMsgTime(timeStr) {
   if (!timeStr) return "";
-  // Already a short time string like "10:32 AM" — return as-is
   if (/^\d{1,2}:\d{2}/.test(timeStr)) return timeStr;
   const date = new Date(timeStr);
   if (isNaN(date.getTime())) return timeStr;
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// ─── Date separator label ─────────────────────────────────────────────────────
 function getDateLabel(timeStr) {
   if (!timeStr) return null;
   const date = new Date(timeStr);
@@ -52,7 +55,6 @@ function getDateLabel(timeStr) {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
-// ─── Avatar colours ───────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   "#4f46e5", "#0891b2", "#059669", "#d97706",
   "#dc2626", "#7c3aed", "#db2777", "#0284c7",
@@ -139,7 +141,7 @@ function ReactionPicker({ onSelect, onClose, isOwn }) {
   );
 }
 
-// ─── Profile Photo Modal ──────────────────────────────────────────────────────
+// ─── Profile Photo Modal — only usable in settings (canEdit flag) ─────────────
 function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit = true }) {
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
@@ -186,12 +188,12 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
     <div className="profile-modal-overlay" onClick={onClose}>
       <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="profile-modal-header">
-          <h3>{canEdit ? "Update Profile Photo" : "Profile Photo"}</h3>
+          <h3>{canEdit ? "Update Profile Photo" : `${displayUser?.name || "User"}'s Photo`}</h3>
           <button type="button" className="profile-modal-close-btn" onClick={onClose} aria-label="Close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        
+
         <div className="profile-modal-content">
           <div className="profile-image-preview-section">
             <div className="profile-preview-circle">
@@ -199,9 +201,9 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
                 ? <img src={preview} alt="New profile preview" className="profile-preview-img" />
                 : <Avatar name={displayUser?.name} email={displayUser?.email} photo={displayUser?.photo} size={250} />}
               {canEdit && (
-                <button 
-                  type="button" 
-                  className="profile-edit-overlay-btn" 
+                <button
+                  type="button"
+                  className="profile-edit-overlay-btn"
                   onClick={() => inputRef.current?.click()}
                   title="Change Photo"
                 >
@@ -210,11 +212,16 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
                 </button>
               )}
             </div>
-            {canEdit && <p className="profile-modal-hint">JPG, PNG or GIF. Max 5MB.</p>}
+            {canEdit && <p className="profile-modal-hint">JPG, PNG or GIF. Max 5MB. Photo can only be changed here in Settings.</p>}
+            {!canEdit && (
+              <p className="profile-modal-hint" style={{ textAlign: "center" }}>
+                Profile photo of <strong>{displayUser?.name || displayUser?.email}</strong>
+              </p>
+            )}
           </div>
-          
+
           <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
-          
+
           {error && (
             <div className="profile-modal-error-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -228,18 +235,25 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
             <button type="button" className="profile-action-btn cancel" onClick={onClose}>
               Cancel
             </button>
-            <button 
-              type="button" 
-              className="profile-action-btn save" 
-              onClick={handleUpload} 
+            <button
+              type="button"
+              className="profile-action-btn save"
+              onClick={handleUpload}
               disabled={!file || uploading}
             >
               {uploading ? (
                 <span className="btn-loading-state">
-                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"></path></svg>
+                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>
                   Saving...
                 </span>
               ) : "Save Photo"}
+            </button>
+          </div>
+        )}
+        {!canEdit && (
+          <div className="profile-modal-actions">
+            <button type="button" className="profile-action-btn cancel" onClick={onClose}>
+              Close
             </button>
           </div>
         )}
@@ -277,11 +291,22 @@ function getMessageId(message, fallbackIndex = null) {
   return message?._id || message?.clientTempId || `${message?.sender}:${message?.receiver}:${message?.time}:${fallbackIndex ?? "x"}`;
 }
 
-function _getReactionCountMap(reactions = {}) {
-  return Object.fromEntries(
-    Object.entries(reactions)
-      .map(([emoji, users]) => [emoji, Array.isArray(users) ? users.length : 0])
-      .filter(([, count]) => count > 0)
+// ─── WhatsApp-style Reply Preview Banner ─────────────────────────────────────
+function ReplyBanner({ replyingTo, onCancel }) {
+  if (!replyingTo) return null;
+  return (
+    <div className="chat-reply-banner">
+      <div className="chat-reply-banner-bar" />
+      <div className="chat-reply-banner-content">
+        <span className="chat-reply-banner-name">{replyingTo.senderName || "User"}</span>
+        <p className="chat-reply-banner-text">
+          {replyingTo.mediaUrl ? "📎 Media" : (replyingTo.text || "")}
+        </p>
+      </div>
+      <button type="button" className="chat-reply-banner-close" onClick={onCancel} aria-label="Cancel reply">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   );
 }
 
@@ -304,8 +329,11 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
     <div className="msg-search-overlay" onClick={onClose}>
       <div className="msg-search-modal" onClick={(e) => e.stopPropagation()}>
         <div className="msg-search-header">
-          <span>🔍 Search Messages</span>
-          <button className="profile-modal-close" onClick={onClose}>✕</button>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Search Messages</span>
+          <button className="profile-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
         <input
           ref={inputRef}
@@ -447,11 +475,11 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
                     </div>
                   </div>
                   <div className="chat-call-actions">
-                    <button type="button" className="chat-mini-action-btn" onClick={() => onStartCall("voice", entry)} title="Voice call">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z" /></svg>
+                    <button type="button" className="chat-call-action-btn voice" onClick={() => onStartCall("voice", entry)} title="Voice call">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/></svg>
                     </button>
-                    <button type="button" className="chat-mini-action-btn primary" onClick={() => onStartCall("video", entry)} title="Video call">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                    <button type="button" className="chat-call-action-btn video" onClick={() => onStartCall("video", entry)} title="Video call">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                     </button>
                   </div>
                 </article>
@@ -467,12 +495,15 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
             <div className="chat-call-history">
               {callHistory.length > 0 ? callHistory.map((item) => (
                 <article key={item.id} className="chat-history-card">
-                  <div className="chat-history-icon">
-                    {item.type === "video" ? "VC" : "AC"}
+                  <div className={`chat-history-icon ${item.type}`}>
+                    {item.type === "video"
+                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/></svg>
+                    }
                   </div>
                   <div className="chat-history-copy">
                     <strong>{item.name}</strong>
-                    <span>{item.type === "video" ? "Video call" : "Voice call"} • {item.status} • {item.durationLabel}</span>
+                    <span>{item.type === "video" ? "Video call" : "Voice call"} · {item.status} · {item.durationLabel}</span>
                   </div>
                   <time>{item.timeLabel}</time>
                 </article>
@@ -485,6 +516,7 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
   );
 }
 
+// ─── Settings panel — photo edit only here ────────────────────────────────────
 function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLogout, saving, theme, toggleTheme, stats }) {
   return (
     <main className="chat-panel full-height">
@@ -500,9 +532,15 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
       <div className="chat-feature-panel settings-panel-view">
         <section className="chat-settings-top">
           <div className="chat-settings-profile-card">
-            <button type="button" className="chat-settings-avatar-btn" onClick={onOpenProfile}>
-              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={76} className="chat-settings-avatar" />
-              <span>Change photo</span>
+            {/* Photo change — only accessible from this Settings page */}
+            <button type="button" className="chat-settings-avatar-btn" onClick={onOpenProfile} title="Change profile photo">
+              <div className="chat-settings-avatar-wrap">
+                <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={76} className="chat-settings-avatar" />
+                <span className="chat-settings-avatar-edit-badge" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
+              </div>
+              <span className="chat-settings-avatar-label">Change photo</span>
             </button>
             <div className="chat-settings-profile-copy">
               <h4>{user?.name || user?.email}</h4>
@@ -569,18 +607,18 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 </div>
                 <input type="checkbox" checked={draft.privacy.readReceipts} onChange={(e) => onDraftChange("privacy.readReceipts", e.target.checked)} />
               </label>
-              
+
               <div className="chat-settings-field">
                 <span>Restrict users (Emails)</span>
                 <div className="chat-restriction-input-row">
-                  <input 
-                    type="email" 
-                    placeholder="Enter email to restrict" 
+                  <input
+                    type="email"
+                    placeholder="Enter email to restrict"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && e.target.value.trim()) {
                         const email = e.target.value.trim();
-                        if (!draft.privacy.restrictedEmails.includes(email)) {
-                          onDraftChange("privacy.restrictedEmails", [...draft.privacy.restrictedEmails, email]);
+                        if (!draft.privacy.restrictedEmails?.includes(email)) {
+                          onDraftChange("privacy.restrictedEmails", [...(draft.privacy.restrictedEmails || []), email]);
                         }
                         e.target.value = "";
                       }
@@ -588,18 +626,18 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                   />
                 </div>
                 <div className="chat-restricted-list">
-                  {draft.privacy.restrictedEmails.map((email) => (
+                  {(draft.privacy.restrictedEmails || []).map((email) => (
                     <span key={email} className="chat-restricted-tag">
                       {email}
-                      <button 
-                        type="button" 
-                        onClick={() => onDraftChange("privacy.restrictedEmails", draft.privacy.restrictedEmails.filter(e => e !== email))}
+                      <button
+                        type="button"
+                        onClick={() => onDraftChange("privacy.restrictedEmails", (draft.privacy.restrictedEmails || []).filter(e => e !== email))}
                       >
                         ✕
                       </button>
                     </span>
                   ))}
-                  {draft.privacy.restrictedEmails.length === 0 && <p className="chat-field-hint">No users restricted.</p>}
+                  {!(draft.privacy.restrictedEmails?.length) && <p className="chat-field-hint">No users restricted.</p>}
                 </div>
               </div>
             </div>
@@ -639,15 +677,17 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                   <strong>{theme === "dark" ? "Dark mode" : "Light mode"}</strong>
                   <span>Switch the full messaging interface theme.</span>
                 </div>
-                <button type="button" className="chat-secondary-btn" onClick={toggleTheme}>Toggle theme</button>
+                <button type="button" className="chat-theme-toggle-btn" onClick={toggleTheme}>
+                  {theme === "dark"
+                    ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 .28 0 .57.02.85A7 7 0 0 0 20.15 12c.28 0 .57 0 .85-.02z"/></svg>
+                  }
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
               </label>
               <div className="chat-insight-card">
                 <strong>End-to-end encryption</strong>
-                <span>Conversation transport and data model are prepared as a secure baseline. Full cross-device key exchange can be layered on top of this structure.</span>
-              </div>
-              <div className="chat-insight-card">
-                <strong>Cloud sync and scalability</strong>
-                <span>Messages, media, presence, and profile settings are already separated cleanly for scalable server-side persistence.</span>
+                <span>Conversation transport and data model are prepared as a secure baseline. Full cross-device key exchange can be layered on top.</span>
               </div>
             </div>
             <div className="chat-settings-actions">
@@ -663,7 +703,6 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
 
 function ActiveCallOverlay({ call, onEnd }) {
   if (!call) return null;
-
   return (
     <div className="chat-call-overlay">
       <div className="chat-call-modal">
@@ -671,7 +710,7 @@ function ActiveCallOverlay({ call, onEnd }) {
           <Avatar name={call.target.name} email={call.target.email} photo={call.target.photo} size={92} className="chat-call-avatar" />
         </div>
         <h3>{call.target.name || call.target.email}</h3>
-        <p>{call.type === "video" ? "Video calling" : "Voice calling"} • {call.phaseLabel}</p>
+        <p>{call.type === "video" ? "Video calling" : "Voice calling"} · {call.phaseLabel}</p>
         <strong>{call.durationLabel}</strong>
         <div className="chat-call-chip-row">
           <span className="chat-call-chip">Encrypted</span>
@@ -680,14 +719,17 @@ function ActiveCallOverlay({ call, onEnd }) {
         </div>
         <div className="chat-call-controls">
           <button type="button" className="chat-mini-action-btn" onClick={() => onEnd("muted")}>Mute</button>
-          <button type="button" className="chat-mini-action-btn primary" onClick={() => onEnd("ended")}>End</button>
+          <button type="button" className="chat-mini-action-btn danger" onClick={() => onEnd("ended")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+            End
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Chat ─────────────────────────────────────────────────────────────────────
+// ─── Main Chat Component ───────────────────────────────────────────────────────
 function Chat({ user, setUser, theme, toggleTheme }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -698,30 +740,30 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [_usersError, setUsersError] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // Photo modal only opened from Settings (canEditProfile = true)
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [modalUser, setModalUser] = useState(null);
-  const [canEditProfile, setCanEditProfile] = useState(true);
+  const [canEditProfile, setCanEditProfile] = useState(false);
 
+  // Only settings can open editable photo modal; contact clicks show read-only view
   const handleOpenProfileModal = (target = null, edit = false) => {
     setModalUser(target);
     setCanEditProfile(edit);
     setShowProfileModal(true);
   };
+
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [_mediaUploading, setMediaUploading] = useState(false);
   const [_highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
   const [reactionPickerFor, setReactionPickerFor] = useState(null);
-  // read receipts: Set of msgKeys seen by remote
   const [readBy, setReadBy] = useState(new Set());
-  const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting | online | offline
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [unreadMap, setUnreadMap] = useState({});
   const [_flashEmail, setFlashEmail] = useState(null);
-  const [_showScrollBtn, _setShowScrollBtn] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
   const [freshMessageId, setFreshMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-
   const [activeTab, setActiveTab] = useState("chats");
 
   // Status state
@@ -730,6 +772,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [statusFile, setStatusFile] = useState(null);
   const [statusUploading, setStatusUploading] = useState(false);
   const [viewingStatusUser, setViewingStatusUser] = useState(null);
+
   const [settingsDraft, setSettingsDraft] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
@@ -752,22 +795,20 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     try {
       const raw = localStorage.getItem("chatapp-call-history");
       return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   });
   const [activeCall, setActiveCall] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
-
-  // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const callStreamRef = useRef(null);
   const callPhaseTimerRef = useRef(null);
+  const recordingTimerRef = useRef(null);
 
   const { showToast } = useToast();
-
   const bottomRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -784,10 +825,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const copiedMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // Initialize settings draft from user on mount
   useEffect(() => {
     if (user?.email) {
-      /* eslint-disable-next-line */
       setSettingsDraft({
         name: user?.name || "",
         phone: user?.phone || "",
@@ -809,29 +848,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   }, [user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("chatapp-call-history", JSON.stringify(callHistory));
-    } catch {
-      // ignore persistence issues
-    }
+    try { localStorage.setItem("chatapp-call-history", JSON.stringify(callHistory)); }
+    catch { /* ignore */ }
   }, [callHistory]);
 
-  // ── Persist unreadMap ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!composerNotice.text) return undefined;
-    const timer = window.setTimeout(() => {
-      setComposerNotice({ type: "", text: "" });
-    }, 2800);
+    const timer = window.setTimeout(() => setComposerNotice({ type: "", text: "" }), 2800);
     return () => window.clearTimeout(timer);
   }, [composerNotice]);
 
   // ── Socket ────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const socket = io(SERVER_URL, {
-      transports: ["websocket"],
-      withCredentials: true,
-      autoConnect: true,
-    });
+    const socket = io(SERVER_URL, { transports: ["websocket"], withCredentials: true, autoConnect: true });
     socketRef.current = socket;
 
     const register = () => {
@@ -844,9 +873,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     socket.on("connect_error", () => setConnectionStatus("offline"));
     if (socket.connected) register();
 
-    socket.on("users_update", (data) => {
-      setUsers(Array.isArray(data) ? data : []);
-    });
+    socket.on("users_update", (data) => { setUsers(Array.isArray(data) ? data : []); });
 
     socket.on("private_message", (incomingMessage) => {
       setMessages((prev) => {
@@ -855,13 +882,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           (m) =>
             (m._id && normalizedIncoming._id && m._id === normalizedIncoming._id) ||
             (m.clientTempId && normalizedIncoming.clientTempId && m.clientTempId === normalizedIncoming.clientTempId) ||
-            (
-              m.sender === normalizedIncoming.sender &&
-              m.receiver === normalizedIncoming.receiver &&
-              m.time === normalizedIncoming.time &&
-              m.text === normalizedIncoming.text &&
-              m.mediaUrl === normalizedIncoming.mediaUrl
-            )
+            (m.sender === normalizedIncoming.sender && m.receiver === normalizedIncoming.receiver &&
+             m.time === normalizedIncoming.time && m.text === normalizedIncoming.text && m.mediaUrl === normalizedIncoming.mediaUrl)
         );
         return isDuplicate ? prev : [...prev, normalizedIncoming];
       });
@@ -871,7 +893,6 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const senderEmail = incomingMessage.sender;
       if (senderEmail && senderEmail !== userRef.current?.email) {
         const isViewingConversation = activeSelectedUserRef.current?.email === senderEmail;
-        // Send read receipt if conversation is open
         if (isViewingConversation) {
           shouldScrollRef.current = true;
           socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
@@ -900,27 +921,18 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             (normalizedSaved.clientTempId && m.clientTempId === normalizedSaved.clientTempId) ||
             (normalizedSaved._id && m._id === normalizedSaved._id)
         );
-
-        if (existingIndex === -1) {
-          return [...prev, normalizedSaved];
-        }
-
+        if (existingIndex === -1) return [...prev, normalizedSaved];
         const next = [...prev];
-        next[existingIndex] = {
-          ...next[existingIndex],
-          ...normalizedSaved,
-          deliveryState: "sent",
-        };
+        next[existingIndex] = { ...next[existingIndex], ...normalizedSaved, deliveryState: "sent" };
         return next;
       });
     });
 
-    // Read receipt received — mark our messages as seen
     socket.on("read_receipt", ({ from }) => {
       setReadBy((prev) => new Set([...prev, from]));
     });
 
-    // Reaction received
+    // ── Reaction received — update local state with MongoDB-persisted reactions ──
     socket.on("message_reaction", ({ messageId, reactions: nextReactions }) => {
       if (!messageId) return;
       setMessages((prev) =>
@@ -953,10 +965,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         const data = await parseJsonResponse(response);
         if (cancelled) return;
         if (!response.ok) {
-          if (response.status === 503 && attempt < 4) {
-            setTimeout(() => { if (!cancelled) loadUsers(attempt + 1); }, 2000 * attempt);
-            return;
-          }
+          if (response.status === 503 && attempt < 4) { setTimeout(() => { if (!cancelled) loadUsers(attempt + 1); }, 2000 * attempt); return; }
           throw new Error(data.error || "Unable to load users");
         }
         setUsers(Array.isArray(data) ? data : []);
@@ -982,20 +991,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         if (!cancelled && Array.isArray(data)) {
           const normalizedMessages = data.map((entry) => normalizeMessage(entry));
           setMessages(normalizedMessages);
-
           const nextUnreadMap = {};
           for (const entry of normalizedMessages) {
             if (entry.receiver !== user.email) continue;
             const readByList = Array.isArray(entry.readBy) ? entry.readBy : [];
             if (readByList.includes(user.email)) continue;
-
             nextUnreadMap[entry.sender] = {
               count: (nextUnreadMap[entry.sender]?.count || 0) + 1,
               lastText: entry.text || (entry.mediaUrl ? "📎 Media" : ""),
               lastTime: formatMsgTime(entry.createdAt || entry.time),
             };
           }
-
           setUnreadMap(nextUnreadMap);
         }
       } catch (_err) {
@@ -1041,18 +1047,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   useEffect(() => {
     if (!freshMessageId) return undefined;
     clearTimeout(freshMessageTimerRef.current);
-    freshMessageTimerRef.current = window.setTimeout(() => {
-      setFreshMessageId(null);
-    }, 1600);
+    freshMessageTimerRef.current = window.setTimeout(() => setFreshMessageId(null), 1600);
     return () => window.clearTimeout(freshMessageTimerRef.current);
   }, [freshMessageId]);
 
   useEffect(() => {
     if (!copiedMessageId) return undefined;
     clearTimeout(copiedMessageTimerRef.current);
-    copiedMessageTimerRef.current = window.setTimeout(() => {
-      setCopiedMessageId(null);
-    }, 1400);
+    copiedMessageTimerRef.current = window.setTimeout(() => setCopiedMessageId(null), 1400);
     return () => window.clearTimeout(copiedMessageTimerRef.current);
   }, [copiedMessageId]);
 
@@ -1066,6 +1068,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   useEffect(() => () => {
     clearTimeout(callPhaseTimerRef.current);
+    clearInterval(recordingTimerRef.current);
     if (callStreamRef.current) {
       callStreamRef.current.getTracks().forEach((track) => track.stop());
       callStreamRef.current = null;
@@ -1076,9 +1079,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   useEffect(() => {
     if (!showEmojiPicker) return undefined;
     const handler = (e) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
-        setShowEmojiPicker(false);
-      }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) setShowEmojiPicker(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -1087,14 +1088,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // ── Close reaction picker on outside click ────────────────────────────────────
   useEffect(() => {
     if (!reactionPickerFor) return undefined;
-    // Use a small timeout so the click that opened the picker doesn't
-    // immediately close it, and so reaction button clicks fire before this handler.
     const handler = (e) => {
-      // Don't close if clicking inside a reaction-related element
       if (e.target.closest?.(".chat-reaction-wrap")) return;
       setReactionPickerFor(null);
     };
-    // Delay attaching so the opening click doesn't trigger it immediately
     const t = setTimeout(() => document.addEventListener("click", handler), 0);
     return () => { clearTimeout(t); document.removeEventListener("click", handler); };
   }, [reactionPickerFor]);
@@ -1106,12 +1103,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       setMessages((prev) =>
         prev.map((entry) =>
           entry.sender === selectedUser.email && entry.receiver === user?.email
-            ? {
-                ...entry,
-                readBy: Array.isArray(entry.readBy) && entry.readBy.includes(user?.email)
-                  ? entry.readBy
-                  : [...(Array.isArray(entry.readBy) ? entry.readBy : []), user?.email].filter(Boolean),
-              }
+            ? { ...entry, readBy: Array.isArray(entry.readBy) && entry.readBy.includes(user?.email) ? entry.readBy : [...(Array.isArray(entry.readBy) ? entry.readBy : []), user?.email].filter(Boolean) }
             : entry
         )
       );
@@ -1123,7 +1115,6 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       if (!selectedUser?.email || !socketRef.current || document.visibilityState !== "visible") return;
       socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
     };
-
     window.addEventListener("focus", syncReadReceipt);
     document.addEventListener("visibilitychange", syncReadReceipt);
     return () => {
@@ -1134,9 +1125,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   // ── Derived values ─────────────────────────────────────────────────────────────
   const activeSelectedUser = useMemo(
-    () => selectedUser?.email
-      ? users.find((u) => u.email === selectedUser.email) || selectedUser
-      : null,
+    () => selectedUser?.email ? users.find((u) => u.email === selectedUser.email) || selectedUser : null,
     [selectedUser, users]
   );
 
@@ -1148,9 +1137,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     try {
       if (message.trim()) localStorage.setItem(draftKey, message);
       else localStorage.removeItem(draftKey);
-    } catch {
-      // ignore draft persist failures
-    }
+    } catch { /* ignore */ }
   }, [activeSelectedUser?.email, message, user?.email]);
 
   const filteredUsers = useMemo(() => {
@@ -1168,21 +1155,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         });
       }
     }
-
     const base = users.filter((u) => {
       if (!u?.email || u.email === user?.email) return false;
       const q = search.toLowerCase();
       return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
     });
-
-    return base.map(u => ({
-      ...u,
-      lastMsg: userMetadata.get(u.email)
-    })).sort((a, b) => {
+    return base.map(u => ({ ...u, lastMsg: userMetadata.get(u.email) })).sort((a, b) => {
       const aHasUnread = (unreadMap[a.email]?.count || 0) > 0;
       const bHasUnread = (unreadMap[b.email]?.count || 0) > 0;
       if (aHasUnread !== bHasUnread) return aHasUnread ? -1 : 1;
-
       const at = a.lastMsg?.time || 0;
       const bt = b.lastMsg?.time || 0;
       if (at !== bt) return bt - at;
@@ -1193,39 +1174,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   useEffect(() => {
     if (search.trim() || isLoadingUsers || filteredUsers.length === 0) return;
     if (selectedUser?.email && users.some((entry) => entry.email === selectedUser.email)) return;
-
     const nextUser = filteredUsers[0];
     shouldScrollRef.current = true;
-
     let nextDraft = "";
     if (user?.email && nextUser?.email) {
       const draftKey = `chatapp-draft||${user.email}||${nextUser.email}`;
-      try {
-        nextDraft = localStorage.getItem(draftKey) || "";
-      } catch {
-        nextDraft = "";
-      }
+      try { nextDraft = localStorage.getItem(draftKey) || ""; }
+      catch { nextDraft = ""; }
     }
-
-    // Only update if values actually changed
     if (nextDraft !== message || nextUser?.email !== selectedUser?.email) {
-      /* eslint-disable-next-line */
       setMessage(nextDraft);
       setSelectedUser(nextUser);
     }
   }, [filteredUsers, isLoadingUsers, search, selectedUser?.email, user?.email, users, message]);
-
-  const _onlineUsersCount = useMemo(
-    () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
-    [user?.email, users]
-  );
-
-  const _panelStatusText = useMemo(() => {
-    if (!activeSelectedUser) return "Choose someone from the list to start chatting.";
-    if (isTyping) return `${activeSelectedUser.name || activeSelectedUser.email} is typing…`;
-    if (activeSelectedUser.isOnline) return "Online now";
-    return `Last seen: ${formatLastSeen(activeSelectedUser.lastSeen)}`;
-  }, [activeSelectedUser, isTyping]);
 
   const conversationMessages = useMemo(
     () => messages.filter((m) =>
@@ -1236,20 +1197,55 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     [activeSelectedUser, messages, user?.email]
   );
 
-  // Build message key for reactions/read receipts
+  const messageItems = useMemo(() => {
+    const items = [];
+    let lastLabel = null;
+    conversationMessages.forEach((entry, index) => {
+      const label = getDateLabel(entry.time);
+      if (label && label !== lastLabel) { items.push({ type: "date", label }); lastLabel = label; }
+      items.push({ type: "msg", entry, index });
+    });
+    return items;
+  }, [conversationMessages]);
+
+  const lastOwnMsgIsRead = useMemo(() => {
+    if (!activeSelectedUser) return false;
+    return readBy.has(activeSelectedUser.email);
+  }, [readBy, activeSelectedUser]);
+
+  const callContacts = useMemo(() => filteredUsers.slice(0, 8), [filteredUsers]);
+
+  const callRecords = useMemo(
+    () => callHistory.map((entry) => ({
+      ...entry,
+      durationLabel: entry.duration > 0 ? `${Math.floor(entry.duration / 60)}m ${String(entry.duration % 60).padStart(2, "0")}s` : "No answer",
+      timeLabel: new Date(entry.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    })),
+    [callHistory]
+  );
+
+  const settingsStats = useMemo(() => ({
+    unreadCount: Object.values(unreadMap).reduce((sum, entry) => sum + (entry?.count || 0), 0),
+    statusCount: users.filter((entry) => entry.email !== user?.email && entry.status?.mediaUrl).length,
+    blockedCount: user?.blockedUsers?.length || 0,
+    pinnedCount: user?.pinnedChats?.length || 0,
+  }), [unreadMap, user?.blockedUsers?.length, user?.email, user?.pinnedChats?.length, users]);
+
+  const activeCallView = useMemo(() => {
+    if (!activeCall) return null;
+    return {
+      ...activeCall,
+      durationLabel: `${Math.floor(callDuration / 60)}:${String(callDuration % 60).padStart(2, "0")}`,
+      phaseLabel: activeCall.phase === "connecting" ? "Connecting" : "Live",
+    };
+  }, [activeCall, callDuration]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      showToast("Signed out successfully", "info");
-    } catch { /* ignore */ }
+    try { await signOut(auth); showToast("Signed out successfully", "info"); }
+    catch { /* ignore */ }
     finally {
-      setSelectedUser(null);
-      setMessage("");
-      setMessages([]);
-      setUnreadMap({});
-      setUser(null);
+      setSelectedUser(null); setMessage(""); setMessages([]); setUnreadMap({}); setUser(null);
       navigate("/login", { replace: true });
     }
   };
@@ -1261,17 +1257,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const formData = new FormData();
       formData.append("email", user.email);
       formData.append("text", statusText);
-      if (statusFile) {
-        formData.append("file", statusFile);
-      }
-
-      const response = await fetch(`${SERVER_URL}/api/status`, {
-        method: "POST",
-        body: formData,
-      });
+      if (statusFile) formData.append("file", statusFile);
+      const response = await fetch(`${SERVER_URL}/api/status`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to update status");
-
       setUser((prev) => ({ ...prev, status: data.status }));
       setIsEditingStatus(false);
       setStatusFile(null);
@@ -1292,9 +1281,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
@@ -1306,7 +1293,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
       mediaRecorder.start();
       setIsRecording(true);
-      showToast("Recording voice message...", "info");
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
     } catch {
       showToast("Could not access microphone", "error");
     }
@@ -1316,6 +1304,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      setRecordingSeconds(0);
+      clearInterval(recordingTimerRef.current);
     }
   };
 
@@ -1324,28 +1314,21 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     let nextDraft = "";
     if (user?.email && entry?.email) {
       const draftKey = `chatapp-draft||${user.email}||${entry.email}`;
-      try {
-        nextDraft = localStorage.getItem(draftKey) || "";
-      } catch {
-        nextDraft = "";
-      }
+      try { nextDraft = localStorage.getItem(draftKey) || ""; }
+      catch { nextDraft = ""; }
     }
     setSelectedUser(entry);
     setMessage(nextDraft);
-    setUnreadMap((prev) => {
-      if (!prev[entry.email]) return prev;
-      const next = { ...prev };
-      delete next[entry.email];
-      return next;
-    });
+    setUnreadMap((prev) => { if (!prev[entry.email]) return prev; const next = { ...prev }; delete next[entry.email]; return next; });
     setFlashEmail((cur) => cur === entry.email ? null : cur);
     setHighlightedMsgIndex(null);
+    setReplyingTo(null);
   };
 
   const sendMessage = () => {
     if (!message.trim() || !activeSelectedUser || !user?.email) return;
     if (!socketRef.current?.connected) {
-      setComposerNotice({ type: "error", text: "Connection lost. Reconnect before sending new messages." });
+      setComposerNotice({ type: "error", text: "Connection lost. Reconnect before sending." });
       return;
     }
     shouldScrollRef.current = true;
@@ -1377,10 +1360,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   };
 
   const handleMessageKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
+    if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); }
   };
 
   const handleTyping = (event) => {
@@ -1456,24 +1436,18 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     const end = ta.selectionEnd;
     setMessage(message.slice(0, start) + emoji + message.slice(end));
     setShowEmojiPicker(false);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(start + emoji.length, start + emoji.length);
-    });
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(start + emoji.length, start + emoji.length); });
   };
 
   const handlePhotoUpdated = (newPhotoUrl) => {
     const resolvedPhoto = resolveAssetUrl(newPhotoUrl);
     setUser((prev) => ({ ...prev, photo: resolvedPhoto }));
-    setUsers((prev) =>
-      prev.map((entry) =>
-        entry.email === user?.email ? { ...entry, photo: resolvedPhoto } : entry
-      )
-    );
+    setUsers((prev) => prev.map((entry) => entry.email === user?.email ? { ...entry, photo: resolvedPhoto } : entry));
     showToast("Profile picture updated", "success");
   };
 
-  const _handleReaction = (messageId, emoji) => {
+  // ── Reaction handler — emits to socket, server persists to MongoDB ─────────────
+  const handleReaction = (messageId, emoji) => {
     if (!messageId || !activeSelectedUser?.email || !user?.email) {
       setComposerNotice({ type: "error", text: "Wait for the message to finish saving before reacting." });
       return;
@@ -1482,24 +1456,27 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       setComposerNotice({ type: "error", text: "Connection lost. Reconnect before updating reactions." });
       return;
     }
-
     socketRef.current?.emit("message_reaction", {
       to: activeSelectedUser.email,
       messageId,
       emoji,
       by: user.email,
     });
-  };
-
-  const _handleCopyMessage = async (entry, fallbackIndex) => {
-    if (!entry?.text?.trim()) return;
-    const copyKey = getMessageId(entry, fallbackIndex);
-    try {
-      await navigator.clipboard.writeText(entry.text);
-      setCopiedMessageId(copyKey);
-    } catch {
-      setComposerNotice({ type: "error", text: "Unable to copy that message." });
-    }
+    // Optimistic UI update
+    setMessages((prev) =>
+      prev.map((entry) => {
+        if (entry._id !== messageId) return entry;
+        const reactions = { ...(entry.reactions || {}) };
+        const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+        if (users.includes(user.email)) {
+          reactions[emoji] = users.filter((e) => e !== user.email);
+          if (!reactions[emoji].length) delete reactions[emoji];
+        } else {
+          reactions[emoji] = [...users, user.email];
+        }
+        return { ...entry, reactions };
+      })
+    );
   };
 
   const handleJumpToMessage = (targetMsg) => {
@@ -1515,68 +1492,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     setTimeout(() => setHighlightedMsgIndex(null), 2500);
   };
 
-  // ── Group messages by date for separators ────────────────────────────────────
-  // Build a list of items: { type: "date", label } | { type: "msg", entry, index }
-  const messageItems = useMemo(() => {
-    const items = [];
-    let lastLabel = null;
-    conversationMessages.forEach((entry, index) => {
-      const label = getDateLabel(entry.time);
-      if (label && label !== lastLabel) {
-        items.push({ type: "date", label });
-        lastLabel = label;
-      }
-      items.push({ type: "msg", entry, index });
-    });
-    return items;
-  }, [conversationMessages]);
-
-  // Check if the last message was sent by me and is read by the other user
-  const lastOwnMsgIsRead = useMemo(() => {
-    if (!activeSelectedUser) return false;
-    return readBy.has(activeSelectedUser.email);
-  }, [readBy, activeSelectedUser]);
-
-  const callContacts = useMemo(() => filteredUsers.slice(0, 8), [filteredUsers]);
-
-  const callRecords = useMemo(
-    () =>
-      callHistory.map((entry) => ({
-        ...entry,
-        durationLabel: entry.duration > 0
-          ? `${Math.floor(entry.duration / 60)}m ${String(entry.duration % 60).padStart(2, "0")}s`
-          : "No answer",
-        timeLabel: new Date(entry.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-    [callHistory]
-  );
-
-  const settingsStats = useMemo(() => ({
-    unreadCount: Object.values(unreadMap).reduce((sum, entry) => sum + (entry?.count || 0), 0),
-    statusCount: users.filter((entry) => entry.email !== user?.email && entry.status?.mediaUrl).length,
-    blockedCount: user?.blockedUsers?.length || 0,
-    pinnedCount: user?.pinnedChats?.length || 0,
-  }), [unreadMap, user?.blockedUsers?.length, user?.email, user?.pinnedChats?.length, users]);
-
-  const activeCallView = useMemo(() => {
-    if (!activeCall) return null;
-    return {
-      ...activeCall,
-      durationLabel: `${Math.floor(callDuration / 60)}:${String(callDuration % 60).padStart(2, "0")}`,
-      phaseLabel: activeCall.phase === "connecting" ? "Connecting" : "Live",
-    };
-  }, [activeCall, callDuration]);
-
   const handleDraftChange = (path, value) => {
     const keys = path.split(".");
     setSettingsDraft((prev) => {
       const next = { ...prev };
       let cursor = next;
-      for (let i = 0; i < keys.length - 1; i += 1) {
-        const key = keys[i];
-        cursor[key] = { ...cursor[key] };
-        cursor = cursor[key];
-      }
+      for (let i = 0; i < keys.length - 1; i += 1) { const key = keys[i]; cursor[key] = { ...cursor[key] }; cursor = cursor[key]; }
       cursor[keys[keys.length - 1]] = value;
       return next;
     });
@@ -1589,16 +1510,8 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       const data = await requestJson(`${SERVER_URL}/api/profile/preferences`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: user.email,
-          name: settingsDraft.name,
-          phone: settingsDraft.phone,
-          bio: settingsDraft.bio,
-          privacy: settingsDraft.privacy,
-          notifications: settingsDraft.notifications,
-        }),
+        body: JSON.stringify({ email: user.email, name: settingsDraft.name, phone: settingsDraft.phone, bio: settingsDraft.bio, privacy: settingsDraft.privacy, notifications: settingsDraft.notifications }),
       });
-
       if (data?.user) {
         setUser((prev) => ({ ...prev, ...data.user }));
         setUsers((prev) => prev.map((entry) => (entry.email === data.user.email ? { ...entry, ...data.user } : entry)));
@@ -1612,27 +1525,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   };
 
   const handleStartCall = async (type, contact = activeSelectedUser) => {
-    if (!contact?.email) {
-      showToast("Select a contact to start a call", "info");
-      return;
-    }
-
+    if (!contact?.email) { showToast("Select a contact to start a call", "info"); return; }
     try {
-      if (callStreamRef.current) {
-        callStreamRef.current.getTracks().forEach((track) => track.stop());
-        callStreamRef.current = null;
-      }
-
+      if (callStreamRef.current) { callStreamRef.current.getTracks().forEach((track) => track.stop()); callStreamRef.current = null; }
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       callStreamRef.current = stream;
       setCallDuration(0);
-      setActiveCall({
-        type,
-        target: contact,
-        startedAt: Date.now(),
-        phase: "connecting",
-      });
+      setActiveCall({ type, target: contact, startedAt: Date.now(), phase: "connecting" });
       clearTimeout(callPhaseTimerRef.current);
       callPhaseTimerRef.current = window.setTimeout(() => {
         setActiveCall((prev) => (prev ? { ...prev, phase: "live" } : prev));
@@ -1645,22 +1545,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const handleEndCall = (status = "ended") => {
     setCallHistory((prev) => {
       if (!activeCall) return prev;
-      const nextEntry = {
-        id: `call-${Date.now()}`,
-        name: activeCall.target.name || activeCall.target.email,
-        email: activeCall.target.email,
-        type: activeCall.type,
-        status,
-        duration: callDuration,
-        startedAt: activeCall.startedAt,
-      };
+      const nextEntry = { id: `call-${Date.now()}`, name: activeCall.target.name || activeCall.target.email, email: activeCall.target.email, type: activeCall.type, status, duration: callDuration, startedAt: activeCall.startedAt };
       return [nextEntry, ...prev].slice(0, 20);
     });
     clearTimeout(callPhaseTimerRef.current);
-    if (callStreamRef.current) {
-      callStreamRef.current.getTracks().forEach((track) => track.stop());
-      callStreamRef.current = null;
-    }
+    if (callStreamRef.current) { callStreamRef.current.getTracks().forEach((track) => track.stop()); callStreamRef.current = null; }
     setActiveCall(null);
     setCallDuration(0);
   };
@@ -1696,11 +1585,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               <div className="chat-sidebar-header">
                 <div
                   className="chat-self-avatar-wrap"
-                  title="Update profile photo"
-                  onClick={() => handleOpenProfileModal(user, true)}
+                  title="Your profile (edit photo in Settings)"
+                  onClick={() => setActiveTab("settings")}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && handleOpenProfileModal(user, true)}
+                  onKeyDown={(e) => e.key === "Enter" && setActiveTab("settings")}
                   style={{ cursor: "pointer" }}
                 >
                   <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={40} className="chat-self-avatar" />
@@ -1710,27 +1599,15 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                   <span
                     className={`chat-conn-dot chat-conn-dot-${connectionStatus}`}
                     title={connectionStatus === "online" ? "Connected" : connectionStatus === "offline" ? "Disconnected" : "Connecting…"}
-                    style={{ width: '10px', height: '10px', borderRadius: '50%', background: connectionStatus === 'online' ? '#22c55e' : (connectionStatus === 'offline' ? '#fb7185' : '#f59e0b'), marginRight: '8px' }}
                   />
-                  <button
-                    type="button"
-                    className="chat-nav-icon-btn"
-                    onClick={toggleTheme}
-                    title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-                  >
-                    {theme === "dark" ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 .28 0 .57.02.85A7 7 0 0 0 20.15 12c.28 0 .57 0 .85-.02z"/></svg>
-                    )}
+                  <button type="button" className="chat-nav-icon-btn" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+                    {theme === "dark"
+                      ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                      : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 .28 0 .57.02.85A7 7 0 0 0 20.15 12c.28 0 .57 0 .85-.02z"/></svg>
+                    }
                   </button>
-                  <button
-                    type="button"
-                    className="chat-nav-icon-btn"
-                    onClick={() => setActiveTab("settings")}
-                    title="Settings"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.49.74.83 1.3.83H21a2 2 0 1 1 0 4h-.09c-.56 0-1.1.34-1.51.83z" /></svg>
+                  <button type="button" className="chat-nav-icon-btn" onClick={() => setActiveTab("settings")} title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.49.74.83 1.3.83H21a2 2 0 1 1 0 4h-.09c-.56 0-1.1.34-1.51.83z"/></svg>
                   </button>
                   <button type="button" className="chat-nav-icon-btn" onClick={handleLogout} title="Logout">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1740,7 +1617,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
               <div className="chat-search-container">
                 <div className="chat-search-wrap">
-                  <svg className="chat-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <svg className="chat-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   <input
                     type="text"
                     placeholder="Search or start new chat"
@@ -1752,7 +1629,10 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
               <div className="chat-user-list">
                 {isLoadingUsers ? (
-                  <div className="chat-loading-state">Loading chats...</div>
+                  <div className="chat-loading-state">
+                    <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>
+                    Loading chats...
+                  </div>
                 ) : filteredUsers.length > 0 ? (
                   filteredUsers.map((entry) => {
                     const isActive = activeSelectedUser?.email === entry.email;
@@ -1765,14 +1645,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         className={`chat-user-card ${isActive ? "active" : ""} ${hasUnread ? "unread" : ""}`}
                         onClick={() => handleSelectUser(entry)}
                       >
-                        <div 
-                          className="chat-avatar-wrap" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenProfileModal(entry, false);
-                          }}
-                          title="View profile photo"
-                        >
+                        <div className="chat-avatar-wrap" onClick={(e) => { e.stopPropagation(); handleOpenProfileModal(entry, false); }} title="View profile photo">
                           <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={56} className="chat-avatar" />
                           {entry.isOnline && <span className="chat-online-dot-small" />}
                         </div>
@@ -1783,14 +1656,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                               {hasUnread ? unread.lastTime : (entry.lastMsg?.formattedTime || (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen)))}
                             </span>
                           </div>
-                          <div className="chat-user-email">
-                            <span className="chat-user-email-text">{entry.email}</span>
-                          </div>
                           <div className="chat-user-info-bottom">
                             <span className="chat-user-message">
                               {hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Chat App.")}
                             </span>
-                            {hasUnread && <span className="chat-unread-badge">{unread.count}</span>}
+                            {hasUnread && <span className="chat-unread-badge">{unread.count > 9 ? "9+" : unread.count}</span>}
                           </div>
                         </div>
                       </button>
@@ -1808,12 +1678,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 <>
                   <div className="chat-panel-header">
                     <div className="chat-panel-header-left">
-                      <div 
-                        className="chat-avatar-clickable" 
-                        onClick={() => handleOpenProfileModal(activeSelectedUser, false)}
-                        title="View profile photo"
-                        style={{ cursor: "pointer" }}
-                      >
+                      <div className="chat-avatar-clickable" onClick={() => handleOpenProfileModal(activeSelectedUser, false)} title="View profile photo" style={{ cursor: "pointer" }}>
                         <Avatar name={activeSelectedUser.name} email={activeSelectedUser.email} photo={activeSelectedUser.photo} size={40} />
                       </div>
                       <div className="chat-active-user-info">
@@ -1830,7 +1695,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                       <button type="button" className="chat-header-icon-btn" onClick={() => handleStartCall("video", activeSelectedUser)} title="Video call">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                       </button>
-                      <button type="button" className="chat-header-icon-btn" onClick={() => setShowMsgSearch(true)} title="Search">
+                      <button type="button" className="chat-header-icon-btn" onClick={() => setShowMsgSearch(true)} title="Search messages">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                       </button>
                     </div>
@@ -1847,94 +1712,143 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         const isOwn = entry.sender === user?.email;
                         const key = getMessageId(entry, index);
                         const isPending = entry.deliveryState === "sending" && !entry._id;
+                        const reactionEntries = entry.reactions ? Object.entries(entry.reactions) : [];
 
                         return (
-                          <div
-                            key={key}
-                            className={`chat-bubble-row ${isOwn ? "own" : "received"}`}
-                          >
+                          <div key={key} data-msgindex={index} className={`chat-bubble-row ${isOwn ? "own" : "received"}`}>
                             <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""}`}>
                               {!isOwn && <span className="chat-bubble-sender">{activeSelectedUser.name || activeSelectedUser.email}</span>}
-                              
+
+                              {/* ── Action buttons (reply + react) ── */}
                               <div className="chat-message-actions-trigger">
-                                <button 
-                                  type="button" 
-                                  className="chat-bubble-action-btn"
-                                  onClick={() => setReplyingTo({ 
-                                    sender: entry.sender, 
-                                    senderName: isOwn ? "You" : (activeSelectedUser.name || activeSelectedUser.email),
-                                    text: entry.text || (entry.mediaUrl ? "📎 Media" : "") 
-                                  })}
+                                {/* Reply button — WhatsApp style */}
+                                <button
+                                  type="button"
+                                  className="chat-bubble-action-btn chat-reply-action-btn"
                                   title="Reply"
+                                  onClick={() => setReplyingTo({
+                                    messageId: entry._id || null,
+                                    sender: entry.sender,
+                                    senderName: isOwn ? "You" : (activeSelectedUser.name || activeSelectedUser.email),
+                                    text: entry.text || (entry.mediaUrl ? "📎 Media" : ""),
+                                    mediaUrl: entry.mediaUrl || null,
+                                    mediaType: entry.mediaType || null,
+                                  })}
                                 >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
                                 </button>
-                                <button 
-                                  type="button" 
-                                  className="chat-bubble-action-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setReactionPickerFor(reactionPickerFor === key ? null : key);
-                                  }}
+                                {/* React button */}
+                                <button
+                                  type="button"
+                                  className="chat-bubble-action-btn chat-react-action-btn"
                                   title="React"
+                                  onClick={(e) => { e.stopPropagation(); setReactionPickerFor(reactionPickerFor === key ? null : key); }}
                                 >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                                 </button>
+                                {/* Reaction picker popover */}
                                 {reactionPickerFor === key && (
-                                  <div className="chat-bubble-reaction-picker">
-                                    <ReactionPicker 
-                                      onSelect={(emoji) => handleReaction(entry._id || key, emoji)} 
-                                      onClose={() => setReactionPickerFor(null)} 
-                                      isOwn={isOwn} 
+                                  <div className="chat-reaction-wrap">
+                                    <ReactionPicker
+                                      onSelect={(emoji) => handleReaction(entry._id || key, emoji)}
+                                      onClose={() => setReactionPickerFor(null)}
+                                      isOwn={isOwn}
                                     />
                                   </div>
                                 )}
                               </div>
 
-                              {entry.replyTo && (
-                                <div className="chat-reply-preview">
-                                  <span className="reply-sender">{entry.replyTo.senderName}</span>
-                                  <p>{entry.replyTo.text}</p>
+                              {/* ── WhatsApp-style quoted reply preview ── */}
+                              {entry.replyTo?.text || entry.replyTo?.mediaUrl ? (
+                                <div className={`chat-reply-quote ${isOwn ? "own" : "other"}`}>
+                                  <div className="chat-reply-quote-bar" />
+                                  <div className="chat-reply-quote-body">
+                                    <span className="chat-reply-quote-name">{entry.replyTo.senderName || "User"}</span>
+                                    <p className="chat-reply-quote-text">
+                                      {entry.replyTo.mediaUrl
+                                        ? <><span className="chat-reply-quote-media-icon">📎</span> {entry.replyTo.text || "Media"}</>
+                                        : entry.replyTo.text}
+                                    </p>
+                                  </div>
                                 </div>
-                              )}
+                              ) : null}
+
                               <div className="chat-bubble-content">
                                 {entry.text && <p>{entry.text}</p>}
                                 {entry.mediaUrl && <MediaMessage mediaUrl={entry.mediaUrl} mediaType={entry.mediaType} />}
                                 <div className="chat-bubble-meta">
                                   <time>{formatMsgTime(entry.time)}</time>
                                   {isOwn && (
-                                    <span className="chat-status-icon">
-                                      {isPending ? "..." : (lastOwnMsgIsRead && index === conversationMessages.length - 1 ? "✓✓" : "✓")}
+                                    <span className={`chat-status-icon ${lastOwnMsgIsRead && index === conversationMessages.length - 1 ? "read" : ""}`}>
+                                      {isPending ? (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeOpacity="0.4"/></svg>
+                                      ) : lastOwnMsgIsRead && index === conversationMessages.length - 1 ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/><polyline points="24 6 13 17" opacity="0.6"/></svg>
+                                      ) : (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      )}
                                     </span>
                                   )}
                                 </div>
                               </div>
-                              {entry.reactions && Object.keys(entry.reactions).length > 0 && (
+
+                              {/* ── Reaction pills — show emoji + count ── */}
+                              {reactionEntries.length > 0 && (
                                 <div className="chat-bubble-reactions-list">
-                                  {Object.entries(entry.reactions).map(([emoji, count]) => (
-                                    <span key={emoji} className="chat-reaction-pill">{emoji} {count > 1 && count}</span>
-                                  ))}
+                                  {reactionEntries.map(([emoji, reactors]) => {
+                                    const count = Array.isArray(reactors) ? reactors.length : (typeof reactors === "number" ? reactors : 0);
+                                    const iReacted = Array.isArray(reactors) && reactors.includes(user?.email);
+                                    return count > 0 ? (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        className={`chat-reaction-pill ${iReacted ? "i-reacted" : ""}`}
+                                        onClick={() => handleReaction(entry._id, emoji)}
+                                        title={iReacted ? "Remove reaction" : "React"}
+                                      >
+                                        {emoji}{count > 1 && <span className="chat-reaction-count">{count}</span>}
+                                      </button>
+                                    ) : null;
+                                  })}
                                 </div>
                               )}
                             </div>
                           </div>
                         );
                       })}
-                      {isTyping && <div className="chat-typing-indicator"><span></span><span></span><span></span></div>}
+                      {isTyping && (
+                        <div className="chat-bubble-row received">
+                          <div className="chat-bubble chat-typing-bubble">
+                            <div className="chat-typing-indicator">
+                              <span /><span /><span />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div ref={bottomRef} />
                     </div>
                   </div>
 
+                  {/* ── Composer ── */}
                   <div className="chat-input-area">
+                    {/* WhatsApp-style reply banner above input */}
+                    <ReplyBanner replyingTo={replyingTo} onCancel={() => setReplyingTo(null)} />
+                    {composerNotice.text && (
+                      <div className={`chat-composer-notice ${composerNotice.type}`}>{composerNotice.text}</div>
+                    )}
                     <div className="chat-input-wrap">
-                      <button type="button" className="chat-input-icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                      {/* Emoji picker button */}
+                      <button type="button" className="chat-input-icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                       </button>
                       {showEmojiPicker && <div className="emoji-picker-container" ref={emojiPickerRef}><EmojiPicker onSelect={handleEmojiSelect} /></div>}
-                      <button type="button" className="chat-input-icon-btn" onClick={() => mediaInputRef.current?.click()}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+
+                      {/* Attachment button */}
+                      <button type="button" className="chat-input-icon-btn" onClick={() => mediaInputRef.current?.click()} title="Attach file">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                       </button>
                       <input ref={mediaInputRef} type="file" style={{ display: "none" }} onChange={handleMediaFileChange} />
+
                       <textarea
                         ref={textareaRef}
                         value={message}
@@ -1943,33 +1857,41 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         placeholder="Type a message"
                         rows="1"
                       />
+
                       {message.trim() ? (
-                        <button type="button" className="chat-send-btn" onClick={sendMessage}>
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg>
+                        /* Send button — solid filled circle with arrow */
+                        <button type="button" className="chat-send-btn" onClick={sendMessage} title="Send">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"/></svg>
+                        </button>
+                      ) : isRecording ? (
+                        /* Recording state — animated red mic with timer */
+                        <button type="button" className="chat-voice-btn recording" onMouseUp={stopRecording} title="Release to send">
+                          <span className="chat-recording-timer">{String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:{String(recordingSeconds % 60).padStart(2, "0")}</span>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
                         </button>
                       ) : (
-                        <button type="button" className={`chat-voice-btn ${isRecording ? "recording" : ""}`} onMouseDown={startRecording} onMouseUp={stopRecording}>
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        /* Voice mic button — hold to record */
+                        <button type="button" className="chat-voice-btn" onMouseDown={startRecording} onTouchStart={startRecording} onMouseUp={stopRecording} onTouchEnd={stopRecording} title="Hold to record voice message">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
                       )}
                     </div>
                   </div>
                 </>
-                ) : (
-                  <div className="chat-panel-empty">
-                    <div className="chat-panel-empty-content">
-                      <div className="chat-empty-icon">
-                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.1 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                      </div>
-                      <h2>No conversations yet</h2>
-                      <p>Your latest conversation will open here automatically as soon as messages are available.</p>
+              ) : (
+                <div className="chat-panel-empty">
+                  <div className="chat-panel-empty-content">
+                    <div className="chat-empty-icon">
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.15 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
+                    <h2>No conversations yet</h2>
+                    <p>Your latest conversation will open here automatically as soon as messages are available.</p>
                   </div>
-                )}
+                </div>
+              )}
             </main>
           </>
         ) : activeTab === "status" ? (
-          /* ── Full Width Status Section ── */
           <main className="chat-panel full-height">
             <div className="chat-panel-header">
               <div className="chat-panel-header-left">
@@ -2018,7 +1940,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         </div>
                         <div className="chat-user-info">
                           <span className="chat-user-name">{u.name || u.email}</span>
-                          <span className="chat-user-time">{new Date(u.status.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="chat-user-time">{new Date(u.status.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                         </div>
                       </button>
                     ))
@@ -2039,17 +1961,16 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                       </div>
                     </div>
                     <div className="status-viewer-media">
-                      {viewingStatusUser.status.mediaType === "video" ? (
-                        <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls />
-                      ) : (
-                        <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />
-                      )}
+                      {viewingStatusUser.status.mediaType === "video"
+                        ? <video key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} autoPlay controls />
+                        : <img key={viewingStatusUser.status.mediaUrl} src={`${SERVER_URL}${viewingStatusUser.status.mediaUrl}`} alt="Status" />
+                      }
                     </div>
                     {viewingStatusUser.status.text && <div className="status-viewer-caption">{viewingStatusUser.status.text}</div>}
                   </div>
                 ) : (
                   <div className="chat-status-empty">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: '20px' }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: "20px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <p>Click on a contact to view their status update</p>
                   </div>
                 )}
@@ -2108,6 +2029,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           </div>
         )}
       </section>
+
       <BottomNav
         activeTab={activeTab}
         onChange={setActiveTab}
