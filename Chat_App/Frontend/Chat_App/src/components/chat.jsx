@@ -270,7 +270,7 @@ function getMessageId(message, fallbackIndex = null) {
   return message?._id || message?.clientTempId || `${message?.sender}:${message?.receiver}:${message?.time}:${fallbackIndex ?? "x"}`;
 }
 
-function getReactionCountMap(reactions = {}) {
+function _getReactionCountMap(reactions = {}) {
   return Object.fromEntries(
     Object.entries(reactions)
       .map(([emoji, users]) => [emoji, Array.isArray(users) ? users.length : 0])
@@ -656,19 +656,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState("");
+  const [_usersError, setUsersError] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showMsgSearch, setShowMsgSearch] = useState(false);
-  const [mediaUploading, setMediaUploading] = useState(false);
-  const [highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
+  const [_mediaUploading, setMediaUploading] = useState(false);
+  const [_highlightedMsgIndex, setHighlightedMsgIndex] = useState(null);
   const [reactionPickerFor, setReactionPickerFor] = useState(null);
   // read receipts: Set of msgKeys seen by remote
   const [readBy, setReadBy] = useState(new Set());
   const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting | online | offline
   const [unreadMap, setUnreadMap] = useState({});
-  const [flashEmail, setFlashEmail] = useState(null);
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [_flashEmail, setFlashEmail] = useState(null);
+  const [_showScrollBtn, _setShowScrollBtn] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [composerNotice, setComposerNotice] = useState({ type: "", text: "" });
   const [freshMessageId, setFreshMessageId] = useState(null);
@@ -735,23 +735,27 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const copiedMessageTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
+  // Initialize settings draft from user on mount
   useEffect(() => {
-    setSettingsDraft({
-      name: user?.name || "",
-      phone: user?.phone || "",
-      bio: user?.bio || "",
-      privacy: {
-        lastSeen: user?.privacy?.lastSeen || "everyone",
-        profilePhoto: user?.privacy?.profilePhoto || "everyone",
-        readReceipts: user?.privacy?.readReceipts !== false,
-      },
-      notifications: {
-        messagePreview: user?.notifications?.messagePreview !== false,
-        sound: user?.notifications?.sound !== false,
-        vibrate: user?.notifications?.vibrate !== false,
-        desktopAlerts: user?.notifications?.desktopAlerts !== false,
-      },
-    });
+    if (user?.email) {
+      /* eslint-disable-next-line */
+      setSettingsDraft({
+        name: user?.name || "",
+        phone: user?.phone || "",
+        bio: user?.bio || "",
+        privacy: {
+          lastSeen: user?.privacy?.lastSeen || "everyone",
+          profilePhoto: user?.privacy?.profilePhoto || "everyone",
+          readReceipts: user?.privacy?.readReceipts !== false,
+        },
+        notifications: {
+          messagePreview: user?.notifications?.messagePreview !== false,
+          sound: user?.notifications?.sound !== false,
+          vibrate: user?.notifications?.vibrate !== false,
+          desktopAlerts: user?.notifications?.desktopAlerts !== false,
+        },
+      });
+    }
   }, [user]);
 
   useEffect(() => {
@@ -1146,16 +1150,20 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       }
     }
 
-    setMessage(nextDraft);
-    setSelectedUser(nextUser);
-  }, [filteredUsers, isLoadingUsers, search, selectedUser?.email, user?.email, users]);
+    // Only update if values actually changed
+    if (nextDraft !== message || nextUser?.email !== selectedUser?.email) {
+      /* eslint-disable-next-line */
+      setMessage(nextDraft);
+      setSelectedUser(nextUser);
+    }
+  }, [filteredUsers, isLoadingUsers, search, selectedUser?.email, user?.email, users, message]);
 
-  const onlineUsersCount = useMemo(
+  const _onlineUsersCount = useMemo(
     () => users.filter((entry) => entry?.email && entry.email !== user?.email && entry.isOnline).length,
     [user?.email, users]
   );
 
-  const panelStatusText = useMemo(() => {
+  const _panelStatusText = useMemo(() => {
     if (!activeSelectedUser) return "Choose someone from the list to start chatting.";
     if (isTyping) return `${activeSelectedUser.name || activeSelectedUser.email} is typing…`;
     if (activeSelectedUser.isOnline) return "Online now";
@@ -1242,7 +1250,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       mediaRecorder.start();
       setIsRecording(true);
       showToast("Recording voice message...", "info");
-    } catch (err) {
+    } catch {
       showToast("Could not access microphone", "error");
     }
   };
@@ -1408,7 +1416,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     showToast("Profile picture updated", "success");
   };
 
-  const handleReaction = (messageId, emoji) => {
+  const _handleReaction = (messageId, emoji) => {
     if (!messageId || !activeSelectedUser?.email || !user?.email) {
       setComposerNotice({ type: "error", text: "Wait for the message to finish saving before reacting." });
       return;
@@ -1426,7 +1434,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     });
   };
 
-  const handleCopyMessage = async (entry, fallbackIndex) => {
+  const _handleCopyMessage = async (entry, fallbackIndex) => {
     if (!entry?.text?.trim()) return;
     const copyKey = getMessageId(entry, fallbackIndex);
     try {
@@ -1709,9 +1717,12 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                               {hasUnread ? unread.lastTime : (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen))}
                             </span>
                           </div>
+                          <div className="chat-user-email">
+                            <span className="chat-user-email-text">{entry.email}</span>
+                          </div>
                           <div className="chat-user-info-bottom">
                             <span className="chat-user-message">
-                              {hasUnread ? unread.lastText : (entry.status?.text || entry.email)}
+                              {hasUnread ? unread.lastText : (entry.status?.text || "")}
                             </span>
                             {hasUnread && <span className="chat-unread-badge">{unread.count}</span>}
                           </div>

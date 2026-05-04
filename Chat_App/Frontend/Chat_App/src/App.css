@@ -1010,8 +1010,8 @@ button {
 .chat-user-card {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  height: 72px; /* Consistent height like WhatsApp */
+  padding: 12px 16px;
+  height: 88px; /* Increased from 72px to accommodate 3 lines */
   width: 100%;
   background: transparent;
   border: none;
@@ -1070,7 +1070,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .chat-user-name {
@@ -1087,6 +1087,22 @@ button {
   font-size: 0.75rem;
 }
 
+.chat-user-email {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.chat-user-email-text {
+  color: #8696a0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
 .chat-user-info-bottom {
   display: flex;
   justify-content: space-between;
@@ -1095,7 +1111,7 @@ button {
 
 .chat-user-message {
   color: #8696a0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2723,7 +2739,7 @@ body.theme-light .chat-user-status-preview {
   }
 
   .chat-user-card {
-    padding: 8px;
+    padding: 8px 12px;
   }
 
   .chat-panel-header {
