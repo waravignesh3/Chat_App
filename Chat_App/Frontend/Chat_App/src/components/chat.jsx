@@ -609,7 +609,7 @@ function StatusPage({
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
