@@ -1,4 +1,4 @@
-﻿/* AUTH PAGES — App.css — WhatsApp-inspired */
+/* AUTH PAGES — App.css — WhatsApp-inspired */
 
 .auth-shell {
   min-height: 100svh; display: flex; align-items: center;
@@ -30,7 +30,7 @@
   right:2%;bottom:3%;animation-delay:-5s;
 }
 .auth-layout {
-  position: relative; z-index: 1; width: 100%; max-width: 1100px;
+  position: relative; z-index: 1; width: 100%;
   display: grid; grid-template-columns: 1fr 1fr;
   gap: clamp(16px,2.5vw,32px); align-items: stretch;
 }

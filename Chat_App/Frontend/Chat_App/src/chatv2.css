@@ -343,7 +343,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 8px 4% 4px;
+  padding: 8px 16px 4px;
   position: relative;
   scroll-behavior: smooth;
 }
