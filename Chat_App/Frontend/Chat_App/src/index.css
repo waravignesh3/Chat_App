@@ -270,13 +270,14 @@ img {
   gap: 12px;
 }
 
-.auth-bootstrap::before {
-  content: '';
-  width: 20px; height: 20px;
-  border: 2px solid var(--wa-teal);
-  border-top-color: transparent;
+.auth-bootstrap-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(0,168,132,0.25);
+  border-top-color: var(--wa-teal);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
 }
 
 /* ─── Scrollbar ─── */

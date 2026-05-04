@@ -1,437 +1,50 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   chat.reaction-fix.css
-   1. Fixes reaction picker overflowing left border on short messages
-   2. Expands reaction picker to full categorised emoji grid
-   3. Adds polished real-time chat UI enhancements
-   Import LAST in chat.jsx after all other CSS files.
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   REACTION PILLS — chat.reactions.fix.css
+═══════════════════════════════════════════════════════ */
 
-/* ── OVERFLOW FIX: let action bars escape the clip box ──────────────────── */
-.chat-messages-wrap {
-  overflow: visible !important;
-}
-.chat-messages {
-  overflow-x: clip !important;
-  padding-top: 52px !important;
-}
-
-/* ── REACTION WRAP: anchor point for the picker ─────────────────────────── */
-.chat-reaction-wrap {
-  position: relative !important;
-}
-
-/* ── SIMPLE REACTION PICKER (6-emoji bar, single unwrapped row) ─────────── */
-.reaction-picker-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  z-index: 400;
-
-  /* Exactly fits 6 × 36px buttons + 4px gaps × 5 + 12px padding */
-  width: 244px;
-  min-width: 244px;
-
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;       /* NEVER wrap — all 6 stay on one line  */
-  align-items: center;
+/* ─── Reaction Pills Row ─── */
+.chat-bubble-reactions-list {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  padding: 6px;
-
-  background: #0f172a;
-  border: 1px solid rgba(110, 168, 254, 0.22);
-  border-radius: 999px;               /* pill shape                            */
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.4),
-    0 12px 32px rgba(0,0,0,0.6);
-  backdrop-filter: blur(16px);
-  animation: reactionPickerIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+  margin-top: 4px;
 }
 
-/* Own message — pin RIGHT so picker never bleeds past the right edge */
-.reaction-picker-popover.reaction-picker-own {
-  right: 0;
-  left: auto;
-}
-
-/* Other message — pin LEFT so picker never bleeds off the left edge */
-.reaction-picker-popover.reaction-picker-other {
-  left: 0;
-  right: auto;
-}
-
-/* Buttons inside the simple picker bar */
-.reaction-picker-popover .reaction-picker-btn {
-  flex: 0 0 36px;
-  width: 36px !important;
-  height: 36px !important;
-  font-size: 20px !important;
-  border-radius: 50% !important;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
+/* ─── Single Reaction Pill ─── */
+.chat-reaction-pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: background 0.12s, transform 0.12s;
-  padding: 0;
-  line-height: 1;
-}
-
-.reaction-picker-popover .reaction-picker-btn:hover {
-  background: rgba(110,168,254,0.18);
-  transform: scale(1.3);
-}
-
-/* Mobile — slightly smaller but still a single row */
-@media (max-width: 480px) {
-  .reaction-picker-popover {
-    width: 216px;
-    min-width: 216px;
-    padding: 5px;
-    gap: 2px;
-  }
-
-  .reaction-picker-popover .reaction-picker-btn {
-    flex: 0 0 32px;
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 17px !important;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   EXPANDED REACTION PICKER — categorised tab grid
-   ═══════════════════════════════════════════════════════════════════════════ */
-.reaction-picker-expanded {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  z-index: 400;
-  width: 264px;
-  background: #0f172a;
-  border: 1px solid rgba(110, 168, 254, 0.18);
-  border-radius: 18px;
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.4),
-    0 24px 48px rgba(0,0,0,0.65),
-    0 8px 16px rgba(0,0,0,0.4);
-  backdrop-filter: blur(20px);
-  overflow: hidden;
-  animation: reactionPickerIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-
-@keyframes reactionPickerIn {
-  from { opacity: 0; transform: scale(0.82) translateY(10px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-/* ── Anchor: own message (right-aligned) — picker opens left ────────────── */
-.reaction-picker-own {
-  right: 0;
-  left: auto;
-}
-
-/* ── Anchor: other message (left-aligned) — picker opens right ──────────── */
-.reaction-picker-other {
-  left: 0;
-  right: auto;
-}
-
-/* ── Safety clamp: never let it bleed off either screen edge ────────────── */
-@media (max-width: 520px) {
-  .reaction-picker-expanded {
-    width: calc(100vw - 32px);
-    left: 0 !important;
-    right: auto !important;
-  }
-}
-
-/* ── Tab bar ────────────────────────────────────────────────────────────── */
-.reaction-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 10px 10px 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.reaction-tab-btn {
-  flex: 1;
-  padding: 5px 4px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: rgba(148, 163, 184, 0.7);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  text-transform: uppercase;
-}
-
-.reaction-tab-btn:hover {
-  background: rgba(110, 168, 254, 0.1);
-  color: #94a3b8;
-}
-
-.reaction-tab-btn.active {
-  background: rgba(110, 168, 254, 0.18);
-  color: #6ea8fe;
-}
-
-/* ── Emoji grid inside picker ───────────────────────────────────────────── */
-.reaction-emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 2px;
-  padding: 8px 8px 10px;
-}
-
-/* Override old single-row flex layout */
-.reaction-picker-expanded.reaction-picker-popover {
-  flex-direction: column !important;
-  border-radius: 18px !important;
-  padding: 0 !important;
-}
-
-.reaction-picker-btn {
-  width: 100%;
-  height: 40px;
-  border: none;
-  background: transparent;
-  border-radius: 10px;
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.12s, transform 0.12s;
-  padding: 0;
-  line-height: 1;
-}
-
-.reaction-picker-btn:hover {
-  background: rgba(110, 168, 254, 0.16);
-  transform: scale(1.28);
-}
-
-.reaction-picker-btn:active {
-  transform: scale(0.92);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   REAL-TIME CHAT ENHANCEMENTS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Message bubbles: richer depth and polish ───────────────────────────── */
-.chat-bubble {
-  position: relative;
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.15s ease;
-}
-
-.chat-bubble:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 12px 32px rgba(2,10,26,0.28),
-    0 2px 8px rgba(2,10,26,0.18);
-}
-
-.chat-bubble.own {
-  background: linear-gradient(
-    135deg,
-    rgba(99,102,241,0.22) 0%,
-    rgba(79,70,229,0.18) 100%
-  ) !important;
-  border-color: rgba(99,102,241,0.28) !important;
-}
-
-/* ── Sender label: subtle but clear ────────────────────────────────────── */
-.chat-bubble-sender {
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-}
-
-.chat-bubble.own .chat-bubble-sender {
-  color: rgba(110,168,254,0.7) !important;
-}
-
-.chat-bubble:not(.own) .chat-bubble-sender {
-  color: rgba(167,139,250,0.8) !important;
-}
-
-/* ── Reaction badges: pill with glow ───────────────────────────────────── */
-.chat-reaction-badge {
-  background: rgba(110,168,254,0.12) !important;
-  border: 1px solid rgba(110,168,254,0.22) !important;
-  color: #e2e8f0 !important;
-  font-size: 14px !important;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.12s, border-color 0.15s;
-  padding: 3px 9px !important;
-  border-radius: 999px !important;
-}
-
-.chat-reaction-badge:hover {
-  background: rgba(110,168,254,0.22) !important;
-  border-color: rgba(110,168,254,0.4) !important;
-  transform: scale(1.1);
-}
-
-/* ── Action buttons bar: cleaner pill style ─────────────────────────────── */
-.chat-bubble-actions {
-  background: rgba(10,14,28,0.88);
-  border: 1px solid rgba(255,255,255,0.1);
+  gap: 3px;
+  padding: 3px 8px;
   border-radius: 999px;
-  padding: 2px 4px;
-  gap: 2px !important;
-  top: -22px !important;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  background: var(--wa-input-bg, #2a3942);
+  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--wa-transition-fast), border-color var(--wa-transition-fast), transform var(--wa-transition-fast);
 }
 
-.chat-bubble-reply-btn,
-.chat-bubble-react-btn {
-  border-radius: 50% !important;
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  width: 28px !important;
-  height: 28px !important;
-  font-size: 13px !important;
-  transition: background 0.12s, transform 0.12s !important;
+.chat-reaction-pill:hover {
+  background: #354852;
+  border-color: rgba(255,255,255,0.2);
+  transform: scale(1.08);
 }
 
-.chat-bubble-reply-btn:hover,
-.chat-bubble-react-btn:hover {
-  background: rgba(110,168,254,0.2) !important;
-  transform: scale(1.15) !important;
-  border: none !important;
+/* User's own reaction highlighted */
+.chat-reaction-pill.i-reacted {
+  background: rgba(0,168,132,0.15);
+  border-color: rgba(0,168,132,0.4);
+}
+.chat-reaction-pill.i-reacted:hover {
+  background: rgba(0,168,132,0.22);
 }
 
-/* ── Online indicator ring pulse — sky-blue glow border (overrides base) ── */
-.chat-online-ring {
-  /* Size is set in App_enhanced.css / chat_profile.css; just override animation */
-  animation: onlineRingPulse 2.4s ease-in-out infinite;
+.chat-reaction-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wa-text-muted, #8696a0);
 }
-/* onlineRingPulse keyframes are defined in App_enhanced.css */
-
-/* ── Typing indicator: smoother bounce ──────────────────────────────────── */
-.chat-typing-indicator span {
-  width: 7px !important;
-  height: 7px !important;
-  border-radius: 50%;
-  background: rgba(110,168,254,0.6) !important;
-  animation: typingBounce 1.2s ease-in-out infinite !important;
-  display: inline-block;
-}
-
-.chat-typing-indicator span:nth-child(1) { animation-delay: 0s !important; }
-.chat-typing-indicator span:nth-child(2) { animation-delay: 0.18s !important; }
-.chat-typing-indicator span:nth-child(3) { animation-delay: 0.36s !important; }
-
-@keyframes typingBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-  40%            { transform: translateY(-7px); opacity: 1; }
-}
-
-/* ── Compose input: subtle glow on focus ───────────────────────────────── */
-.chat-compose-input:focus {
-  border-color: rgba(99,102,241,0.45) !important;
-  box-shadow:
-    0 0 0 3px rgba(99,102,241,0.12),
-    inset 0 1px 3px rgba(0,0,0,0.2) !important;
-  outline: none !important;
-}
-
-/* ── Send button: active state pop ─────────────────────────────────────── */
-.chat-send-btn:active {
-  transform: scale(0.94) !important;
-}
-
-/* ── Scroll-to-bottom button ──────────────────────────────────────────── */
-.chat-scroll-btn {
-  background: rgba(99,102,241,0.88) !important;
-  border: 1px solid rgba(110,168,254,0.3) !important;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.4) !important;
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s !important;
-}
-
-.chat-scroll-btn:hover {
-  background: rgba(99,102,241,1) !important;
-  transform: scale(1.08) translateX(-50%) !important;
-  box-shadow: 0 6px 28px rgba(99,102,241,0.55) !important;
-}
-
-/* ── Message bubble entrance animation ─────────────────────────────────── */
-@keyframes bubbleIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.chat-bubble {
-  animation: bubbleIn 0.28s ease both !important;
-}
-
-/* ── Highlighted message: flash for reply-jump ──────────────────────────── */
-.chat-bubble-highlighted {
-  animation: highlightFlash 1.2s ease both !important;
-}
-
-@keyframes highlightFlash {
-  0%   { background: rgba(110,168,254,0.28); border-color: rgba(110,168,254,0.55); }
-  60%  { background: rgba(110,168,254,0.14); border-color: rgba(110,168,254,0.35); }
-  100% { background: inherit; border-color: inherit; }
-}
-
-/* ── Read receipt colours ───────────────────────────────────────────────── */
-.chat-read-receipt.read {
-  color: #6ea8fe !important;
-  text-shadow: 0 0 8px rgba(110,168,254,0.5) !important;
-}
-
-/* ── Mobile adjustments ─────────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .reaction-picker-expanded {
-    width: calc(100vw - 24px) !important;
-    left: 0 !important;
-    right: auto !important;
-  }
-
-  .reaction-emoji-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  .reaction-picker-btn {
-    height: 36px;
-    font-size: 20px;
-  }
-
-  .chat-messages {
-    padding-top: 44px !important;
-  }
-
-  .chat-bubble-actions {
-    top: -20px !important;
-    padding: 1px 3px;
-  }
-}
-
-/* ── Reduced motion ─────────────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .reaction-picker-expanded,
-  .chat-bubble,
-  .chat-online-ring,
-  .chat-typing-indicator span {
-    animation: none !important;
-    transition: none !important;
-  }
+.chat-reaction-pill.i-reacted .chat-reaction-count {
+  color: var(--wa-teal, #00a884);
 }

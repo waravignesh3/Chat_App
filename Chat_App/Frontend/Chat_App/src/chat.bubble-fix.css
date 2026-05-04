@@ -1,108 +1,95 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   chat.bubble-fix.css
-   Fixes: reaction/emoji panel hidden in top notch on short messages.
+/* ═══════════════════════════════════════════════════════
+   BUBBLE FIXES — chat.bubble-fix.css
+   Bubble spacing, hover states, pinned messages
+═══════════════════════════════════════════════════════ */
 
-   Root cause: .chat-messages-wrap { overflow: hidden } clips the
-   .chat-bubble-actions bar that sits at top: -18px above each bubble.
-   When a bubble is near the top of the scroll area the bar is swallowed.
-
-   Import AFTER App.css and App.enhanced.css in chat.jsx:
-     import "../chat.bubble-fix.css";
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── 1. Let the wrapper pass overflow up instead of clipping it ─────────── */
-.chat-messages-wrap {
-  /*
-    'overflow: visible' lets absolutely-positioned children (action bars,
-    reaction pickers) escape the box. The scrollable area is .chat-messages
-    directly, so removing clip here has no visible side-effect.
-  */
-  overflow: visible !important;
+/* ─── Bubble Group Spacing ─── */
+.chat-bubble-row + .chat-bubble-row {
+  margin-top: 1px;
 }
 
-/* ── 2. Keep horizontal scroll contained without creating a clip context ── */
-.chat-messages {
-  /*
-    'overflow-x: clip' prevents horizontal bleed exactly like 'hidden' but
-    does NOT establish a new block-formatting context, so children with
-    negative top offsets are still visible above the scroll container.
-    'overflow-y: auto' is kept from the base stylesheet.
-  */
-  overflow-x: clip !important;
-
-  /*
-    Extra top padding ensures the very first bubble's action bar (top: -18px,
-    height: 30px → needs ~48 px of clearance) is never hidden behind the
-    chat header. Bump from the existing 32px to 52px.
-  */
-  padding-top: 52px !important;
+/* Extra space when sender changes */
+.chat-bubble-row.own + .chat-bubble-row.received,
+.chat-bubble-row.received + .chat-bubble-row.own {
+  margin-top: 6px;
 }
 
-/* ── 3. Guarantee action bar is always above bubbles, never clipped ──────── */
-.chat-bubble-actions {
-  /*
-    Raise z-index above sibling bubbles and the scroll container's
-    stacking context. 30 is enough; reaction-picker-popover is z-index 300.
-  */
-  z-index: 30;
+/* ─── Pinned Message Banner ─── */
+.chat-pinned-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--wa-panel, #202c33);
+  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.06));
+  cursor: pointer;
+  transition: background var(--wa-transition-fast);
+  flex-shrink: 0;
+}
+.chat-pinned-banner:hover { background: #263239; }
 
-  /*
-    Move the bar a touch further up so it clears the bubble border cleanly.
-    -20px gives 2 px of breathing room over the original -18px.
-  */
-  top: -20px;
+.chat-pinned-indicator {
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--wa-teal, #00a884);
+  flex-shrink: 0;
 }
 
-/* ── 4. Reaction picker: flip below when bubble is close to top ──────────── */
-/*
-  The .near-top class should be added in JS when the bubble's top offset
-  is within ~80px of the scroll container's top. Example (add to the
-  virtualised row renderer or a ResizeObserver):
-
-    article.classList.toggle(
-      'near-top',
-      article.offsetTop - scrollEl.scrollTop < 80
-    );
-
-  As a CSS-only fallback we also handle the case where the picker would
-  overflow by anchoring it below the action bar instead.
-*/
-.chat-bubble.near-top .reaction-picker-popover {
-  bottom: auto;
-  top: calc(100% + 6px);
-  animation-name: reactionPopDown;
+.chat-pinned-copy { flex: 1; min-width: 0; }
+.chat-pinned-copy span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wa-teal, #00a884);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.chat-pinned-copy p {
+  font-size: 0.83rem;
+  color: var(--wa-text-muted, #8696a0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
 }
 
-@keyframes reactionPopDown {
-  from { transform: scale(0.7) translateY(-8px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);       opacity: 1; }
+/* ─── Hover Context Menu (right-click / long press) ─── */
+.chat-ctx-menu {
+  position: fixed;
+  z-index: 500;
+  background: var(--wa-panel, #202c33);
+  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  border-radius: var(--wa-radius-md, 12px);
+  padding: 6px;
+  box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.5));
+  min-width: 180px;
+  animation: fadeIn 0.12s ease both;
 }
 
-/* ── 5. Remove double border on the message area ─────────────────────────── */
-/*
-  If you see a double border at the top of .chat-messages-wrap it is because
-  both .chat-main and .chat-messages-wrap have a border or background edge.
-  This rule normalises it — adjust colour/width to match your design.
-*/
-.chat-messages-wrap {
-  /* Prevent a phantom extra border line appearing when overflow is visible */
-  border-top: none;
+.chat-ctx-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--wa-radius-sm, 6px);
+  font-size: 0.88rem;
+  color: var(--wa-text, #e9edef);
+  transition: background var(--wa-transition-fast);
+  text-align: left;
+}
+.chat-ctx-menu-item:hover { background: var(--wa-hover, rgba(255,255,255,0.06)); }
+.chat-ctx-menu-item.danger { color: #ff5449; }
+.chat-ctx-menu-item svg { flex-shrink: 0; }
+
+/* ─── Copy Flash ─── */
+@keyframes copyFlash {
+  0%   { background: rgba(37,211,102,0.25); }
+  100% { background: transparent; }
 }
 
-/* ── 6. Mobile: keep padding sane on small viewports ────────────────────── */
-@media (max-width: 480px) {
-  .chat-messages {
-    padding-top: 44px !important;
-  }
-
-  .chat-bubble-actions {
-    top: -18px;
-  }
-}
-
-/* ── 7. Reduced-motion: no animation override needed (inherits base) ──────── */
-@media (prefers-reduced-motion: reduce) {
-  .chat-bubble.near-top .reaction-picker-popover {
-    animation: none !important;
-  }
+.chat-bubble.copied {
+  animation: copyFlash 1.2s ease both;
 }

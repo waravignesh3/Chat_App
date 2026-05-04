@@ -1,212 +1,75 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   chat.unread.css  —  Unread message highlighting for the chat card list
-   Matches the deep-navy dark design system in App.css / App.enhanced.css
-   Zero collision with existing selectors. Drop into your imports in chat.jsx:
-     import "../chat.unread.css";
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   UNREAD INDICATORS — chat.unread.css
+═══════════════════════════════════════════════════════ */
 
-/* ── Unread card state ───────────────────────────────────────────────────── */
-/*
-  Applied when: hasUnread = !isActive && unread?.count > 0
-  Class in JSX: `chat-user-card-unread`
-  Already emitted by your chat.jsx render (line 632).
-*/
-.chat-user-card.chat-user-card-unread {
-  background: rgba(110, 168, 254, 0.09);        /* subtle blue wash */
-  border-color: rgba(110, 168, 254, 0.28);       /* accent blue border */
-  /*
-    The base .chat-user-card already has:
-      transition: background 0.3s ease, border-color 0.3s ease
-    so both entering and leaving the unread state fade smoothly.
-    Add it here too in case the base rule isn't loaded first.
-  */
-  transition:
-    background      0.35s ease,
-    border-color    0.35s ease,
-    transform       0.2s  ease,
-    box-shadow      0.35s ease;
-}
-
-.chat-user-card.chat-user-card-unread:hover {
-  background: rgba(110, 168, 254, 0.14);
-  border-color: rgba(110, 168, 254, 0.42);
-}
-
-/* Gentle border-color pulse to catch the eye without being harsh */
-@keyframes chat-unread-pulse {
-  0%,  100% { border-color: rgba(110, 168, 254, 0.28); }
-  50%       { border-color: rgba(110, 168, 254, 0.52); }
-}
-
-.chat-user-card.chat-user-card-unread {
-  animation: chat-unread-pulse 2.6s ease-in-out infinite;
-}
-
-/* Stop pulsing while hovered — gives a "settled" feeling on hover */
-.chat-user-card.chat-user-card-unread:hover {
-  animation: none;
-}
-
-/* ── Bold name when unread ───────────────────────────────────────────────── */
-.chat-user-card.chat-user-card-unread .chat-user-copy > strong {
-  color: #ffffff;
-  font-weight: 700;
-}
-
-/* ── Last-message preview text (unread state) ───────────────────────────── */
-/*
-  In JSX: <span className="chat-unread-preview">{unread.lastText}</span>
-  Shown only when hasUnread is true.
-*/
-.chat-unread-preview {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: rgba(110, 168, 254, 0.85);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-}
-
-/* ── Timestamp shown for unread chats ───────────────────────────────────── */
-/*
-  In JSX: <span className="chat-unread-time">{unread.lastTime}</span>
-  Shown only when hasUnread is true, inside .chat-status.
-*/
-.chat-unread-time {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--auth-primary, #6ea8fe);
-  letter-spacing: 0.01em;
-}
-
-/* ── Unread badge (dot or count) ─────────────────────────────────────────── */
-/*
-  In JSX: <span className="chat-unread-dot" aria-label={`${unread.count} unread`} />
-  Positioned absolutely inside .chat-avatar-wrap which is already position:relative.
-*/
-.chat-unread-dot {
-  position: absolute;
-  top:   -3px;
-  right: -3px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;                 /* pill for 2-digit, circle for 1-digit */
-  background: var(--auth-primary, #6ea8fe);
-  border: 2px solid var(--auth-bg, #07111f);
-  color: #07111f;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
+/* ─── Unread Separator in Message List ─── */
+.chat-unread-separator {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 6px 0;
+  margin: 4px 0;
+}
+
+.chat-unread-separator span {
+  background: rgba(0,168,132,0.12);
+  border: 1px solid rgba(0,168,132,0.25);
+  color: var(--wa-teal, #00a884);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+
+/* ─── Flash Animation (new message from non-selected user) ─── */
+@keyframes sidebarFlash {
+  0%   { background: rgba(37,211,102,0.18); }
+  100% { background: transparent; }
+}
+
+.chat-user-card.flash {
+  animation: sidebarFlash 0.7s ease both;
+}
+
+/* ─── Online indicator (sidebar list) ─── */
+.chat-online-dot-small {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--wa-green, #25D366);
+  border: 2.5px solid var(--wa-sidebar, #111b21);
+  box-shadow: 0 0 0 1px var(--wa-green, #25D366);
+}
+
+/* ─── Tab unread badge (bottom nav) ─── */
+.chat-bottom-nav-item .chat-bottom-nav-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 17px;
+  height: 17px;
   padding: 0 4px;
-  pointer-events: none;
-  z-index: 5;
-  /* Pop in with a spring */
-  animation: chat-badge-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  border-radius: 999px;
+  background: var(--wa-teal, #00a884);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: messagePop 0.2s ease both;
 }
 
-@keyframes chat-badge-pop {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+/* ─── Sidebar unread count (desktop) ─── */
+.chat-user-card.unread .chat-user-time {
+  color: var(--wa-teal, #00a884);
+  font-weight: 600;
 }
 
-/* ── New-message flash: brief highlight on the card when a message arrives ── */
-/*
-  Usage: add the class `chat-user-card-flash` on receipt of a new message,
-  then remove it after ~700 ms. Vanilla JS example:
-    card.classList.add("chat-user-card-flash");
-    setTimeout(() => card.classList.remove("chat-user-card-flash"), 700);
-  In React, toggle a `flash` state for 700 ms and add the class conditionally.
-*/
-.chat-user-card.chat-user-card-flash {
-  animation: chat-card-flash 0.65s ease both;
-}
-
-@keyframes chat-card-flash {
-  0%   { background: rgba(110, 168, 254, 0.22); }
-  40%  { background: rgba(110, 168, 254, 0.16); }
-  100% { background: rgba(110, 168, 254, 0.09); }
-}
-
-/* ── Transition from unread → read (opening the chat) ───────────────────── */
-/*
-  When the card loses .chat-user-card-unread (because the user opened the chat),
-  CSS transitions on .chat-user-card handle the background/border-color fade
-  back to the default values. No extra class needed.
-*/
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIGHT MODE OVERRIDES (if you ever add a light theme)
-   ═══════════════════════════════════════════════════════════════════════════ */
-@media (prefers-color-scheme: light) {
-  .chat-user-card.chat-user-card-unread {
-    background:    rgba(59, 130, 246, 0.07);
-    border-color:  rgba(59, 130, 246, 0.30);
-  }
-
-  .chat-user-card.chat-user-card-unread:hover {
-    background:    rgba(59, 130, 246, 0.12);
-    border-color:  rgba(59, 130, 246, 0.48);
-  }
-
-  .chat-unread-dot {
-    background: #2563eb;
-    border-color: #f8fafc;
-    color: #fff;
-  }
-
-  .chat-unread-preview {
-    color: #2563eb;
-  }
-
-  .chat-unread-time {
-    color: #2563eb;
-  }
-
-  .chat-user-card.chat-user-card-unread .chat-user-copy > strong {
-    color: #0f172a;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   MOBILE — Tighten badge and card on small screens
-   ═══════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 480px) {
-  .chat-unread-dot {
-    min-width: 16px;
-    height: 16px;
-    font-size: 9px;
-    top:   -2px;
-    right: -2px;
-    border-width: 1.5px;
-    padding: 0 3px;
-  }
-
-  .chat-unread-preview {
-    font-size: 0.74rem;
-  }
-
-  .chat-unread-time {
-    font-size: 0.68rem;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   REDUCED MOTION — Replace animations with instant state change
-   ═══════════════════════════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .chat-user-card.chat-user-card-unread,
-  .chat-unread-dot,
-  .chat-user-card.chat-user-card-flash {
-    animation: none !important;
-  }
-
-  .chat-user-card {
-    transition: background 0.01ms, border-color 0.01ms !important;
-  }
+.chat-user-card.unread .chat-user-message {
+  color: var(--wa-text, #e9edef);
+  font-weight: 500;
 }

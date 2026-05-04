@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { parseJsonResponse, requestJson } from "../utils/http";
 import { useToast } from "./ToastContext";
+import BottomNav from "./BottomNav";
 import "../App.css";
 import "../App.enhanced.css";
 import "../chatv2.css";
@@ -371,71 +372,7 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
   );
 }
 
-function BottomNav({ activeTab, onChange, unreadCount, statusCount, callCount }) {
-  const items = [
-    {
-      id: "chats",
-      label: "Chats",
-      badge: unreadCount,
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: "status",
-      label: "Status",
-      badge: statusCount,
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      ),
-    },
-    {
-      id: "calls",
-      label: "Calls",
-      badge: callCount,
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.24a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z" />
-        </svg>
-      ),
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      badge: 0,
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.49.74.83 1.3.83H21a2 2 0 1 1 0 4h-.09c-.56 0-1.1.34-1.51.83z" />
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <nav className="chat-bottom-nav" aria-label="Primary">
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={`chat-bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
-          onClick={() => onChange(item.id)}
-        >
-          <span className="chat-bottom-nav-icon">
-            {item.icon}
-            {item.badge > 0 && <span className="chat-bottom-nav-badge">{item.badge > 9 ? "9+" : item.badge}</span>}
-          </span>
-          <span>{item.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-}
+// BottomNav is now a dedicated component — imported above
 
 function CallsPanel({ contacts, callHistory, onStartCall }) {
   return (

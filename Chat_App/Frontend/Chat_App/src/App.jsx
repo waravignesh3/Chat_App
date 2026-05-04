@@ -137,7 +137,12 @@ function App() {
   }, [user?.id, user?.email, user?.provider]); // Dependencies included to satisfy ESLint and ensure correct sync logic
 
   if (!authReady) {
-    return <div className="auth-bootstrap">Loading your session…</div>;
+    return (
+      <div className="auth-bootstrap">
+        <span className="auth-bootstrap-spinner" aria-hidden="true" />
+        Loading your session…
+      </div>
+    );
   }
 
   return (
