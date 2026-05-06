@@ -1276,13 +1276,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
           senderEmail.split("@")[0];
         const msgPreview = incomingMessage.text ||
           (incomingMessage.mediaUrl ? "📎 Media" : "New message");
+        
         notify({
           title: senderName,
           body: msgPreview,
           tag: `msg-${senderEmail}`,
         });
+
         if (isViewingConversation) {
           shouldScrollRef.current = true;
+          // IMMEDIATELY notify sender that we've seen it
+          socket.emit("mark_messages_seen", { sender: senderEmail, receiver: userRef.current.email });
           socket.emit("read_receipt", { to: senderEmail, from: userRef.current.email });
         } else {
           const incomingTime = formatMsgTime(incomingMessage.createdAt || incomingMessage.time);
@@ -1471,14 +1475,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     return () => { cancelled = true; };
   }, [user?.email]);
 
-  // ── Typing indicators ─────────────────────────────────────────────────────────
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
       setTypingUsers((prev) => ({ ...prev, [from]: true }));
       if (selectedUser?.email === from) {
         setIsTyping(true);
+        // Fallback cleanup in case stop_typing is never received
         clearTimeout(typingIndicatorTimeoutRef.current);
-        typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
+        typingIndicatorTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+          setTypingUsers((prev) => { const next = { ...prev }; delete next[from]; return next; });
+        }, 3000);
       }
     };
     const handleTypingStop = ({ from }) => {
@@ -1489,6 +1496,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       });
       if (selectedUser?.email === from) {
         setIsTyping(false);
+        clearTimeout(typingIndicatorTimeoutRef.current);
       }
     };
     socketRef.current?.on("typing", handleTypingStart);
@@ -2011,13 +2019,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   };
 
   const handleTyping = (event) => {
-    setMessage(event.target.value);
+    const val = event.target.value;
+    setMessage(val);
     if (activeSelectedUser) {
       clearTimeout(typingTimeoutRef.current);
-      socketRef.current?.emit("typing", { to: activeSelectedUser.email, from: user.email });
-      typingTimeoutRef.current = setTimeout(() => {
+      if (!val.trim()) {
+        // If empty, stop typing immediately
         socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
-      }, 1200);
+      } else {
+        socketRef.current?.emit("typing", { to: activeSelectedUser.email, from: user.email });
+        typingTimeoutRef.current = setTimeout(() => {
+          socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
+        }, 1500);
+      }
     }
   };
 
