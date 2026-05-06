@@ -35,49 +35,77 @@
 
 /* Own bubble (same bg as other) */
 .chat-bubble.own {
-  background: var(--wa-input-bg);
-  color: var(--wa-text);
+  background: var(--wa-btn-primary);
+  color: #0F172A;
   border-bottom-right-radius: 2px;
-  border: 1px solid var(--wa-border);
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0, 201, 255, 0.2);
 }
 
-/* Received bubble (same bg as own) */
 .chat-bubble:not(.own) {
-  background: var(--wa-input-bg);
+  background: var(--wa-surface);
   color: var(--wa-text);
   border-bottom-left-radius: 2px;
   border: 1px solid var(--wa-border);
 }
 
-/* Fresh / new message highlight */
-.chat-bubble.fresh {
-  animation: freshGlow 0.7s ease both;
-}
-
-/* Bubble tail — own */
 .chat-bubble.own::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: -8px;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 8px 0 0 8px;
-  border-color: transparent transparent transparent var(--wa-input-bg);
+  border-color: transparent transparent transparent #92FE9D; /* Match end of secondary gradient */
 }
 
-/* Bubble tail — received */
-.chat-bubble:not(.own)::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -8px;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 8px 8px 0 0;
-  border-color: transparent var(--wa-input-bg) transparent transparent;
+.chat-send-btn {
+  background: var(--wa-btn-primary);
+  color: #0F172A;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--wa-transition-fast);
+  box-shadow: 0 4px 15px rgba(0, 201, 255, 0.3);
+}
+.chat-send-btn:hover {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 6px 20px rgba(0, 201, 255, 0.4);
+}
+
+.emoji-picker {
+  background: var(--wa-panel);
+  border: 1px solid var(--wa-border);
+  border-radius: var(--wa-radius-lg);
+  padding: 12px;
+  box-shadow: var(--wa-shadow-lg);
+  backdrop-filter: blur(20px);
+}
+
+.msg-search-modal {
+  background: var(--wa-panel);
+  border-radius: var(--wa-radius-lg);
+  border: 1px solid var(--wa-border);
+  box-shadow: var(--wa-shadow-lg);
+  backdrop-filter: blur(20px);
+}
+
+.reaction-picker-popover {
+  background: var(--wa-panel);
+  border: 1px solid var(--wa-border);
+  border-radius: 999px;
+  box-shadow: var(--wa-shadow-lg);
+  backdrop-filter: blur(10px);
+}
+
+.chat-typing-indicator span {
+  background: var(--wa-teal);
+}
+
+.chat-status-icon.read {
+  color: var(--wa-teal);
+}
+
+body.theme-light .chat-bubble.own {
+  color: #FFFFFF;
+}
+body.theme-light .chat-send-btn {
+  color: #FFFFFF;
 }
 
 /* Sender name (received bubbles) */

@@ -12,69 +12,50 @@
   --gradient-secondary: linear-gradient(135deg, #00C9FF, #92FE9D);
   --gradient-accent:    linear-gradient(135deg, #F7971E, #FFD200);
 
-  /* Light/Dark mode backgrounds (gradient-driven) */
-  --wa-bg: var(--gradient-primary);
-  --wa-panel: rgba(15, 23, 42, 0.85); /* Semi-transparent panel for readability over gradient */
-  
-  /* HEX Formats */
-  --wa-primary:      #FF6A00;
-  --wa-sidebar:      #0B0F19;
-  --wa-input-bg:     #1E293B; /* Slate 800 */
+  /* Semantic Gradient Mapping */
+  --wa-bg:           var(--gradient-primary);
+  --wa-panel:        rgba(15, 23, 42, 0.82);
+  --wa-surface:      rgba(30, 41, 59, 0.5);
   --wa-border:       rgba(255, 255, 255, 0.08);
-  --wa-hover:        rgba(99, 102, 241, 0.12);
-  --wa-active:       rgba(99, 102, 241, 0.2);
+  
+  /* Buttons & Interaction */
+  --wa-btn-primary:  var(--gradient-secondary);
+  --wa-btn-accent:   var(--gradient-accent);
+  --wa-hover:        rgba(255, 255, 255, 0.08);
+  --wa-active:       rgba(255, 255, 255, 0.12);
   
   /* Typography */
-  --wa-text:         #F8FAFC; /* Slate 50 */
-  --wa-text-muted:   #94A3B8; /* Slate 400 */
-  --wa-text-faint:   #64748B; /* Slate 500 */
+  --wa-text:         #FFFFFF;
+  --wa-text-muted:   #CBD5E1;
+  --wa-text-faint:   #94A3B8;
   
-  /* Semantic */
-  --wa-danger:       #EF4444;
-  --wa-warning:      #F59E0B;
-  --wa-info:         #3B82F6;
-  --wa-success:      #10B981;
+  /* Fixed Colors */
+  --wa-teal:         #00C9FF;
+  --wa-green:        #25D366;
+  --wa-danger:       #FF5449;
+  
+  /* Radii */
+  --wa-radius-sm:  8px;
+  --wa-radius-md:  16px;
+  --wa-radius-lg:  24px;
+  --wa-radius-xl:  32px;
 
   /* Shadows */
-  --wa-shadow-sm:    0 1px 2px rgba(0,0,0,0.4);
-  --wa-shadow-md:    0 4px 12px rgba(0,0,0,0.5);
-  --wa-shadow-lg:    0 12px 32px rgba(0,0,0,0.6);
-
-  /* Radii */
-  --wa-radius-sm:  6px;
-  --wa-radius-md:  12px;
-  --wa-radius-lg:  20px;
-  --wa-radius-xl:  28px;
-  --wa-radius-full: 9999px;
-
-  /* Transitions */
-  --wa-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --wa-transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --wa-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* ─── Modern Light Mode (Arctic Clean) ─── */
 body.theme-light {
-  --wa-bg: var(--gradient-primary);
-  --wa-panel: rgba(255, 255, 255, 0.9);
-  --wa-sidebar: rgba(241, 245, 249, 0.95);
-  --wa-input-bg: rgba(226, 232, 240, 0.8);
-  --wa-border: rgba(15, 23, 42, 0.1);
-  --wa-hover: var(--gradient-secondary);
-  --wa-active: var(--gradient-secondary);
+  --wa-bg:           var(--gradient-primary);
+  --wa-panel:        rgba(255, 255, 255, 0.92);
+  --wa-surface:      rgba(241, 245, 249, 0.8);
+  --wa-border:       rgba(15, 23, 42, 0.08);
   
-  /* Typography */
-  --wa-text:         #0F172A; /* Slate 900 */
-  --wa-text-muted:   #475467; /* Slate 600 */
-  --wa-text-faint:   #98A2B3;
+  --wa-text:         #0F172A;
+  --wa-text-muted:   #475569;
+  --wa-text-faint:   #64748B;
   
-  /* Light Mode Colors */
-  --wa-primary:      #FF6A00;
-  --wa-primary-dark: #EE0979;
-  --wa-secondary:    #00C9FF;
-  
-  --wa-shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
-  --wa-shadow-md:    0 4px 12px rgba(0,0,0,0.08);
-  --wa-shadow-lg:    0 12px 32px rgba(0,0,0,0.12);
+  --wa-hover:        rgba(15, 23, 42, 0.04);
+  --wa-active:       rgba(15, 23, 42, 0.08);
 }
 
 /* ─── Global Reset ─── */
