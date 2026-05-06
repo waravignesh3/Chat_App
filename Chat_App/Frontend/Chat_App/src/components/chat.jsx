@@ -2515,6 +2515,9 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                                 : (hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Hello Hub."))}
                             </span>
                             {hasUnread && <span className="chat-unread-badge">{unread.count > 9 ? "9+" : unread.count}</span>}
+                            {!isUserTyping && entry.isOnline && (
+                              <span className="chat-user-online-text">Online</span>
+                            )}
                           </div>
                         </div>
                       </button>
@@ -2532,6 +2535,9 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 <>
                   <div className="chat-panel-header">
                     <div className="chat-panel-header-left">
+                      <button type="button" className="chat-panel-back-btn" onClick={() => setSelectedUser(null)} title="Back to user list">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                      </button>
                       <div className="chat-avatar-clickable" onClick={() => handleOpenProfileModal(activeSelectedUser, false)} title="View profile photo" style={{ cursor: "pointer" }}>
                         <Avatar name={activeSelectedUser.name} email={activeSelectedUser.email} photo={activeSelectedUser.photo} size={40} />
                       </div>

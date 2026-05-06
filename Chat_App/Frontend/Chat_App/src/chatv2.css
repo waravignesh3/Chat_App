@@ -219,6 +219,26 @@
   gap: 4px;
 }
 
+.chat-user-info-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+
+.chat-user-online-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wa-teal, #00a884);
+  background: rgba(0, 168, 132, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease both;
+}
+
 /* Unread Badge */
 .chat-unread-badge {
   min-width: 22px;
@@ -306,6 +326,26 @@
   gap: 12px;
   min-width: 0;
   flex: 1;
+}
+
+.chat-panel-back-btn {
+  display: none; /* Hidden by default on desktop */
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  color: var(--wa-teal, #00a884);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: -4px;
+}
+
+.chat-panel-back-btn:hover {
+  background: rgba(0, 168, 132, 0.1);
+  transform: translateX(-2px);
 }
 
 .chat-avatar-clickable {
@@ -878,6 +918,10 @@
   .chat-panel {
     flex: 1;
     min-height: 0;
+  }
+
+  .chat-panel-back-btn {
+    display: flex; /* Show back button on mobile */
   }
 
   /* On mobile, show sidebar as full screen when tab = chats and no user selected */

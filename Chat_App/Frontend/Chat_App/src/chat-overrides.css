@@ -99,7 +99,12 @@ body.theme-light .chat-input-icon-btn:hover { background: var(--wa-hover); color
 body.theme-light .chat-panel-header-actions .chat-header-icon-btn { color: var(--wa-text-muted); }
 body.theme-light .chat-header-icon-btn:hover { background: var(--wa-hover); color: var(--wa-text); }
 body.theme-light .chat-nav-icon-btn { color: var(--wa-text-muted); }
-body.theme-light .chat-nav-icon-btn:hover { background: var(--wa-hover); color: var(--wa-text); }
+body.theme-light .chat-panel-back-btn {
+  color: #00a884;
+}
+body.theme-light .chat-panel-back-btn:hover {
+  background: #f0f2f5;
+}
 
 body.theme-light .chat-bottom-nav {
   background: var(--wa-panel);
