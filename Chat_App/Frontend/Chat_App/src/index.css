@@ -43,6 +43,18 @@
   --wa-shadow-md:    0 4px 12px rgba(0,0,0,0.5);
   --wa-shadow-lg:    0 12px 32px rgba(0,0,0,0.6);
 
+  /* Modern Gradients */
+  --grad-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --grad-secondary: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  --grad-accent: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
+  --grad-surface: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+  --grad-dark: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  
+  /* Glass Effects */
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(12px);
+
   /* Radii */
   --wa-radius-sm:  6px;
   --wa-radius-md:  12px;
@@ -78,6 +90,17 @@ body.theme-light {
   --wa-shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
   --wa-shadow-md:    0 4px 12px rgba(0,0,0,0.08);
   --wa-shadow-lg:    0 12px 32px rgba(0,0,0,0.12);
+
+  /* Modern Gradients Light */
+  --grad-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --grad-secondary: linear-gradient(135deg, #059669 0%, #2563eb 100%);
+  --grad-accent: linear-gradient(135deg, #e11d48 0%, #ea580c 100%);
+  --grad-surface: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+  --grad-dark: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+
+  /* Glass Effects Light */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(15, 23, 42, 0.08);
 }
 
 /* ─── Global Reset ─── */
@@ -153,6 +176,11 @@ img {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-20px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -163,10 +191,20 @@ img {
   to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 @keyframes messagePop {
   0%   { opacity: 0; transform: scale(0.88) translateY(4px); }
   60%  { transform: scale(1.02) translateY(-1px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
 }
 
 @keyframes typingBounce {
@@ -175,9 +213,9 @@ img {
 }
 
 @keyframes pulseOnline {
-  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
-  70%  { box-shadow: 0 0 0 6px rgba(37,211,102,0); }
-  100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--wa-primary-rgb), 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(var(--wa-primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--wa-primary-rgb), 0); }
 }
 
 @keyframes shimmer {
@@ -191,14 +229,25 @@ img {
 }
 
 @keyframes freshGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.4); }
-  60%  { box-shadow: 0 0 0 8px rgba(37,211,102,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  60%  { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
   100% { box-shadow: none; }
 }
 
 @keyframes gradientShift {
   0%, 100% { background-position: 0% 50%; }
-  50%       { background-position: 100% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+@keyframes driftLight {
+  from { transform: rotate(0deg) translate(-10%, -10%); }
+  to   { transform: rotate(360deg) translate(-10%, -10%); }
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(15px, -25px) scale(1.05); }
+  66%      { transform: translate(-20px, 15px) scale(0.95); }
 }
 
 @keyframes floatBlob {
@@ -217,7 +266,15 @@ img {
 }
 
 /* ─── Utility Classes ─── */
-.sr-only {
+.app-name-gradient {
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
+}
+  .sr-only {
   position: absolute;
   width: 1px; height: 1px;
   padding: 0; margin: -1px;

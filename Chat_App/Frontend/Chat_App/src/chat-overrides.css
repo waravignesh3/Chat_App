@@ -156,6 +156,154 @@ body.theme-light .auth-field input { background: var(--wa-input-bg); color: var(
 body.theme-light .auth-chat-bubble.other { background: var(--wa-bubble-other); color: var(--wa-text); border: 1px solid var(--wa-border); }
 body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color: var(--wa-bubble-text); }
 
+/* ─── Modern Design System Extensions ─── */
+
+.modern-gradient-bg {
+  background: var(--grad-dark) !important;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.modern-gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glass-header {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: var(--wa-shadow-md);
+}
+
+.modern-hero {
+  background: var(--grad-surface) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 24px !important;
+  padding: 32px !important;
+  margin-bottom: 24px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  background: var(--grad-primary);
+  opacity: 0.1;
+  filter: blur(40px);
+  border-radius: 50%;
+}
+
+.glass-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--wa-shadow-sm) !important;
+  transition: all 0.3s ease !important;
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: var(--wa-shadow-md) !important;
+  transform: translateY(-2px);
+}
+
+.glass-tile {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  transition: all 0.3s ease;
+}
+
+.glass-tile:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--wa-primary);
+}
+
+.modern-btn {
+  background: var(--grad-primary) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.modern-btn:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.modern-toggle input[type="checkbox"] {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid var(--glass-border);
+}
+
+.modern-toggle input[type="checkbox"]:checked {
+  background: var(--grad-primary);
+}
+
+.modern-toggle input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.modern-toggle input[type="checkbox"]:checked::before {
+  left: 22px;
+}
+
+.modern-icon-btn {
+  background: var(--wa-hover) !important;
+  color: var(--wa-primary) !important;
+  border-radius: 12px !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.3s ease !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.modern-icon-btn:hover {
+  background: var(--wa-active) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--wa-shadow-sm);
+}
+
 /* ─── Final Production Fixes ─── */
 
 /* Ensure textarea auto-grows (fallback for no field-sizing support) */

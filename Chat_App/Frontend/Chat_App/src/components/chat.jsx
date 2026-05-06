@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "firebase/auth";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
@@ -489,10 +489,15 @@ function StatusPage({
   const contactsWithStatus = users.filter(u => u.email !== user?.email && u.statuses?.length > 0);
 
   return (
-    <main className="status-page">
+    <motion.main 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="status-page modern-gradient-bg"
+    >
 
       {/* ── Fixed header ── */}
-      <div className="status-page-header">
+      <div className="status-page-header glass-header">
         <h3>Status</h3>
         <span>Updates from your network</span>
       </div>
@@ -500,8 +505,9 @@ function StatusPage({
       <div className="status-page-body">
 
         {/* ── My Status Card ── */}
-        <div
-          className={`status-my-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className={`status-my-card glass-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
           onClick={() => user?.statuses?.length > 0 && onViewMyStatus()}
           role={user?.statuses?.length > 0 ? "button" : undefined}
           tabIndex={user?.statuses?.length > 0 ? 0 : undefined}
@@ -510,7 +516,7 @@ function StatusPage({
         >
           <div className="status-my-avatar-col">
             <div className="status-my-avatar-wrap">
-              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={54} />
+              <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={60} />
               {user?.statuses?.length > 0 && (
                 <span className="status-ring active" />
               )}
@@ -527,9 +533,11 @@ function StatusPage({
             )}
           </div>
           <div className="status-my-actions" onClick={e => e.stopPropagation()}>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               type="button"
-              className="status-action-btn media-btn"
+              className="status-action-btn media-btn modern-icon-btn"
               onClick={openMediaPicker}
               title="Add photo or video"
             >
@@ -537,10 +545,12 @@ function StatusPage({
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               type="button"
-              className="status-action-btn text-btn"
+              className="status-action-btn text-btn modern-icon-btn"
               onClick={() => setPostMode(postMode === "text" ? null : "text")}
               title="Add text status"
             >
@@ -548,51 +558,58 @@ function StatusPage({
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Text Status Composer ── */}
-        {postMode === "text" && (
-          <div className="status-text-composer">
-            <textarea
-              ref={statusInputRef}
-              placeholder="What's on your mind? (max 280 chars)"
-              maxLength={280}
-              value={statusText}
-              onChange={(e) => setStatusText(e.target.value)}
-              autoFocus
-              rows={3}
-            />
-            <div className="status-composer-footer">
-              <span className="status-char-count">{statusText.length}/280</span>
-              <div className="status-composer-actions">
-                <button
-                  type="button"
-                  className="status-cancel-btn"
-                  onClick={() => { setPostMode(null); setStatusText(""); }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="status-post-btn"
-                  onClick={() => { handleStatusUpdate(); setPostMode(null); }}
-                  disabled={!statusText.trim() || statusUploading}
-                >
-                  {statusUploading ? "Posting…" : "Post Status"}
-                </button>
+        <AnimatePresence>
+          {postMode === "text" && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="status-text-composer glass-card"
+            >
+              <textarea
+                ref={statusInputRef}
+                placeholder="What's on your mind? (max 280 chars)"
+                maxLength={280}
+                value={statusText}
+                onChange={(e) => setStatusText(e.target.value)}
+                autoFocus
+                rows={3}
+              />
+              <div className="status-composer-footer">
+                <span className="status-char-count">{statusText.length}/280</span>
+                <div className="status-composer-actions">
+                  <button
+                    type="button"
+                    className="status-cancel-btn"
+                    onClick={() => { setPostMode(null); setStatusText(""); }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="status-post-btn modern-btn"
+                    onClick={() => { handleStatusUpdate(); setPostMode(null); }}
+                    disabled={!statusText.trim() || statusUploading}
+                  >
+                    {statusUploading ? "Posting…" : "Post Status"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Contact Status List ── */}
         <div className="status-contacts-section">
           <div className="status-section-label">Recent updates</div>
 
           {contactsWithStatus.length === 0 ? (
-            <div className="status-empty-state">
+            <div className="status-empty-state glass-card">
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.18 }}>
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
@@ -601,15 +618,18 @@ function StatusPage({
             </div>
           ) : (
             <div className="status-contact-list">
-              {contactsWithStatus.map((u) => (
-                <button
+              {contactsWithStatus.map((u, idx) => (
+                <motion.button
                   key={u.email}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * idx }}
                   type="button"
-                  className={`status-contact-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
+                  className={`status-contact-card glass-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
                   onClick={() => setViewingStatusUser(viewingStatusUser?.email === u.email ? null : u)}
                 >
                   <div className="status-avatar-ring-wrap">
-                    <Avatar name={u.name} email={u.email} photo={u.photo} size={50} />
+                    <Avatar name={u.name} email={u.email} photo={u.photo} size={54} />
                     <span className={`status-ring ${u.statuses?.every(s => s.views?.includes(user?.email)) ? "seen" : ""}`} />
                   </div>
                   <div className="status-contact-info">
@@ -619,13 +639,13 @@ function StatusPage({
                   {u.statuses?.length > 0 && u.statuses[u.statuses.length - 1].text && (
                     <p className="status-contact-preview">{u.statuses[u.statuses.length - 1].text.slice(0, 50)}{u.statuses[u.statuses.length - 1].text.length > 50 ? "…" : ""}</p>
                   )}
-                </button>
+                </motion.button>
               ))}
             </div>
           )}
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }
 
@@ -634,8 +654,14 @@ function StatusPage({
 
 function CallsPanel({ contacts, callHistory, onStartCall }) {
   return (
-    <main className="chat-panel full-height">
-      <div className="chat-panel-header">
+    <motion.main 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="chat-panel full-height modern-gradient-bg"
+    >
+      <div className="chat-panel-header glass-header">
         <div className="chat-panel-header-left">
           <div className="chat-active-user-info">
             <h3>Calls</h3>
@@ -645,23 +671,38 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
       </div>
 
       <div className="chat-feature-panel">
-        <section className="chat-feature-hero">
-          <div>
+        <section className="chat-feature-hero modern-hero">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <span className="chat-feature-kicker">Fast calling</span>
             <h2>Start a voice or video conversation in one tap.</h2>
-            <p>Calls are prepared with microphone and camera permissions for a smooth Hello Hub-style launch flow.</p>
-          </div>
+            <p>Calls are prepared with microphone and camera permissions for a smooth launch flow.</p>
+          </motion.div>
         </section>
 
         <section className="chat-feature-grid">
-          <div className="chat-card-section">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="chat-card-section glass-card"
+          >
             <div className="chat-section-head">
               <h4>Quick Call</h4>
               <span>{contacts.length} contacts</span>
             </div>
             <div className="chat-call-list">
-              {contacts.length > 0 ? contacts.map((entry) => (
-                <article key={entry.email} className="chat-call-card">
+              {contacts.length > 0 ? contacts.map((entry, idx) => (
+                <motion.article 
+                  key={entry.email} 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * idx }}
+                  className="chat-call-card"
+                >
                   <div className="chat-call-card-main">
                     <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={52} className="chat-avatar" />
                     <div className="chat-call-copy">
@@ -677,19 +718,30 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                     </button>
                   </div>
-                </article>
+                </motion.article>
               )) : <div className="chat-empty-state">Your recent chat contacts will show up here for quick calling.</div>}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="chat-card-section">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="chat-card-section glass-card"
+          >
             <div className="chat-section-head">
               <h4>Recent Calls</h4>
               <span>{callHistory.length} records</span>
             </div>
             <div className="chat-call-history">
-              {callHistory.length > 0 ? callHistory.map((item) => (
-                <article key={item.id} className="chat-history-card">
+              {callHistory.length > 0 ? callHistory.map((item, idx) => (
+                <motion.article 
+                  key={item.id} 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * idx }}
+                  className="chat-history-card"
+                >
                   <div className={`chat-history-icon ${item.type}`}>
                     {item.type === "video"
                       ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -701,21 +753,27 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
                     <span>{item.type === "video" ? "Video call" : "Voice call"} · {item.status} · {item.durationLabel}</span>
                   </div>
                   <time>{item.timeLabel}</time>
-                </article>
+                </motion.article>
               )) : <div className="chat-empty-state">No calls yet. Start one from a chat or the quick call list.</div>}
             </div>
-          </div>
+          </motion.div>
         </section>
       </div>
-    </main>
+    </motion.main>
   );
 }
 
 // ─── Settings panel — photo edit only here ────────────────────────────────────
 function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLogout, saving, theme, toggleTheme, stats, onBack }) {
   return (
-    <main className="settings-fullpage">
-      <div className="settings-header">
+    <motion.main 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.4 }}
+      className="settings-fullpage modern-gradient-bg"
+    >
+      <div className="settings-header glass-header">
         <button type="button" className="settings-back-btn" onClick={onBack} aria-label="Back to chats">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -723,14 +781,21 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
           <h3>Settings</h3>
           <p>Profile, privacy, notifications &amp; preferences</p>
         </div>
-        <button type="button" className="settings-save-quick-btn" onClick={onSave} disabled={saving}>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          type="button" 
+          className="settings-save-quick-btn modern-btn" 
+          onClick={onSave} 
+          disabled={saving}
+        >
           {saving ? "Saving…" : "Save"}
-        </button>
+        </motion.button>
       </div>
 
       <div className="chat-feature-panel settings-panel-view">
-        <section className="chat-settings-top">
-          <div className="chat-settings-profile-card">
+        <section className="chat-settings-top modern-hero">
+          <div className="chat-settings-profile-card glass-card">
             {/* Photo change — only accessible from this Settings page */}
             <button type="button" className="chat-settings-avatar-btn" onClick={onOpenProfile} title="Change profile photo">
               <div className="chat-settings-avatar-wrap">
@@ -748,15 +813,20 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
             </div>
           </div>
           <div className="chat-settings-stats">
-            <div className="chat-stat-tile"><strong>{stats.unreadCount}</strong><span>Unread</span></div>
-            <div className="chat-stat-tile"><strong>{stats.statusCount}</strong><span>Status</span></div>
-            <div className="chat-stat-tile"><strong>{stats.blockedCount}</strong><span>Blocked</span></div>
-            <div className="chat-stat-tile"><strong>{stats.pinnedCount}</strong><span>Pinned</span></div>
+            <div className="chat-stat-tile glass-tile"><strong>{stats.unreadCount}</strong><span>Unread</span></div>
+            <div className="chat-stat-tile glass-tile"><strong>{stats.statusCount}</strong><span>Status</span></div>
+            <div className="chat-stat-tile glass-tile"><strong>{stats.blockedCount}</strong><span>Blocked</span></div>
+            <div className="chat-stat-tile glass-tile"><strong>{stats.pinnedCount}</strong><span>Pinned</span></div>
           </div>
         </section>
 
         <section className="chat-feature-grid settings-grid">
-          <div className="chat-card-section">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="chat-card-section glass-card"
+          >
             <div className="chat-section-head">
               <h4>Profile</h4>
               <span>Visible account details</span>
@@ -775,9 +845,14 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 <textarea rows="4" value={draft.bio} onChange={(e) => onDraftChange("bio", e.target.value)} maxLength={160} />
               </label>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="chat-card-section">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="chat-card-section glass-card"
+          >
             <div className="chat-section-head">
               <h4>Privacy</h4>
               <span>Control what others can see</span>
@@ -799,7 +874,7 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                   <option value="nobody">Nobody</option>
                 </select>
               </label>
-              <label className="chat-toggle-row">
+              <label className="chat-toggle-row modern-toggle">
                 <div>
                   <strong>Read receipts</strong>
                   <span>Allow others to know when you have read messages.</span>
@@ -840,9 +915,14 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="chat-card-section">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="chat-card-section glass-card"
+          >
             <div className="chat-section-head">
               <h4>Notifications</h4>
               <span>Device and desktop behavior</span>
@@ -854,7 +934,7 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 ["notifications.vibrate", "Vibrate", "Use vibration feedback on supported devices."],
                 ["notifications.desktopAlerts", "Desktop alerts", "Keep tab notifications visible on desktop."],
               ].map(([key, title, desc]) => (
-                <label key={key} className="chat-toggle-row">
+                <label key={key} className="chat-toggle-row modern-toggle">
                   <div>
                     <strong>{title}</strong>
                     <span>{desc}</span>
@@ -863,7 +943,7 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
                 </label>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           <div className="chat-card-section">
             <div className="chat-section-head">
@@ -896,7 +976,7 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
           </div>
         </section>
       </div>
-    </main>
+    </motion.main>
   );
 }
 
@@ -2303,21 +2383,21 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       )}
 
       <section className={`chat-layout ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
-        {activeTab === "chats" ? (
-          <>
-            {/* ── Sidebar ── */}
-            <aside className="chat-sidebar">
+        <AnimatePresence mode="wait">
+          {activeTab === "chats" ? (
+            <motion.div 
+              key="chats"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="chat-layout-wrapper"
+              style={{ display: "grid", gridTemplateColumns: "380px 1fr", width: "100%", height: "100%" }}
+            >
+              {/* ── Sidebar ── */}
+              <aside className="chat-sidebar">
               <div className="chat-sidebar-header">
-                <div
-                  className="chat-self-avatar-wrap"
-                  title="Your profile (edit photo in Settings)"
-                  onClick={() => setActiveTab("settings")}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && setActiveTab("settings")}
-                  style={{ cursor: "pointer" }}
-                >
-                  <Avatar name={user?.name} email={user?.email} photo={user?.photo} size={40} className="chat-self-avatar" />
+                <div className="chat-sidebar-header-left">
+                  <h2 className="app-name-gradient">Hello Hub</h2>
                 </div>
 
                 <div className="chat-sidebar-actions">
@@ -2462,7 +2542,14 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         const reactionEntries = entry.reactions ? Object.entries(entry.reactions) : [];
 
                         return (
-                          <div key={key} data-msgindex={index} className={`chat-bubble-row ${isOwn ? "own" : "received"}`}>
+                          <motion.div 
+                            key={key} 
+                            data-msgindex={index} 
+                            className={`chat-bubble-row ${isOwn ? "own" : "received"}`}
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                          >
                             <div className={`chat-bubble ${isOwn ? "own" : ""} ${freshMessageId === key ? "fresh" : ""} ${entry.mediaUrl ? "media-bubble" : ""}`}>
                               {!isOwn && <span className="chat-bubble-sender">{activeSelectedUser.name || activeSelectedUser.email}</span>}
 
@@ -2560,7 +2647,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </motion.div>
                         );
                       })}
                       {isTyping && (
@@ -2642,44 +2729,54 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 </div>
               )}
             </main>
-          </>
-        ) : activeTab === "status" ? (
-          <StatusPage
-            user={user}
-            users={users}
-            statusText={statusText}
-            setStatusText={setStatusText}
-            statusFile={statusFile}
-            setStatusFile={setStatusFile}
-            isEditingStatus={isEditingStatus}
-            setIsEditingStatus={setIsEditingStatus}
-            statusUploading={statusUploading}
-            handleStatusUpdate={handleStatusUpdate}
-            viewingStatusUser={viewingStatusUser}
-            setViewingStatusUser={setViewingStatusUser}
-            SERVER_URL={SERVER_URL}
-            onStatusLike={handleStatusLike}
-            onStatusView={handleStatusView}
-            onViewMyStatus={() => setViewingStatusUser(user)}
-          />
-
-        ) : activeTab === "calls" ? (
-          <CallsPanel contacts={callContacts} callHistory={callRecords} onStartCall={handleStartCall} />
-        ) : (
-          <SettingsPanel
-            user={user}
-            draft={settingsDraft}
-            onDraftChange={handleDraftChange}
-            onSave={handleSaveSettings}
-            onOpenProfile={() => handleOpenProfileModal(user, true)}
-            onLogout={handleLogout}
-            saving={settingsSaving}
-            theme={theme}
-            toggleTheme={toggleTheme}
-            stats={settingsStats}
-            onBack={() => setActiveTab("chats")}
-          />
-        )}
+            </motion.div>
+          ) : activeTab === "status" ? (
+            <motion.div
+              key="status"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="chat-full-panel"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <StatusPage
+                user={user}
+                users={users}
+                statusText={statusText}
+                setStatusText={setStatusText}
+                statusFile={statusFile}
+                setStatusFile={setStatusFile}
+                isEditingStatus={isEditingStatus}
+                setIsEditingStatus={setIsEditingStatus}
+                statusUploading={statusUploading}
+                handleStatusUpdate={handleStatusUpdate}
+                viewingStatusUser={viewingStatusUser}
+                setViewingStatusUser={setViewingStatusUser}
+                SERVER_URL={SERVER_URL}
+                onStatusLike={handleStatusLike}
+                onStatusView={handleStatusView}
+                onViewMyStatus={() => setViewingStatusUser(user)}
+              />
+            </motion.div>
+          ) : activeTab === "calls" ? (
+            <CallsPanel key="calls" contacts={callContacts} callHistory={callRecords} onStartCall={handleStartCall} />
+          ) : (
+            <SettingsPanel
+              key="settings"
+              user={user}
+              draft={settingsDraft}
+              onDraftChange={handleDraftChange}
+              onSave={handleSaveSettings}
+              onOpenProfile={() => handleOpenProfileModal(user, true)}
+              onLogout={handleLogout}
+              saving={settingsSaving}
+              theme={theme}
+              toggleTheme={toggleTheme}
+              stats={settingsStats}
+              onBack={() => setActiveTab("chats")}
+            />
+          )}
+        </AnimatePresence>
       </section>
 
 
