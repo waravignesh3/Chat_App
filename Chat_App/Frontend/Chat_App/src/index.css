@@ -7,55 +7,116 @@
 
 /* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
-  /* Core Pop Gradients */
-  --gradient-primary:   linear-gradient(135deg, #FF6A00, #EE0979);
-  --gradient-secondary: linear-gradient(135deg, #00C9FF, #92FE9D);
-  --gradient-accent:    linear-gradient(135deg, #F7971E, #FFD200);
+  /* Modern Dynamic Glassmorphism Colors */
+  --wa-green:        #8B5CF6; /* Vibrant Violet */
+  --wa-green-dark:   #6D28D9; /* Deep Violet */
+  --wa-green-deeper: #4C1D95; /* Darker Violet */
+  --wa-teal:         #06B6D4; /* Cyan */
+  --wa-teal-dark:    #0891B2; /* Deep Cyan */
+  --wa-pink:         #EC4899; /* Pink */
+  --wa-rose:         #F43F5E; /* Rose */
 
-  /* Semantic Gradient Mapping */
-  --wa-bg:           var(--gradient-primary);
-  --wa-panel:        rgba(15, 23, 42, 0.82);
-  --wa-surface:      rgba(30, 41, 59, 0.5);
+  /* Dark Mode Surfaces (Highly Modern) */
+  --wa-bg:           #0B0F19; /* Very dark rich blue/black */
+  --wa-panel:        #151B2B; /* Dark elegant panel */
+  --wa-sidebar:      #0D121F; /* Slightly lighter than bg */
+  --wa-input-bg:     #1E2638; /* Input fields */
   --wa-border:       rgba(255, 255, 255, 0.08);
-  
-  /* Buttons & Interaction */
-  --wa-btn-primary:  var(--gradient-secondary);
-  --wa-btn-accent:   var(--gradient-accent);
-  --wa-hover:        rgba(255, 255, 255, 0.08);
-  --wa-active:       rgba(255, 255, 255, 0.12);
-  
-  /* Typography */
-  --wa-text:         #FFFFFF;
-  --wa-text-muted:   #CBD5E1;
-  --wa-text-faint:   #94A3B8;
-  
-  /* Fixed Colors */
-  --wa-teal:         #00C9FF;
-  --wa-green:        #25D366;
-  --wa-danger:       #FF5449;
-  
-  /* Radii */
-  --wa-radius-sm:  8px;
-  --wa-radius-md:  16px;
-  --wa-radius-lg:  24px;
-  --wa-radius-xl:  32px;
+  --wa-hover:        rgba(139, 92, 246, 0.15); /* Violet tint hover */
+  --wa-active:       rgba(139, 92, 246, 0.25);
 
-  /* Shadows */
-  --wa-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.3);
+  /* Text */
+  --wa-text:         #F8FAFC;
+  --wa-text-muted:   #94A3B8;
+  
+  /* High Contrast Typography */
+  --wa-text:         #FFFFFF; /* Pure white for maximum readability */
+  --wa-text-muted:   #B6B3D6; /* Light violet-slate for secondary text */
+  --wa-text-faint:   #7A759E; /* Subtle but readable */
+  
+  /* Modern Accent Colors */
+  --wa-teal:         #38BDF8; /* Sky Blue accent instead of basic teal */
+  --wa-teal-dark:    #0284C7;
+  --wa-green:        #34D399; /* Vibrant neon emerald */
+  --wa-red:          #FB7185; /* Soft rose red */
+  
+  /* High-Visibility Chat Bubbles */
+  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%); /* Violet to Sky Blue */
+  --wa-bubble-other: #231F3F; /* Distinctive dark violet-blue */
+  --wa-bubble-text:  #FFFFFF; /* Absolute white text for perfect contrast */
+  
+  /* Modern Depth */
+  --wa-shadow-sm:    0 2px 8px rgba(0,0,0,0.4);
+  --wa-shadow-md:    0 8px 24px rgba(0,0,0,0.5);
+  --wa-shadow-lg:    0 16px 48px rgba(139, 92, 246, 0.15); /* Soft violet glow */
+
+  /* Semantic */
+  --wa-danger:       #EF4444;
+  --wa-warning:      #F59E0B;
+  --wa-info:         #3B82F6;
+  --wa-success:      #10B981;
+
+  /* Radii */
+  --wa-radius-sm:  6px;
+  --wa-radius-md:  12px;
+  --wa-radius-lg:  20px;
+  --wa-radius-xl:  28px;
+  --wa-radius-full: 9999px;
+
+  /* Typography */
+  --wa-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --wa-font-size-xs:  11px;
+  --wa-font-size-sm:  13px;
+  --wa-font-size-base: 14.5px;
+  --wa-font-size-md:  15px;
+  --wa-font-size-lg:  17px;
+  --wa-font-size-xl:  20px;
+
+  /* Spacing */
+  --wa-space-1: 4px;
+  --wa-space-2: 8px;
+  --wa-space-3: 12px;
+  --wa-space-4: 16px;
+  --wa-space-5: 20px;
+  --wa-space-6: 24px;
+
+  /* Transitions */
+  --wa-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --wa-transition-base:   0.25s ease;
+  --wa-transition-slow:   0.4s ease;
+
+  /* Z-index scale */
+  --wa-z-base:    1;
+  --wa-z-sidebar: 10;
+  --wa-z-header:  20;
+  --wa-z-overlay: 100;
+  --wa-z-modal:   200;
+  --wa-z-toast:   99999 !important;
 }
 
+/* ─── Ultra Modern Light Mode (Lavender Snow) ─── */
 body.theme-light {
-  --wa-bg:           var(--gradient-primary);
-  --wa-panel:        rgba(255, 255, 255, 0.92);
-  --wa-surface:      rgba(241, 245, 249, 0.8);
-  --wa-border:       rgba(15, 23, 42, 0.08);
+  --wa-bg:           #F4F4F9; /* Very light lavender-grey */
+  --wa-panel:        #FFFFFF; /* Pure white */
+  --wa-sidebar:      #FAFAFC; /* Subtle separation */
+  --wa-input-bg:     #F0F0F6; /* Input contrast */
+  --wa-border:       rgba(139, 92, 246, 0.1); /* Subtle violet border */
+  --wa-hover:        rgba(139, 92, 246, 0.08); 
+  --wa-active:       rgba(139, 92, 246, 0.15);
   
-  --wa-text:         #0F172A;
-  --wa-text-muted:   #475569;
-  --wa-text-faint:   #64748B;
+  /* High Contrast Typography */
+  --wa-text:         #101828; /* Deepest slate for maximum contrast */
+  --wa-text-muted:   #475467; /* Readable slate */
+  --wa-text-faint:   #98A2B3;
   
-  --wa-hover:        rgba(15, 23, 42, 0.04);
-  --wa-active:       rgba(15, 23, 42, 0.08);
+  /* Chat Bubbles */
+  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  --wa-bubble-other: #FFFFFF;
+  --wa-bubble-text:  #FFFFFF;
+  
+  --wa-shadow-sm:    0 2px 6px rgba(139, 92, 246, 0.05);
+  --wa-shadow-md:    0 8px 20px rgba(139, 92, 246, 0.08);
+  --wa-shadow-lg:    0 16px 40px rgba(139, 92, 246, 0.12);
 }
 
 /* ─── Global Reset ─── */

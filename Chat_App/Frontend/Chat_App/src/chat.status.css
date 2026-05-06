@@ -9,7 +9,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--gradient-primary);
+  background: var(--wa-bg, #0F172A);
   overflow-y: auto;
   animation: fadeIn 0.2s ease both;
 }
@@ -20,8 +20,8 @@
   align-items: baseline;
   gap: 10px;
   padding: 16px 20px 12px;
-  background: var(--wa-panel);
-  border-bottom: 1px solid var(--wa-border);
+  background: var(--wa-panel, #1E293B);
+  border-bottom: 1px solid var(--wa-border, rgba(148,163,184,0.12));
   position: sticky;
   top: 0;
   z-index: 10;
@@ -31,13 +31,13 @@
 .status-page-header h3 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--wa-text);
+  color: var(--wa-text, #F1F5F9);
   margin: 0;
 }
 
 .status-page-header span {
   font-size: 0.78rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #94A3B8);
 }
 
 /* ─── Body (scrollable) ─── */
@@ -55,14 +55,14 @@
   align-items: center;
   gap: 14px;
   padding: 16px 20px;
-  background: var(--wa-panel);
-  border-bottom: 1px solid var(--wa-border);
+  background: var(--wa-panel, #1E293B);
+  border-bottom: 1px solid var(--wa-border, rgba(99,102,241,0.12));
   cursor: pointer;
   transition: background var(--wa-transition-fast);
 }
 
 .status-my-card:hover {
-  background: var(--wa-hover);
+  background: rgba(99,102,241,0.08);
 }
 
 .status-my-avatar-col { flex-shrink: 0; }
@@ -78,7 +78,7 @@
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 2.5px solid var(--wa-secondary);
+  border: 2.5px solid var(--wa-green, #6366F1);
   pointer-events: none;
   animation: pulseRing 2s ease-in-out infinite;
 }
@@ -97,13 +97,13 @@
   display: block;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--wa-text);
+  color: var(--wa-text, #F1F5F9);
   margin-bottom: 3px;
 }
 
 .status-my-info p {
   font-size: 0.8rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -134,28 +134,28 @@
 }
 
 .status-action-btn.media-btn {
-  background: rgba(var(--wa-secondary-rgb), 0.15);
-  color: var(--wa-secondary);
+  background: rgba(37,211,102,0.15);
+  color: var(--wa-green, #25D366);
 }
 
 .status-action-btn.media-btn:hover {
-  background: rgba(var(--wa-secondary-rgb), 0.25);
+  background: rgba(37,211,102,0.25);
 }
 
 .status-action-btn.text-btn {
-  background: rgba(var(--wa-primary-rgb), 0.15);
-  color: var(--wa-primary);
+  background: rgba(0,168,132,0.15);
+  color: var(--wa-teal, #00a884);
 }
 
 .status-action-btn.text-btn:hover {
-  background: rgba(var(--wa-primary-rgb), 0.25);
+  background: rgba(0,168,132,0.25);
 }
 
 /* ─── Text Status Composer ─── */
 .status-text-composer {
   margin: 12px 16px;
-  background: var(--wa-input-bg);
-  border: 1.5px solid rgba(var(--wa-secondary-rgb), 0.25);
+  background: var(--wa-input-bg, #2a3942);
+  border: 1.5px solid rgba(37,211,102,0.25);
   border-radius: 16px;
   overflow: hidden;
   animation: slideDown 0.2s ease both;
@@ -172,7 +172,7 @@
   border: none;
   outline: none;
   padding: 14px 16px 10px;
-  color: var(--wa-text);
+  color: var(--wa-text, #e9edef);
   font-size: 0.95rem;
   line-height: 1.5;
   font-family: inherit;
@@ -180,7 +180,7 @@
 }
 
 .status-text-composer textarea::placeholder {
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 .status-composer-footer {
@@ -193,7 +193,7 @@
 
 .status-char-count {
   font-size: 0.75rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 .status-composer-actions {
@@ -205,8 +205,8 @@
   padding: 7px 16px;
   border-radius: 999px;
   background: transparent;
-  border: 1px solid var(--wa-border);
-  color: var(--wa-text-muted);
+  border: 1px solid var(--wa-border, rgba(255,255,255,0.12));
+  color: var(--wa-text-muted, #8696a0);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -217,7 +217,7 @@
 .status-post-btn {
   padding: 7px 20px;
   border-radius: 999px;
-  background: var(--gradient-secondary);
+  background: var(--wa-green, #25D366);
   color: #fff;
   font-size: 0.82rem;
   font-weight: 700;
@@ -226,7 +226,7 @@
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .status-post-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: #1ebd57;
   transform: translateY(-1px);
 }
 .status-post-btn:disabled {
@@ -245,7 +245,7 @@
   padding: 10px 20px 6px;
   font-size: 0.73rem;
   font-weight: 700;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -274,8 +274,8 @@
 }
 
 .status-contact-card.viewing {
-  background: rgba(var(--wa-secondary-rgb), 0.08);
-  border-left: 3px solid var(--wa-secondary);
+  background: rgba(0,168,132,0.08);
+  border-left: 3px solid var(--wa-teal, #00a884);
 }
 
 .status-avatar-ring-wrap {
@@ -287,7 +287,7 @@
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 2.5px solid var(--wa-secondary);
+  border: 2.5px solid var(--wa-green, #25D366);
   pointer-events: none;
 }
 
@@ -300,7 +300,7 @@
   display: block;
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--wa-text);
+  color: var(--wa-text, #e9edef);
   margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -309,13 +309,13 @@
 
 .status-contact-info span {
   font-size: 0.75rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 .status-contact-preview {
   width: 100%;
   font-size: 0.78rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
   margin: 4px 0 0 68px;
   font-style: italic;
 }
@@ -333,22 +333,22 @@
 
 .status-empty-state p {
   font-size: 0.92rem;
-  color: var(--wa-text);
+  color: var(--wa-text, #e9edef);
   margin: 0;
   font-weight: 500;
 }
 
 .status-empty-state span {
   font-size: 0.78rem;
-  color: var(--wa-text-muted);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 /* ─── Inline Status Viewer Panel ─── */
 .status-viewer-panel {
   margin: 12px 16px 0;
   border-radius: 18px;
-  background: var(--gradient-accent);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--wa-panel, #202c33);
+  border: 1px solid var(--wa-border, rgba(255,255,255,0.07));
   overflow: hidden;
   animation: slideUp 0.22s ease both;
 }
@@ -358,7 +358,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.06));
 }
 
 .status-viewer-topbar .status-viewer-meta {
@@ -369,12 +369,12 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #000;
+  color: var(--wa-text, #e9edef);
 }
 
 .status-viewer-topbar .status-viewer-meta span {
   font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 .status-viewer-close-btn {
@@ -384,14 +384,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--wa-text-muted, #8696a0);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 .status-viewer-close-btn:hover {
-  background: rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.08);
+  color: var(--wa-text, #e9edef);
 }
 
 .status-viewer-media-wrap {
@@ -413,8 +414,8 @@
 .status-viewer-caption-bar {
   padding: 12px 16px;
   font-size: 0.88rem;
-  color: #000;
-  background: rgba(255,255,255,0.1);
+  color: var(--wa-text, #e9edef);
+  background: rgba(0,0,0,0.3);
   text-align: center;
 }
 
@@ -434,11 +435,11 @@
 }
 
 .status-share-modal {
-  background: var(--gradient-accent);
+  background: var(--wa-panel, #202c33);
   border-radius: 20px;
   width: 100%;
   max-width: 420px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
   overflow: hidden;
   animation: slideUp 0.25s cubic-bezier(0.34, 1.3, 0.64, 1) both;
@@ -449,14 +450,14 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.07));
 }
 
 .status-share-header h3 {
   flex: 1;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #000;
+  color: var(--wa-text, #e9edef);
   margin: 0;
   text-align: center;
 }
@@ -468,13 +469,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--wa-text-muted, #8696a0);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.status-share-close:hover { background: rgba(0,0,0,0.08); }
+.status-share-close:hover { background: rgba(255,255,255,0.08); }
 
 .status-share-preview {
   display: flex;
@@ -493,16 +494,16 @@
 
 .status-share-caption-row {
   padding: 12px 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--wa-border, rgba(255,255,255,0.06));
 }
 
 .status-share-caption-input {
   width: 100%;
-  background: rgba(255,255,255,0.2);
+  background: var(--wa-input-bg, #2a3942);
   border: 1.5px solid transparent;
   border-radius: 12px;
   padding: 10px 14px;
-  color: #000;
+  color: var(--wa-text, #e9edef);
   font-size: 0.9rem;
   outline: none;
   font-family: inherit;
@@ -510,11 +511,11 @@
 }
 
 .status-share-caption-input:focus {
-  border-color: rgba(0,0,0,0.3);
+  border-color: var(--wa-teal, #00a884);
 }
 
 .status-share-caption-input::placeholder {
-  color: rgba(0,0,0,0.5);
+  color: var(--wa-text-muted, #8696a0);
 }
 
 .status-share-footer {
@@ -529,19 +530,19 @@
   gap: 8px;
   padding: 12px 32px;
   border-radius: 999px;
-  background: var(--gradient-secondary);
+  background: linear-gradient(135deg, #25D366, #128C7E);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 700;
   border: none;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-  box-shadow: 0 4px 16px rgba(0, 201, 255, 0.35);
+  box-shadow: 0 4px 16px rgba(37,211,102,0.35);
 }
 
 .status-share-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 201, 255, 0.45);
+  box-shadow: 0 8px 24px rgba(37,211,102,0.45);
 }
 
 .status-share-submit-btn:disabled {

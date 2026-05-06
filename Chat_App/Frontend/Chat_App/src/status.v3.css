@@ -24,12 +24,12 @@
   max-width: 450px;
   height: 95%;
   max-height: 850px;
-  background: var(--gradient-primary);
+  background: var(--wa-bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
 @media (max-width: 480px) {
@@ -62,7 +62,7 @@
 
 .status-v3-progress-fill {
   height: 100%;
-  background: var(--wa-text);
+  background: #fff;
   width: 0;
 }
 
@@ -90,7 +90,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid var(--wa-secondary); /* Dynamic accent ring */
+  border: 2px solid #00a884; /* Hello Hub teal ring */
   object-fit: cover;
   padding: 2px;
 }
@@ -99,20 +99,20 @@
 .status-ring {
   position: absolute;
   inset: -3px;
-  border: 2px solid var(--wa-secondary);
+  border: 2px solid #00a884;
   border-radius: 50%;
   animation: status-pulse 2s infinite;
 }
 
 .status-ring.seen {
-  border-color: var(--wa-text-muted);
+  border-color: #8696a0;
   animation: none;
 }
 
 .status-ring.active {
-  border-color: var(--wa-secondary);
+  border-color: #00a884;
   animation: status-pulse 2s infinite;
-  box-shadow: 0 0 0 2px rgba(var(--wa-secondary-rgb), 0.25);
+  box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.25);
 }
 
 @keyframes status-pulse {
@@ -124,7 +124,7 @@
 .status-v3-meta {
   display: flex;
   flex-direction: column;
-  color: var(--wa-text);
+  color: #fff;
 }
 
 .status-v3-name {
@@ -146,7 +146,7 @@
 .status-v3-icon-btn {
   background: none;
   border: none;
-  color: var(--wa-text);
+  color: #fff;
   cursor: pointer;
   padding: 6px;
   border-radius: 50%;
@@ -245,7 +245,7 @@
 /* ─── Footer ─── */
 .status-v3-footer {
   height: 70px;
-  background: var(--gradient-accent);
+  background: var(--wa-panel);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -265,7 +265,7 @@
 }
 
 .status-v3-like-btn.active {
-  color: var(--wa-danger);
+  color: #ff4b4b;
 }
 
 .status-v3-like-btn:active {
@@ -275,18 +275,18 @@
 .status-v3-reply-mock {
   flex: 1;
   height: 40px;
-  background: rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.1);
   border-radius: 20px;
   display: flex;
   align-items: center;
   padding: 0 20px;
-  color: rgba(0,0,0,0.6);
+  color: rgba(255,255,255,0.6);
   font-size: 14px;
 }
 
 /* ─── Delete button in header ─── */
 .status-v3-delete-btn {
-  color: var(--wa-danger) !important;
+  color: #ff4b4b !important;
   opacity: 0.85 !important;
 }
 .status-v3-delete-btn:hover {
@@ -326,11 +326,11 @@
   align-items: center;
   justify-content: center;
   padding: 40px 32px;
-  background: linear-gradient(135deg, var(--wa-input-bg) 0%, var(--wa-bg) 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d1f3c 100%);
 }
 
 .status-v3-text-card p {
-  color: var(--wa-text);
+  color: #fff;
   font-size: clamp(20px, 5vw, 32px);
   font-weight: 600;
   text-align: center;
@@ -371,7 +371,7 @@
 }
 
 .status-v3-delete-icon-big {
-  color: var(--wa-danger);
+  color: #ff4b4b;
   margin-bottom: 4px;
 }
 
@@ -420,13 +420,12 @@
 }
 
 .status-v3-delete-confirm-btn {
-  background: var(--gradient-secondary);
+  background: #ff4b4b;
   color: #fff;
 }
 .status-v3-delete-confirm-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 201, 255, 0.4);
+  background: #e63636;
+  transform: scale(1.03);
 }
 .status-v3-delete-confirm-btn:disabled,
 .status-v3-delete-cancel-btn:disabled {
@@ -443,7 +442,7 @@
   transform: translateX(2px);
 }
 .status-my-card.clickable:focus-visible {
-  outline: 2px solid var(--wa-secondary);
+  outline: 2px solid #00a884;
   outline-offset: 2px;
 }
 
@@ -461,12 +460,12 @@
 .status-v3-viewers-sheet {
   width: 100%;
   max-height: 70%;
-  background: var(--gradient-accent);
+  background: var(--wa-panel);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -10px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
   overflow: hidden;
 }
 
@@ -487,7 +486,7 @@
 }
 
 .status-v3-sheet-header h3 {
-  color: var(--wa-text);
+  color: #fff;
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -496,7 +495,7 @@
 .status-v3-sheet-close {
   background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: var(--wa-text);
+  color: #fff;
   padding: 8px;
   border-radius: 50%;
   cursor: pointer;
@@ -545,18 +544,18 @@
 }
 
 .status-v3-viewer-name {
-  color: var(--wa-text);
+  color: #e9edef;
   font-size: 16px;
   font-weight: 500;
 }
 
 .status-v3-viewer-email {
-  color: var(--wa-text-muted);
+  color: #8696a0;
   font-size: 13px;
 }
 
 .status-v3-viewer-action {
-  color: var(--wa-danger);
+  color: #f43f5e;
 }
 
 .status-v3-sheet-empty {
