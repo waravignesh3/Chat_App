@@ -1524,18 +1524,17 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     // Use a small timeout to ensure DOM has rendered new messages
     const timer = setTimeout(() => {
       const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-      const nearBottom = distFromBottom < 120;
+      const nearBottom = distFromBottom < 150;
       
       if (shouldScrollRef.current || nearBottom) {
-        // Use "auto" (instant) scroll when switching users/opening chat
-        // Use "smooth" scroll when receiving new messages while already at bottom
-        bottomRef.current?.scrollIntoView({ 
-          behavior: shouldScrollRef.current ? "auto" : "smooth", 
-          block: "end" 
+        // Force scroll to absolute bottom
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: shouldScrollRef.current ? "auto" : "smooth"
         });
       }
       shouldScrollRef.current = false;
-    }, 60);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [messages, selectedUser, isTyping]);
