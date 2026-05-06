@@ -293,7 +293,7 @@ body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color
 }
 
 .modern-toggle input[type="checkbox"]:checked::before {
-  left: 22px;
+  left: 22px; /* 44px - 2px - 18px - 2px = 22px, perfectly aligned */
 }
 
 .modern-icon-btn {

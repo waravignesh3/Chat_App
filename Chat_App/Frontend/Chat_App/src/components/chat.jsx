@@ -1695,11 +1695,29 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         });
       }
     }
-    const base = users.filter((u) => {
-      if (!u?.email || u.email === user?.email) return false;
-      const q = search.toLowerCase();
-      return u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q);
+
+    // Combine current users list with any historical contacts from messages
+    const allKnownEmails = new Set(users.map(u => u.email));
+    const historyEmails = Array.from(userMetadata.keys());
+    const combinedBase = [...users];
+    
+    historyEmails.forEach(email => {
+      if (!allKnownEmails.has(email)) {
+        combinedBase.push({
+          email,
+          name: email.split("@")[0],
+          isOnline: false,
+          lastSeen: ""
+        });
+      }
     });
+
+    const q = search.toLowerCase();
+    const base = combinedBase.filter((u) => {
+      if (!u?.email || u.email === user?.email) return false;
+      return u.email.toLowerCase().includes(q) || (u.name || "").toLowerCase().includes(q);
+    });
+
     return base.map(u => ({ ...u, lastMsg: userMetadata.get(u.email) })).sort((a, b) => {
       const aHasUnread = (unreadMap[a.email]?.count || 0) > 0;
       const bHasUnread = (unreadMap[b.email]?.count || 0) > 0;
@@ -1974,11 +1992,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     }
     socketRef.current?.emit("private_message", { to: activeSelectedUser.email, message: msgData });
     socketRef.current?.emit("stop_typing", { to: activeSelectedUser.email, from: user.email });
-    setMessages((prev) => [...prev, normalizeMessage(msgData)]);
+    
+    const normalized = normalizeMessage(msgData);
+    setMessages((prev) => [...prev, normalized]);
     setFreshMessageId(clientTempId);
     setMessage("");
     setIsTyping(false);
     setReplyingTo(null);
+
+    // If this is a new contact (not in users list), add them to local state to ensure they show up in sidebar
+    setUsers(prev => {
+      if (prev.some(u => u.email === activeSelectedUser.email)) return prev;
+      return [...prev, activeSelectedUser];
+    });
   };
 
   const handleMessageKeyDown = (event) => {
@@ -2504,7 +2530,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                             ? <span className="typing-status"><span className="typing-dots-mini"><span/><span/><span/></span> typing…</span>
                             : activeSelectedUser.isOnline
                             ? <span className="online-now-status"><span className="online-pulse-dot"/>Online</span>
-                            : `last seen ${formatLastSeen(activeSelectedUser.lastSeen)}`}
+                            : (activeSelectedUser.lastSeen ? `last seen ${formatLastSeen(activeSelectedUser.lastSeen)}` : "Offline")}
                         </p>
                       </div>
                     </div>
