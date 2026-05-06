@@ -62,8 +62,14 @@ function getDateLabel(timeStr) {
 }
 
 const AVATAR_COLORS = [
-  "#4f46e5", "#0891b2", "#059669", "#d97706",
-  "#dc2626", "#7c3aed", "#db2777", "#0284c7",
+  "#6366f1", // Indigo
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#f43f5e", // Rose
+  "#0ea5e9", // Sky
+  "#06b6d4", // Cyan
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
 ];
 
 function hashColor(str = "") {

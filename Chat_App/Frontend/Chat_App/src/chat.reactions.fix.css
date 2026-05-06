@@ -17,34 +17,26 @@
   gap: 3px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: var(--wa-input-bg, #2a3942);
-  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  background: var(--wa-gradient-panel);
+  border: 1px solid var(--wa-border);
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
-  transition: background var(--wa-transition-fast), border-color var(--wa-transition-fast), transform var(--wa-transition-fast);
+  transition: all var(--wa-transition-fast);
 }
 
 .chat-reaction-pill:hover {
-  background: #354852;
+  background: var(--wa-gradient-glass);
   border-color: rgba(255,255,255,0.2);
   transform: scale(1.08);
 }
 
 /* User's own reaction highlighted */
 .chat-reaction-pill.i-reacted {
-  background: rgba(0,168,132,0.15);
-  border-color: rgba(0,168,132,0.4);
-}
-.chat-reaction-pill.i-reacted:hover {
-  background: rgba(0,168,132,0.22);
-}
-
-.chat-reaction-count {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--wa-text-muted, #8696a0);
+  background: var(--wa-gradient-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 .chat-reaction-pill.i-reacted .chat-reaction-count {
-  color: var(--wa-teal, #00a884);
+  color: #fff;
 }

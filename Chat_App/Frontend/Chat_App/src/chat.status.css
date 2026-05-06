@@ -9,7 +9,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--wa-bg, #0F172A);
+  background: var(--wa-gradient-dark);
   overflow-y: auto;
   animation: fadeIn 0.2s ease both;
 }
@@ -20,8 +20,8 @@
   align-items: baseline;
   gap: 10px;
   padding: 16px 20px 12px;
-  background: var(--wa-panel, #1E293B);
-  border-bottom: 1px solid var(--wa-border, rgba(148,163,184,0.12));
+  background: var(--wa-gradient-panel);
+  border-bottom: 1px solid var(--wa-border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -55,14 +55,14 @@
   align-items: center;
   gap: 14px;
   padding: 16px 20px;
-  background: var(--wa-panel, #1E293B);
-  border-bottom: 1px solid var(--wa-border, rgba(99,102,241,0.12));
+  background: var(--wa-gradient-panel);
+  border-bottom: 1px solid var(--wa-border);
   cursor: pointer;
   transition: background var(--wa-transition-fast);
 }
 
 .status-my-card:hover {
-  background: rgba(99,102,241,0.08);
+  background: var(--wa-gradient-glass);
 }
 
 .status-my-avatar-col { flex-shrink: 0; }
@@ -78,7 +78,7 @@
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 2.5px solid var(--wa-green, #6366F1);
+  border: 2.5px solid var(--wa-primary);
   pointer-events: none;
   animation: pulseRing 2s ease-in-out infinite;
 }
@@ -134,8 +134,9 @@
 }
 
 .status-action-btn.media-btn {
-  background: rgba(37,211,102,0.15);
-  color: var(--wa-green, var(--wa-secondary));
+  background: var(--wa-gradient-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .status-action-btn.media-btn:hover {
@@ -143,8 +144,9 @@
 }
 
 .status-action-btn.text-btn {
-  background: rgba(0,168,132,0.15);
-  color: var(--wa-teal, var(--wa-secondary));
+  background: var(--wa-gradient-glass);
+  color: var(--wa-accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .status-action-btn.text-btn:hover {
@@ -154,11 +156,12 @@
 /* ─── Text Status Composer ─── */
 .status-text-composer {
   margin: 12px 16px;
-  background: var(--wa-input-bg, #2a3942);
-  border: 1.5px solid rgba(37,211,102,0.25);
+  background: var(--wa-gradient-panel);
+  border: 1.5px solid rgba(99, 102, 241, 0.25);
   border-radius: 16px;
   overflow: hidden;
   animation: slideDown 0.2s ease both;
+  box-shadow: var(--wa-shadow-md);
 }
 
 @keyframes slideDown {

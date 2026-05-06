@@ -50,6 +50,13 @@
   --wa-radius-xl:  28px;
   --wa-radius-full: 9999px;
 
+  /* Gradients — Inspired by Toast popups */
+  --wa-gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --wa-gradient-panel: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  --wa-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+  --wa-gradient-surface: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+  --wa-gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+
   /* Transitions */
   --wa-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --wa-transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -65,6 +72,12 @@ body.theme-light {
   --wa-hover:        rgba(79, 70, 229, 0.08); 
   --wa-active:       rgba(79, 70, 229, 0.15);
   
+  /* Gradients Light Mode */
+  --wa-gradient-dark: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --wa-gradient-panel: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --wa-gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+  --wa-gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
+
   /* Typography */
   --wa-text:         #0F172A; /* Slate 900 */
   --wa-text-muted:   #475467; /* Slate 600 */
@@ -89,20 +102,21 @@ body.theme-light {
 
 html {
   height: 100%;
-  font-size: var(--wa-font-size-base);
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: var(--wa-font);
-  background: var(--wa-bg);
+  font-family: 'Inter', sans-serif;
+  background: var(--wa-gradient-dark);
+  background-attachment: fixed;
   color: var(--wa-text);
   height: 100%;
   overflow-x: hidden;
   line-height: 1.5;
-  transition: background var(--wa-transition-slow), color var(--wa-transition-slow);
+  transition: background var(--wa-transition-base), color var(--wa-transition-base);
 }
 
 #root {
@@ -129,12 +143,13 @@ input, textarea, select {
 }
 
 a {
-  color: var(--wa-teal);
+  color: var(--wa-accent);
   text-decoration: none;
+  transition: color var(--wa-transition-fast);
 }
 
 a:hover {
-  color: var(--wa-green);
+  color: var(--wa-primary);
 }
 
 img {

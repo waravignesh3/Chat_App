@@ -24,12 +24,13 @@
   max-width: 450px;
   height: 95%;
   max-height: 850px;
-  background: var(--wa-bg);
+  background: var(--wa-gradient-dark);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 480px) {
@@ -62,8 +63,9 @@
 
 .status-v3-progress-fill {
   height: 100%;
-  background: var(--wa-text);
+  background: var(--wa-gradient-primary);
   width: 0;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
 }
 
 /* ─── Header ─── */
@@ -90,16 +92,17 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid var(--wa-secondary); /* Dynamic accent ring */
+  border: 2px solid var(--wa-primary);
   object-fit: cover;
   padding: 2px;
+  background: var(--wa-gradient-panel);
 }
 
 /* ─── Story Ring Animation ─── */
 .status-ring {
   position: absolute;
   inset: -3px;
-  border: 2px solid var(--wa-secondary);
+  border: 2px solid var(--wa-primary);
   border-radius: 50%;
   animation: status-pulse 2s infinite;
 }
@@ -110,9 +113,9 @@
 }
 
 .status-ring.active {
-  border-color: var(--wa-secondary);
+  border-color: var(--wa-accent);
   animation: status-pulse 2s infinite;
-  box-shadow: 0 0 0 2px rgba(var(--wa-secondary-rgb), 0.25);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.25);
 }
 
 @keyframes status-pulse {
@@ -169,7 +172,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wa-bg);
+  background: var(--wa-gradient-dark);
 }
 
 .status-v3-bg-blur {

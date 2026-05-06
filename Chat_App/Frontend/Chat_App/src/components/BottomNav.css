@@ -4,12 +4,12 @@
 
 /* ─── Nav Container ─── */
 .bottom-nav {
-  display: none;               /* shown only on mobile */
+  display: flex;               /* visible everywhere */
   align-items: stretch;
-  background: var(--wa-panel, #202c33);
-  border-top: 1px solid var(--wa-border, rgba(255,255,255,0.07));
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -6px 32px rgba(0,0,0,0.4);
+  background: var(--wa-gradient-panel);
+  border-top: 1px solid var(--wa-border);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
   /* ── FIXED at bottom so it never scrolls away ── */
   position: fixed;
   bottom: 0;
@@ -19,8 +19,8 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
   overflow: hidden;
   flex-shrink: 0;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
 }
 
 /* ─── Sliding Active Indicator Bar ─── */
@@ -30,10 +30,11 @@
   left: 0;
   width: 32px;
   height: 3px;
-  background: linear-gradient(90deg, #25D366, #00a884);
+  background: var(--wa-gradient-primary);
   border-radius: 0 0 6px 6px;
   transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
   pointer-events: none;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
 }
 
 /* ─── Nav Item ─── */
@@ -62,7 +63,7 @@
 }
 
 .bottom-nav-item.active {
-  color: var(--wa-green, #25D366);
+  color: var(--wa-accent);
 }
 
 /* Press micro-interaction */
@@ -107,7 +108,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-gradient-primary);
   color: #fff;
   font-size: 0.6rem;
   font-weight: 700;
@@ -115,9 +116,10 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  border: 2px solid var(--wa-panel, #202c33);
+  border: 2px solid var(--wa-panel);
   animation: badgePop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 @keyframes badgePop {
@@ -157,14 +159,12 @@
 
 /* ─── Light Theme ─── */
 body.theme-light .bottom-nav {
-  background: rgba(255,255,255,0.92);
+  background: var(--wa-gradient-panel);
   border-top-color: var(--wa-border);
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.05);
 }
 
-body.theme-light .bottom-nav-item       { color: var(--wa-text-muted); }
-body.theme-light .bottom-nav-item.active { color: var(--wa-green); }
-body.theme-light .bottom-nav-badge      { border-color: var(--wa-panel); }
+body.theme-light .bottom-nav-item.active { color: var(--wa-primary); }
 
 /* ═══════════════════════════════════════════════════════
    OFFLINE / RECONNECTING BANNER
