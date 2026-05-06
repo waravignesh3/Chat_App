@@ -35,15 +35,15 @@
 
 /* Own bubble (green, right side) */
 .chat-bubble.own {
-  background: var(--wa-bubble-own, #005c4b);
-  color: var(--wa-bubble-text, #e9edef);
+  background: var(--wa-bubble-own, #6366F1);
+  color: var(--wa-bubble-text, #F1F5F9);
   border-top-right-radius: 2px;
 }
 
 /* Received bubble (dark panel, left side) */
 .chat-bubble:not(.own) {
-  background: var(--wa-bubble-other, #202c33);
-  color: var(--wa-bubble-text, #e9edef);
+  background: var(--wa-bubble-other, #1E293B);
+  color: var(--wa-bubble-text, #F1F5F9);
   border-top-left-radius: 2px;
 }
 
@@ -62,7 +62,7 @@
   height: 0;
   border-style: solid;
   border-width: 8px 0 0 8px;
-  border-color: transparent transparent transparent var(--wa-bubble-own, #005c4b);
+  border-color: transparent transparent transparent var(--wa-bubble-own, #6366F1);
 }
 
 /* Bubble tail — received */
@@ -75,7 +75,7 @@
   height: 0;
   border-style: solid;
   border-width: 8px 8px 0 0;
-  border-color: transparent var(--wa-bubble-other, #202c33) transparent transparent;
+  border-color: transparent var(--wa-bubble-other, #1E293B) transparent transparent;
 }
 
 /* Sender name (received bubbles) */
@@ -83,7 +83,7 @@
   display: block;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, #06B6D4);
   margin-bottom: 2px;
   line-height: 1.2;
 }
@@ -128,16 +128,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wa-panel, #202c33);
-  color: var(--wa-text-muted, #8696a0);
+  background: var(--wa-panel, #1E293B);
+  color: var(--wa-text-muted, #94A3B8);
   box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   transition: background var(--wa-transition-fast), color var(--wa-transition-fast), transform var(--wa-transition-fast);
   flex-shrink: 0;
 }
 
 .chat-bubble-action-btn:hover {
-  background: var(--wa-input-bg, #2a3942);
-  color: var(--wa-text, #e9edef);
+  background: var(--wa-input-bg, #1E3A5F);
+  color: var(--wa-text, #F1F5F9);
   transform: scale(1.12);
 }
 
@@ -170,8 +170,8 @@
   align-items: center;
   gap: 4px;
   padding: 8px 12px;
-  background: var(--wa-panel, #202c33);
-  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  background: var(--wa-panel, #1E293B);
+  border: 1px solid var(--wa-border, rgba(99,102,241,0.15));
   border-radius: 999px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   animation: fadeIn 0.15s ease both;
@@ -203,7 +203,7 @@
 .chat-reply-quote-bar {
   width: 3px;
   flex-shrink: 0;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-teal, #06B6D4);
 }
 .chat-reply-quote.own .chat-reply-quote-bar { background: rgba(255,255,255,0.4); }
 
@@ -216,7 +216,7 @@
   display: block;
   font-size: 0.76rem;
   font-weight: 600;
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, #06B6D4);
   margin-bottom: 2px;
 }
 .chat-reply-quote.own .chat-reply-quote-name { color: rgba(255,255,255,0.7); }
@@ -257,7 +257,7 @@
   color: rgba(255,255,255,0.5);
   flex-shrink: 0;
 }
-.chat-status-icon.read { color: #53bdeb; }
+.chat-status-icon.read { color: #06B6D4; }
 
 /* ─── Typing Indicator ─── */
 .chat-typing-bubble {
@@ -277,7 +277,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--wa-text-muted, #8696a0);
+  background: var(--wa-text-muted, #94A3B8);
   display: inline-block;
   animation: typingBounce 1.2s ease-in-out infinite;
 }
@@ -289,7 +289,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  background: var(--wa-input-bg, #2a3942);
+  background: var(--wa-input-bg, #1E3A5F);
   border-left: none;
   padding: 8px 12px 8px 0;
   overflow: hidden;
@@ -298,7 +298,7 @@
 
 .chat-reply-banner-bar {
   width: 4px;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-teal, #06B6D4);
   align-self: stretch;
   border-radius: 2px;
   margin-right: 12px;
@@ -311,13 +311,13 @@
   display: block;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, #06B6D4);
   margin-bottom: 2px;
 }
 
 .chat-reply-banner-text {
   font-size: 0.82rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, #94A3B8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -331,13 +331,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, #94A3B8);
   flex-shrink: 0;
   transition: color var(--wa-transition-fast), background var(--wa-transition-fast);
 }
 .chat-reply-banner-close:hover {
-  color: var(--wa-text, #e9edef);
-  background: rgba(255,255,255,0.08);
+  color: var(--wa-text, #F1F5F9);
+  background: rgba(99,102,241,0.12);
 }
 
 /* ─── Composer Notice ─── */
@@ -346,15 +346,15 @@
   font-size: 0.8rem;
   text-align: center;
   background: rgba(0,0,0,0.3);
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, #94A3B8);
 }
-.chat-composer-notice.error { color: #ff5449; }
-.chat-composer-notice.success { color: var(--wa-teal, #00a884); }
+.chat-composer-notice.error { color: #EF4444; }
+.chat-composer-notice.success { color: var(--wa-teal, #06B6D4); }
 
 /* ─── Input Area ─── */
 .chat-input-area {
-  background: var(--wa-panel, #202c33);
-  border-top: 1px solid var(--wa-border, rgba(255,255,255,0.05));
+  background: var(--wa-panel, #1E293B);
+  border-top: 1px solid var(--wa-border, rgba(99,102,241,0.12));
   flex-shrink: 0;
 }
 
@@ -372,13 +372,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, #94A3B8);
   flex-shrink: 0;
   transition: color var(--wa-transition-fast), background var(--wa-transition-fast);
 }
 .chat-input-icon-btn:hover {
-  color: var(--wa-text, #e9edef);
-  background: rgba(255,255,255,0.06);
+  color: var(--wa-text, #F1F5F9);
+  background: rgba(99,102,241,0.12);
 }
 
 .chat-input-wrap textarea {
@@ -387,9 +387,9 @@
   max-height: 160px;
   padding: 11px 14px;
   border-radius: 22px;
-  background: var(--wa-input-bg, #2a3942);
+  background: var(--wa-input-bg, #1E3A5F);
   border: none;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, #F1F5F9);
   font-size: 0.93rem;
   line-height: 1.45;
   resize: none;

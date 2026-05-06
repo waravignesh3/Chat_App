@@ -20,19 +20,19 @@
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  background: var(--wa-panel, #202c33);
-  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.06));
+  background: var(--wa-panel, #1E293B);
+  border-bottom: 1px solid var(--wa-border, rgba(99,102,241,0.12));
   cursor: pointer;
   transition: background var(--wa-transition-fast);
   flex-shrink: 0;
 }
-.chat-pinned-banner:hover { background: #263239; }
+.chat-pinned-banner:hover { background: #2D5A8F; }
 
 .chat-pinned-indicator {
   width: 3px;
   height: 32px;
   border-radius: 2px;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-teal, #06B6D4);
   flex-shrink: 0;
 }
 
@@ -41,14 +41,14 @@
   display: block;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, #06B6D4);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 2px;
 }
 .chat-pinned-copy p {
   font-size: 0.83rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, #94A3B8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -59,8 +59,8 @@
 .chat-ctx-menu {
   position: fixed;
   z-index: 500;
-  background: var(--wa-panel, #202c33);
-  border: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  background: var(--wa-panel, #1E293B);
+  border: 1px solid var(--wa-border, rgba(99,102,241,0.15));
   border-radius: var(--wa-radius-md, 12px);
   padding: 6px;
   box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.5));
@@ -76,17 +76,17 @@
   padding: 9px 12px;
   border-radius: var(--wa-radius-sm, 6px);
   font-size: 0.88rem;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, #F1F5F9);
   transition: background var(--wa-transition-fast);
   text-align: left;
 }
-.chat-ctx-menu-item:hover { background: var(--wa-hover, rgba(255,255,255,0.06)); }
-.chat-ctx-menu-item.danger { color: #ff5449; }
+.chat-ctx-menu-item:hover { background: var(--wa-hover, rgba(99,102,241,0.12)); }
+.chat-ctx-menu-item.danger { color: #EF4444; }
 .chat-ctx-menu-item svg { flex-shrink: 0; }
 
 /* ─── Copy Flash ─── */
 @keyframes copyFlash {
-  0%   { background: rgba(37,211,102,0.25); }
+  0%   { background: rgba(99,102,241,0.25); }
   100% { background: transparent; }
 }
 

@@ -7,30 +7,30 @@
 
 /* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
-  /* Hello Hub Brand Colors */
-  --wa-green:        #25D366;
-  --wa-green-dark:   #128C7E;
-  --wa-green-deeper: #075E54;
-  --wa-teal:         #00a884;
-  --wa-teal-dark:    #008f6f;
+  /* Modern Dynamic Glassmorphism Colors */
+  --wa-green:        #6366F1;
+  --wa-green-dark:   #8B5CF6;
+  --wa-green-deeper: #EC4899;
+  --wa-teal:         #06B6D4;
+  --wa-teal-dark:    #0891B2;
 
   /* Dark Mode Surfaces (default) */
-  --wa-bg:           #0b141a;
-  --wa-panel:        #202c33;
-  --wa-sidebar:      #111b21;
-  --wa-input-bg:     #2a3942;
-  --wa-border:       rgba(255,255,255,0.08);
-  --wa-hover:        rgba(255,255,255,0.05);
-  --wa-active:       rgba(0,168,132,0.12);
+  --wa-bg:           #0F172A;
+  --wa-panel:        #1E293B;
+  --wa-sidebar:      #0F2847;
+  --wa-input-bg:     #1E3A5F;
+  --wa-border:       rgba(148,163,184,0.12);
+  --wa-hover:        rgba(99,102,241,0.08);
+  --wa-active:       rgba(99,102,241,0.15);
 
   /* Text */
-  --wa-text:         #e9edef;
-  --wa-text-muted:   #8696a0;
-  --wa-text-faint:   #4a5568;
+  --wa-text:         #F1F5F9;
+  --wa-text-muted:   #94A3B8;
+  --wa-text-faint:   #64748B;
 
   /* Bubbles */
-  --wa-bubble-own:   #005c4b;
-  --wa-bubble-other: #202c33;
+  --wa-bubble-own:   #6366F1;
+  --wa-bubble-other: #1E293B;
   --wa-bubble-text:  #e9edef;
 
   /* Semantic */

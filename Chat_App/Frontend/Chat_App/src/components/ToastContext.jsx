@@ -14,39 +14,39 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((message, type = 'info', duration = 3000) => {
+  const showToast = useCallback((message, type = 'info', duration = 3000, icon = null) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
+    
+    setToasts((prev) => {
+      const updated = [...prev, { id, message, type, duration, icon }];
+      
+      // Keep only the last 2 toasts (FIFO - remove oldest when new one arrives)
+      if (updated.length > 2) {
+        return updated.slice(-2);
+      }
+      
+      return updated;
+    });
   }, []);
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const visibleToasts = toasts.slice(0, 3);
-  const hasMore = toasts.length > 3;
-
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div className="toast-wrapper">
-        {visibleToasts.map((toast) => (
+        {toasts.map((toast) => (
           <Toast
             key={toast.id}
             message={toast.message}
             type={toast.type}
             duration={toast.duration}
+            icon={toast.icon}
             onClose={() => removeToast(toast.id)}
           />
         ))}
-        {hasMore && (
-          <div className="toast toast-loading">
-            <div className="toast-content">
-              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              <span>Loading more notifications... ({toasts.length - 3} more)</span>
-            </div>
-          </div>
-        )}
       </div>
     </ToastContext.Provider>
   );

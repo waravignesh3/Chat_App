@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════
+   TOAST DEMO COMPONENT STYLES — ToastDemo.css
+═══════════════════════════════════════════════════════ */
+
+.toast-demo-container {
+  padding: 24px;
+  background: var(--wa-bg, #0F172A);
+  border-radius: 16px;
+  border: 1px solid var(--wa-border, rgba(148, 163, 184, 0.12));
+}
+
+.toast-demo-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.toast-demo-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--wa-text, #F1F5F9);
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.toast-demo-header p {
+  font-size: 0.9rem;
+  color: var(--wa-text-muted, #94A3B8);
+  margin: 0;
+}
+
+/* ─── Button Grid ─── */
+.toast-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .toast-demo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ─── Demo Button Base ─── */
+.toast-demo-btn {
+  padding: 10px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--wa-text, #F1F5F9);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: inherit;
+}
+
+.toast-demo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2);
+}
+
+.toast-demo-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── Button Color Variants ─── */
+
+.toast-demo-success {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #C7D2FE;
+}
+
+.toast-demo-success:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.toast-demo-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #FCA5A5;
+}
+
+.toast-demo-error:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.toast-demo-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #FCD34D;
+}
+
+.toast-demo-warning:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.toast-demo-info {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #BFDBFE;
+}
+
+.toast-demo-info:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.toast-demo-signin {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.25);
+  color: #A5F3FC;
+}
+
+.toast-demo-signin:hover {
+  background: rgba(6, 182, 212, 0.18);
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.toast-demo-signout {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.25);
+  color: #DDD6FE;
+}
+
+.toast-demo-signout:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.toast-demo-signup {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.25);
+  color: #F9A8D4;
+}
+
+.toast-demo-signup:hover {
+  background: rgba(236, 72, 153, 0.18);
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
+.toast-demo-theme {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #C7D2FE;
+}
+
+.toast-demo-theme:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.toast-demo-profile {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.25);
+  color: #E9D5FF;
+}
+
+.toast-demo-profile:hover {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+.toast-demo-status {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #BBF7D0;
+}
+
+.toast-demo-status:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.toast-demo-settings {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #BFDBFE;
+}
+
+.toast-demo-settings:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* ─── Info Section ─── */
+.toast-demo-info {
+  padding: 14px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--wa-text-muted, #94A3B8);
+  line-height: 1.8;
+}
+
+.toast-demo-info p {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast-demo-info p::before {
+  content: '•';
+  color: var(--wa-teal, #06B6D4);
+  font-weight: 700;
+  font-size: 1.2em;
+  line-height: 0;
+}

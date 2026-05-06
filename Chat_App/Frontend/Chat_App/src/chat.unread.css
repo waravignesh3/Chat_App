@@ -12,9 +12,9 @@
 }
 
 .chat-unread-separator span {
-  background: rgba(0,168,132,0.12);
-  border: 1px solid rgba(0,168,132,0.25);
-  color: var(--wa-teal, #00a884);
+  background: rgba(99,102,241,0.12);
+  border: 1px solid rgba(99,102,241,0.25);
+  color: var(--wa-teal, #06B6D4);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 14px;
@@ -23,7 +23,7 @@
 
 /* ─── Flash Animation (new message from non-selected user) ─── */
 @keyframes sidebarFlash {
-  0%   { background: rgba(37,211,102,0.18); }
+  0%   { background: rgba(99,102,241,0.18); }
   100% { background: transparent; }
 }
 
@@ -39,9 +39,9 @@
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: var(--wa-green, #25D366);
-  border: 2.5px solid var(--wa-sidebar, #111b21);
-  box-shadow: 0 0 0 1px var(--wa-green, #25D366);
+  background: var(--wa-green, #6366F1);
+  border: 2.5px solid var(--wa-sidebar, #0F2847);
+  box-shadow: 0 0 0 1px var(--wa-green, #6366F1);
 }
 
 /* ─── Tab unread badge (bottom nav) ─── */
@@ -53,7 +53,7 @@
   height: 17px;
   padding: 0 4px;
   border-radius: 999px;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-teal, #06B6D4);
   color: #fff;
   font-size: 0.62rem;
   font-weight: 700;
@@ -65,18 +65,18 @@
 
 /* ─── Sidebar unread count (desktop) ─── */
 .chat-user-card.unread .chat-user-time {
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, #06B6D4);
   font-weight: 600;
 }
 
 .chat-user-card.unread .chat-user-message {
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, #F1F5F9);
   font-weight: 500;
 }
 
 /* ─── Sidebar unread badge bubble ─── */
 .chat-unread-badge {
-  background: var(--wa-green, #25D366);
+  background: var(--wa-green, #6366F1);
   color: #fff;
   min-width: 20px;
   height: 20px;
