@@ -44,23 +44,20 @@ body.theme-light .chat-messages-bg {
   background-image: radial-gradient(circle, rgba(139, 92, 246, 0.4) 1px, transparent 1px);
 }
 
-/* Light mode bubbles */
-body.theme-light .chat-bubble.own {
-  background: var(--wa-bubble-own);
-  color: var(--wa-bubble-text);
-  border: none;
-}
-body.theme-light .chat-bubble.own::after {
-  border-color: transparent transparent transparent #8B5CF6;
-}
-
+/* Light mode bubbles (Same background for both) */
+body.theme-light .chat-bubble.own,
 body.theme-light .chat-bubble:not(.own) {
-  background: var(--wa-bubble-other);
+  background: var(--wa-input-bg);
   color: var(--wa-text);
   border: 1px solid var(--wa-border);
 }
+
+body.theme-light .chat-bubble.own::after {
+  border-color: transparent transparent transparent var(--wa-input-bg);
+}
+
 body.theme-light .chat-bubble:not(.own)::after {
-  border-color: transparent var(--wa-bubble-other) transparent transparent;
+  border-color: transparent var(--wa-input-bg) transparent transparent;
 }
 
 body.theme-light .chat-bubble-meta time { color: var(--wa-text-faint); }
@@ -258,7 +255,7 @@ body.theme-light .chat-messages-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wa-teal, #06B6D4);
+  color: var(--wa-teal, var(--wa-secondary));
   flex-shrink: 0;
   transition: background var(--wa-transition-fast), transform var(--wa-transition-fast);
 }
@@ -286,7 +283,7 @@ body.theme-light .chat-messages-container {
 .settings-save-quick-btn {
   padding: 8px 20px;
   border-radius: 999px;
-  background: var(--wa-teal, #06B6D4);
+  background: var(--wa-teal, var(--wa-secondary));
   color: #fff;
   font-size: 0.85rem;
   font-weight: 600;
@@ -350,7 +347,7 @@ body.theme-light .settings-header { background: #fff; border-bottom-color: #e9ed
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--wa-teal, #06B6D4);
+  color: var(--wa-teal, var(--wa-secondary));
   font-size: 0.78rem;
 }
 
@@ -358,7 +355,7 @@ body.theme-light .settings-header { background: #fff; border-bottom-color: #e9ed
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--wa-green, #6366F1);
+  background: var(--wa-green, var(--wa-primary));
   flex-shrink: 0;
   animation: pulseOnline 2s ease-in-out infinite;
 }
@@ -368,7 +365,7 @@ body.theme-light .settings-header { background: #fff; border-bottom-color: #e9ed
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--wa-teal, #06B6D4);
+  color: var(--wa-teal, var(--wa-secondary));
   font-size: 0.78rem;
   font-style: italic;
 }
@@ -383,7 +380,7 @@ body.theme-light .settings-header { background: #fff; border-bottom-color: #e9ed
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--wa-teal, #06B6D4);
+  background: var(--wa-teal, var(--wa-secondary));
   display: inline-block;
   animation: typingBounce 1.2s ease-in-out infinite;
 }

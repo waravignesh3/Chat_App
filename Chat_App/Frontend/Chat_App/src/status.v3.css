@@ -62,7 +62,7 @@
 
 .status-v3-progress-fill {
   height: 100%;
-  background: #fff;
+  background: var(--wa-text);
   width: 0;
 }
 
@@ -90,7 +90,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid #00a884; /* Hello Hub teal ring */
+  border: 2px solid var(--wa-secondary); /* Dynamic accent ring */
   object-fit: cover;
   padding: 2px;
 }
@@ -99,20 +99,20 @@
 .status-ring {
   position: absolute;
   inset: -3px;
-  border: 2px solid #00a884;
+  border: 2px solid var(--wa-secondary);
   border-radius: 50%;
   animation: status-pulse 2s infinite;
 }
 
 .status-ring.seen {
-  border-color: #8696a0;
+  border-color: var(--wa-text-muted);
   animation: none;
 }
 
 .status-ring.active {
-  border-color: #00a884;
+  border-color: var(--wa-secondary);
   animation: status-pulse 2s infinite;
-  box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.25);
+  box-shadow: 0 0 0 2px rgba(var(--wa-secondary-rgb), 0.25);
 }
 
 @keyframes status-pulse {
@@ -124,7 +124,7 @@
 .status-v3-meta {
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: var(--wa-text);
 }
 
 .status-v3-name {
@@ -146,7 +146,7 @@
 .status-v3-icon-btn {
   background: none;
   border: none;
-  color: #fff;
+  color: var(--wa-text);
   cursor: pointer;
   padding: 6px;
   border-radius: 50%;
@@ -265,7 +265,7 @@
 }
 
 .status-v3-like-btn.active {
-  color: #ff4b4b;
+  color: var(--wa-danger);
 }
 
 .status-v3-like-btn:active {
@@ -286,7 +286,7 @@
 
 /* ─── Delete button in header ─── */
 .status-v3-delete-btn {
-  color: #ff4b4b !important;
+  color: var(--wa-danger) !important;
   opacity: 0.85 !important;
 }
 .status-v3-delete-btn:hover {
@@ -326,11 +326,11 @@
   align-items: center;
   justify-content: center;
   padding: 40px 32px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #0d1f3c 100%);
+  background: linear-gradient(135deg, var(--wa-input-bg) 0%, var(--wa-bg) 100%);
 }
 
 .status-v3-text-card p {
-  color: #fff;
+  color: var(--wa-text);
   font-size: clamp(20px, 5vw, 32px);
   font-weight: 600;
   text-align: center;
@@ -371,7 +371,7 @@
 }
 
 .status-v3-delete-icon-big {
-  color: #ff4b4b;
+  color: var(--wa-danger);
   margin-bottom: 4px;
 }
 
@@ -420,12 +420,13 @@
 }
 
 .status-v3-delete-confirm-btn {
-  background: #ff4b4b;
-  color: #fff;
+  background: var(--wa-danger);
+  color: var(--wa-text);
 }
 .status-v3-delete-confirm-btn:hover:not(:disabled) {
-  background: #e63636;
-  transform: scale(1.03);
+  background: var(--wa-danger);
+  opacity: 0.9;
+  transform: translateY(-2px);
 }
 .status-v3-delete-confirm-btn:disabled,
 .status-v3-delete-cancel-btn:disabled {
@@ -442,7 +443,7 @@
   transform: translateX(2px);
 }
 .status-my-card.clickable:focus-visible {
-  outline: 2px solid #00a884;
+  outline: 2px solid var(--wa-secondary);
   outline-offset: 2px;
 }
 
@@ -486,7 +487,7 @@
 }
 
 .status-v3-sheet-header h3 {
-  color: #fff;
+  color: var(--wa-text);
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -495,7 +496,7 @@
 .status-v3-sheet-close {
   background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: #fff;
+  color: var(--wa-text);
   padding: 8px;
   border-radius: 50%;
   cursor: pointer;
@@ -544,18 +545,18 @@
 }
 
 .status-v3-viewer-name {
-  color: #e9edef;
+  color: var(--wa-text);
   font-size: 16px;
   font-weight: 500;
 }
 
 .status-v3-viewer-email {
-  color: #8696a0;
+  color: var(--wa-text-muted);
   font-size: 13px;
 }
 
 .status-v3-viewer-action {
-  color: #f43f5e;
+  color: var(--wa-danger);
 }
 
 .status-v3-sheet-empty {
