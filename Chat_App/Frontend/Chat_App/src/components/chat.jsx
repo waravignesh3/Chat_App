@@ -62,8 +62,8 @@ function getDateLabel(timeStr) {
 }
 
 const AVATAR_COLORS = [
-  "#2DD4BF", "#818CF8", "#C084FC", "#38BDF8",
-  "#F43F5E", "#F59E0B", "#10B981", "#6366F1",
+  "#4f46e5", "#0891b2", "#059669", "#d97706",
+  "#dc2626", "#7c3aed", "#db2777", "#0284c7",
 ];
 
 function hashColor(str = "") {
@@ -101,12 +101,10 @@ function Avatar({ name, email, photo, size = 44, className = "" }) {
       className={className}
       style={{
         width: size, height: size, borderRadius: "50%",
-        background: bg, color: "#FFFFFF",
+        background: bg, color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontWeight: 800, fontSize: size * 0.42,
+        fontWeight: 700, fontSize: size * 0.4,
         flexShrink: 0, userSelect: "none",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        border: "2px solid rgba(255,255,255,0.1)"
       }}
     >
       {initial}
