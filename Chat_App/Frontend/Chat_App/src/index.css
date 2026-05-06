@@ -8,36 +8,38 @@
 /* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
   /* Modern Dynamic Glassmorphism Colors */
-  --wa-green:        #6366F1;
-  --wa-green-dark:   #8B5CF6;
-  --wa-green-deeper: #EC4899;
-  --wa-teal:         #06B6D4;
-  --wa-teal-dark:    #0891B2;
+  --wa-green:        #8B5CF6; /* Vibrant Violet */
+  --wa-green-dark:   #6D28D9; /* Deep Violet */
+  --wa-green-deeper: #4C1D95; /* Darker Violet */
+  --wa-teal:         #06B6D4; /* Cyan */
+  --wa-teal-dark:    #0891B2; /* Deep Cyan */
+  --wa-pink:         #EC4899; /* Pink */
+  --wa-rose:         #F43F5E; /* Rose */
 
-  /* Dark Mode Surfaces (default) */
-  --wa-bg:           #0F172A;
-  --wa-panel:        #1E293B;
-  --wa-sidebar:      #0F2847;
-  --wa-input-bg:     #1E3A5F;
-  --wa-border:       rgba(148,163,184,0.12);
-  --wa-hover:        rgba(99,102,241,0.08);
-  --wa-active:       rgba(99,102,241,0.15);
+  /* Dark Mode Surfaces (Highly Modern) */
+  --wa-bg:           #0B0F19; /* Very dark rich blue/black */
+  --wa-panel:        #151B2B; /* Dark elegant panel */
+  --wa-sidebar:      #0D121F; /* Slightly lighter than bg */
+  --wa-input-bg:     #1E2638; /* Input fields */
+  --wa-border:       rgba(255, 255, 255, 0.08);
+  --wa-hover:        rgba(139, 92, 246, 0.15); /* Violet tint hover */
+  --wa-active:       rgba(139, 92, 246, 0.25);
 
   /* Text */
-  --wa-text:         #F1F5F9;
+  --wa-text:         #F8FAFC;
   --wa-text-muted:   #94A3B8;
-  --wa-text-faint:   #64748B;
+  --wa-text-faint:   #475569;
 
   /* Bubbles */
-  --wa-bubble-own:   #6366F1;
-  --wa-bubble-other: #1E293B;
-  --wa-bubble-text:  #e9edef;
+  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  --wa-bubble-other: #1E2638;
+  --wa-bubble-text:  #FFFFFF;
 
   /* Semantic */
-  --wa-danger:       #ff5449;
-  --wa-warning:      #f59e0b;
-  --wa-info:         #3b82f6;
-  --wa-success:      #25D366;
+  --wa-danger:       #EF4444;
+  --wa-warning:      #F59E0B;
+  --wa-info:         #3B82F6;
+  --wa-success:      #10B981;
 
   /* Shadows */
   --wa-shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
@@ -84,22 +86,22 @@
 
 /* ─── Light Mode Tokens ─── */
 body.theme-light {
-  --wa-bg:           #f0f2f5;
-  --wa-panel:        #ffffff;
-  --wa-sidebar:      #ffffff;
-  --wa-input-bg:     #f0f2f5;
-  --wa-border:       rgba(0,0,0,0.08);
-  --wa-hover:        rgba(0,0,0,0.04);
-  --wa-active:       rgba(0,168,132,0.1);
-  --wa-text:         #111b21;
-  --wa-text-muted:   #54656f;
-  --wa-text-faint:   #9ca3af;
-  --wa-bubble-own:   #d9fdd3;
-  --wa-bubble-other: #ffffff;
-  --wa-bubble-text:  #111b21;
-  --wa-shadow-sm:    0 1px 3px rgba(0,0,0,0.1);
-  --wa-shadow-md:    0 4px 20px rgba(0,0,0,0.12);
-  --wa-shadow-lg:    0 8px 40px rgba(0,0,0,0.15);
+  --wa-bg:           #F8FAFC; /* Very light cool grey */
+  --wa-panel:        #FFFFFF; /* Pure white panel */
+  --wa-sidebar:      #F1F5F9; /* Subtle contrast */
+  --wa-input-bg:     #F1F5F9;
+  --wa-border:       rgba(0,0,0,0.06);
+  --wa-hover:        rgba(139, 92, 246, 0.08); /* Violet tint hover */
+  --wa-active:       rgba(139, 92, 246, 0.15);
+  --wa-text:         #0F172A;
+  --wa-text-muted:   #475569;
+  --wa-text-faint:   #94A3B8;
+  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  --wa-bubble-other: #FFFFFF;
+  --wa-bubble-text:  #0F172A;
+  --wa-shadow-sm:    0 2px 4px rgba(0,0,0,0.04);
+  --wa-shadow-md:    0 8px 16px rgba(0,0,0,0.08);
+  --wa-shadow-lg:    0 12px 32px rgba(139, 92, 246, 0.12); /* Subtle violet glow */
 }
 
 /* ─── Global Reset ─── */

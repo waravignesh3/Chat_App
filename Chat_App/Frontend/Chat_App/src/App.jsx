@@ -7,7 +7,8 @@ import Signup from "./components/signup";
 import Chat from "./components/chat";
 import { auth } from "./firebase";
 import { requestJson } from "./utils/http";
-import { ToastProvider } from "./components/ToastContext";
+import { useToast } from "./components/ToastContext";
+import { createToastHelpers } from "./utils/toastHelpers";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -49,6 +50,9 @@ const syncGoogleUser = (firebaseUser) =>
   });
 
 function App() {
+  const { showToast } = useToast();
+  const toast = createToastHelpers(showToast);
+
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem("chatapp-user");
@@ -69,7 +73,11 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => {
+      const newTheme = prev === "dark" ? "light" : "dark";
+      toast.theme(`Switched to ${newTheme} theme`);
+      return newTheme;
+    });
   };
 
   // authReady blocks rendering until Firebase has resolved the initial
@@ -146,29 +154,27 @@ function App() {
   }
 
   return (
-    <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
-          />
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
-          />
-          <Route
-            path="/signup"
-            element={user ? <Navigate to="/chat" replace /> : <Signup />}
-          />
-          <Route
-            path="/chat"
-            element={user ? <Chat user={user} setUser={setUser} theme={theme} toggleTheme={toggleTheme} /> : <Navigate to="/login" replace />}
-          />
-          <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
+        />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/chat" replace /> : <Login setUser={setUser} />}
+        />
+        <Route
+          path="/signup"
+          element={user ? <Navigate to="/chat" replace /> : <Signup />}
+        />
+        <Route
+          path="/chat"
+          element={user ? <Chat user={user} setUser={setUser} theme={theme} toggleTheme={toggleTheme} /> : <Navigate to="/login" replace />}
+        />
+        <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
