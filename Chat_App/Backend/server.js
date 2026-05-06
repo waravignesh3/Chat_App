@@ -23,7 +23,8 @@ const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // Allow all origins in development or from common localhost ports
+    if (!origin || origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1") || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -361,7 +362,7 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
     if (!email) return res.status(400).json({ error: "Email is required" });
 
     if (mongoose.connection.readyState !== 1) await waitForDatabaseConnection();
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
     let statusUpdate = { 
       text: text || "", 
       mediaUrl: "",
@@ -394,7 +395,7 @@ app.post("/api/status", upload.single("file"), async (req, res) => {
       { $push: { statuses: statusUpdate } },
       { new: true }
     );
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     // Broadcast update to all users
     await broadcastUsers();
@@ -621,9 +622,6 @@ app.get("/api/messages/:email", async (req, res) => {
 });
 
 // ─── Toggle reaction on a message (MongoDB) ───────────────────────────────────
-// POST /api/messages/:id/react  body: { emoji, userEmail }
-// If the user already reacted with that emoji → remove it (toggle off)
-// Otherwise → add it
 app.post("/api/messages/:id/react", async (req, res) => {
   try {
     const { id } = req.params;
@@ -667,7 +665,6 @@ app.post("/api/messages/:id/react", async (req, res) => {
 });
 
 // ─── Soft-delete a message for a user ────────────────────────────────────────
-// DELETE /api/messages/:id  body: { userEmail, deleteFor: "me" | "everyone" }
 app.delete("/api/messages/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -700,7 +697,6 @@ app.delete("/api/messages/:id", async (req, res) => {
 });
 
 // ─── Pin / Unpin a message ────────────────────────────────────────────────────
-// POST /api/messages/:id/pin  body: { userEmail, pin: true|false }
 app.post("/api/messages/:id/pin", async (req, res) => {
   try {
     const { id } = req.params;
@@ -765,7 +761,6 @@ io.on("connection", (socket) => {
   socket.on("private_message", async ({ to, message }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
 
-    // Persist the message to MongoDB first, get the _id back
     let savedMsg = null;
     try {
       const doc = await Message.create({
@@ -797,61 +792,28 @@ io.on("connection", (socket) => {
       };
     } catch (err) {
       console.error("Failed to save message:", err.message);
-      savedMsg = message; // fallback: send without DB id
+      savedMsg = message; 
     }
 
-    // Emit to recipient with DB _id so reactions/delete can reference it
-    if (targetSocketId) io.to(targetSocketId).emit("private_message", savedMsg);
-    // Echo back to sender with _id
-    socket.emit("message_saved", savedMsg);
-  });
-
-  socket.on("typing", ({ to, from }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) io.to(targetSocketId).emit("typing", { from });
-  });
-
-  socket.on("stop_typing", ({ to, from }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    if (targetSocketId) io.to(targetSocketId).emit("stop_typing", { from });
-  });
-
-  // ── Read receipts ──────────────────────────────────────────────────────────
-  socket.on("read_receipt", ({ to, from }) => {
-    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
-    const senderEmail = to?.toLowerCase().trim();
-    const readerEmail = from?.toLowerCase().trim();
-
-    if (senderEmail && readerEmail) {
-      Message.updateMany(
-        {
-          sender: senderEmail,
-          receiver: readerEmail,
-          deletedFor: { $ne: readerEmail },
-          readBy: { $ne: readerEmail },
-        },
-        { $addToSet: { readBy: readerEmail } }
-      ).catch((err) => {
-        console.error("Read receipt persist error:", err.message);
-      });
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("private_message", savedMsg);
     }
-
-    if (targetSocketId) io.to(targetSocketId).emit("read_receipt", { from });
   });
 
-  // ── Message reactions — toggle and persist to MongoDB ─────────────────────
-  socket.on("message_reaction", async ({ to, messageId, emoji, by }) => {
-    if (!messageId || !emoji || !by) return;
+  socket.on("typing", ({ to, from, isTyping }) => {
+    const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
+    if (targetSocketId) io.to(targetSocketId).emit("typing", { from, isTyping });
+  });
 
+  socket.on("message_reaction", async ({ to, messageId, emoji, from }) => {
     try {
-      if (mongoose.connection.readyState !== 1) return;
-      const email = by.toLowerCase().trim();
+      const email = from?.toLowerCase().trim();
       const msg   = await Message.findById(messageId);
       if (!msg) return;
 
       const current = msg.reactions.get(emoji) || [];
       let updated;
-      let action; // "added" | "removed"
+      let action; 
       if (current.includes(email)) {
         updated = current.filter((e) => e !== email);
         action  = "removed";
@@ -876,29 +838,24 @@ io.on("connection", (socket) => {
         reactions: serializeReactions(msg.reactions),
       };
 
-      // Notify the target user
       const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
       if (targetSocketId) io.to(targetSocketId).emit("message_reaction", reactionPayload);
-      // Echo updated state back to sender
       socket.emit("message_reaction", reactionPayload);
     } catch (err) {
       console.error("Reaction persist error:", err.message);
     }
   });
 
-  // ── Message deleted ────────────────────────────────────────────────────────
   socket.on("message_deleted", ({ to, messageId, deletedFor, by }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) io.to(targetSocketId).emit("message_deleted", { messageId, deletedFor, by });
   });
 
-  // ── Message pinned / unpinned ──────────────────────────────────────────────
   socket.on("message_pinned", ({ to, messageId, isPinned, by }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) io.to(targetSocketId).emit("message_pinned", { messageId, isPinned, by });
   });
 
-  // ── WebRTC Calling Signaling ──────────────────────────────────────────────────
   socket.on("call_offer", ({ to, from, offer, type }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) io.to(targetSocketId).emit("call_offer", { from, offer, type });
@@ -934,7 +891,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ─── 404 / error handlers ─────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
 });
