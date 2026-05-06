@@ -402,10 +402,12 @@
 .chat-bottom-nav {
   display: none;
   align-items: center;
-  background: var(--wa-panel, #202c33);
-  border-top: 1px solid var(--wa-border, rgba(255,255,255,0.08));
-  z-index: var(--wa-z-sidebar, 10);
+  background: #202c33 !important; /* Force solid non-transparent background */
+  border-top: 1px solid var(--wa-border, rgba(255,255,255,0.1));
+  z-index: 100; /* High z-index to stay above content */
   flex-shrink: 0;
+  opacity: 1 !important;
+  position: relative; /* Ensure it stays in flex flow */
 }
 
 .chat-bottom-nav-item {

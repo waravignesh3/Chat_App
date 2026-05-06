@@ -270,7 +270,7 @@ body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color
 .modern-toggle input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 42px;
+  width: 44px;
   height: 22px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -281,7 +281,8 @@ body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color
   box-sizing: border-box;
   flex-shrink: 0;
   margin: 0;
-  overflow: visible !important;
+  overflow: hidden;
+  display: block; /* Ensure it respects dimensions */
 }
 
 .modern-toggle input[type="checkbox"]:checked {
@@ -291,21 +292,21 @@ body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color
 .modern-toggle input[type="checkbox"]::before {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
   background-color: #ffffff !important;
   border-radius: 50%;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   z-index: 10;
   pointer-events: none;
-  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .modern-toggle input[type="checkbox"]:checked::before {
-  left: 22px; /* (42 - 2 - 16 - 2) = 22px */
+  left: 27px; /* 44px - 3px - 14px = 27px */
 }
 
 .modern-icon-btn {
