@@ -7,20 +7,17 @@
 
 /* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
+  /* Core Pop Gradients */
+  --gradient-primary:   linear-gradient(135deg, #FF6A00, #EE0979);
+  --gradient-secondary: linear-gradient(135deg, #00C9FF, #92FE9D);
+  --gradient-accent:    linear-gradient(135deg, #F7971E, #FFD200);
+
+  /* Light/Dark mode backgrounds (gradient-driven) */
+  --wa-bg: var(--gradient-primary);
+  --wa-panel: rgba(15, 23, 42, 0.85); /* Semi-transparent panel for readability over gradient */
+  
   /* HEX Formats */
-  --wa-primary:      #6366F1; /* Indigo 500 */
-  --wa-primary-dark: #4F46E5; /* Indigo 600 */
-  --wa-secondary:    #10B981; /* Emerald 500 */
-  --wa-secondary-dark: #059669; /* Emerald 600 */
-  --wa-accent:       #22D3EE; /* Cyan 400 */
-  
-  /* RGBA Formats for transparency */
-  --wa-primary-rgb:   99, 102, 241;
-  --wa-secondary-rgb: 16, 185, 129;
-  
-  /* Dark Mode Surfaces */
-  --wa-bg:           #020617; /* Slate 950 */
-  --wa-panel:        #0F172A; /* Slate 900 */
+  --wa-primary:      #FF6A00;
   --wa-sidebar:      #0B0F19;
   --wa-input-bg:     #1E293B; /* Slate 800 */
   --wa-border:       rgba(255, 255, 255, 0.08);
@@ -57,13 +54,13 @@
 
 /* ─── Modern Light Mode (Arctic Clean) ─── */
 body.theme-light {
-  --wa-bg:           #F8FAFC; /* Slate 50 */
-  --wa-panel:        #FFFFFF;
-  --wa-sidebar:      #F1F5F9; /* Slate 100 */
-  --wa-input-bg:     #E2E8F0; /* Slate 200 */
-  --wa-border:       rgba(15, 23, 42, 0.08);
-  --wa-hover:        rgba(79, 70, 229, 0.08); 
-  --wa-active:       rgba(79, 70, 229, 0.15);
+  --wa-bg: var(--gradient-primary);
+  --wa-panel: rgba(255, 255, 255, 0.9);
+  --wa-sidebar: rgba(241, 245, 249, 0.95);
+  --wa-input-bg: rgba(226, 232, 240, 0.8);
+  --wa-border: rgba(15, 23, 42, 0.1);
+  --wa-hover: var(--gradient-secondary);
+  --wa-active: var(--gradient-secondary);
   
   /* Typography */
   --wa-text:         #0F172A; /* Slate 900 */
@@ -71,9 +68,9 @@ body.theme-light {
   --wa-text-faint:   #98A2B3;
   
   /* Light Mode Colors */
-  --wa-primary:      #4F46E5; /* Indigo 600 */
-  --wa-primary-dark: #4338CA; /* Indigo 700 */
-  --wa-secondary:    #059669; /* Emerald 600 */
+  --wa-primary:      #FF6A00;
+  --wa-primary-dark: #EE0979;
+  --wa-secondary:    #00C9FF;
   
   --wa-shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
   --wa-shadow-md:    0 4px 12px rgba(0,0,0,0.08);

@@ -406,24 +406,16 @@
   box-shadow: 0 0 0 2px var(--wa-primary);
 }
 
-/* Send button */
-.chat-send-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--wa-primary);
+  background: var(--gradient-secondary);
   color: #fff;
   flex-shrink: 0;
   transition: background var(--wa-transition-fast), transform var(--wa-transition-fast), box-shadow var(--wa-transition-fast);
-  box-shadow: 0 2px 8px rgba(var(--wa-primary-rgb), 0.3);
+  box-shadow: 0 4px 12px rgba(0, 201, 255, 0.4);
 }
 .chat-send-btn:hover {
-  background: var(--wa-primary-dark);
+  filter: brightness(1.1);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--wa-primary-rgb), 0.4);
+  box-shadow: 0 6px 16px rgba(0, 201, 255, 0.5);
 }
 .chat-send-btn:active {
   transform: scale(0.97);
@@ -472,12 +464,11 @@
   animation: slideUp 0.15s ease both;
 }
 
-.emoji-picker-popover {
-  background: var(--wa-panel, #202c33);
-  border: 1px solid var(--wa-border, rgba(255,255,255,0.08));
+  background: var(--gradient-accent);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--wa-radius-lg, 18px);
   padding: 12px;
-  box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.5));
+  box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.3));
 }
 
 .emoji-picker-grid {
@@ -516,15 +507,15 @@
 }
 
 .msg-search-modal {
-  background: var(--wa-panel, #202c33);
+  background: var(--gradient-accent);
   border-radius: var(--wa-radius-xl, 24px);
-  border: 1px solid var(--wa-border, rgba(255,255,255,0.08));
+  border: 1px solid rgba(0, 0, 0, 0.1);
   width: min(92vw, 540px);
   max-height: 70vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--wa-shadow-lg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
   animation: slideUp 0.2s ease both;
 }
 

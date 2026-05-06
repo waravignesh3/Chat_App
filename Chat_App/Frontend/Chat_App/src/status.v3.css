@@ -24,12 +24,12 @@
   max-width: 450px;
   height: 95%;
   max-height: 850px;
-  background: var(--wa-bg);
+  background: var(--gradient-primary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 80px rgba(0,0,0,0.6);
 }
 
 @media (max-width: 480px) {
@@ -245,7 +245,7 @@
 /* ─── Footer ─── */
 .status-v3-footer {
   height: 70px;
-  background: var(--wa-panel);
+  background: var(--gradient-accent);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -275,12 +275,12 @@
 .status-v3-reply-mock {
   flex: 1;
   height: 40px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.1);
   border-radius: 20px;
   display: flex;
   align-items: center;
   padding: 0 20px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(0,0,0,0.6);
   font-size: 14px;
 }
 
@@ -420,13 +420,13 @@
 }
 
 .status-v3-delete-confirm-btn {
-  background: var(--wa-danger);
-  color: var(--wa-text);
+  background: var(--gradient-secondary);
+  color: #fff;
 }
 .status-v3-delete-confirm-btn:hover:not(:disabled) {
-  background: var(--wa-danger);
-  opacity: 0.9;
+  filter: brightness(1.1);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 201, 255, 0.4);
 }
 .status-v3-delete-confirm-btn:disabled,
 .status-v3-delete-cancel-btn:disabled {
@@ -461,12 +461,12 @@
 .status-v3-viewers-sheet {
   width: 100%;
   max-height: 70%;
-  background: var(--wa-panel);
+  background: var(--gradient-accent);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 -10px 60px rgba(0,0,0,0.5);
   overflow: hidden;
 }
 

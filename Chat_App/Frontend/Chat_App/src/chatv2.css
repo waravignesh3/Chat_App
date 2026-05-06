@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   height: 100svh;
-  background: var(--wa-bg, #0b141a);
+  background: var(--gradient-primary);
   overflow: hidden;
   position: relative;
 }
@@ -31,8 +31,9 @@
 .chat-sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--wa-sidebar, #111b21);
-  border-right: 1px solid var(--wa-border, rgba(255,255,255,0.08));
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--wa-border);
   min-height: 0;
   overflow: hidden;
   z-index: var(--wa-z-sidebar, 10);
@@ -44,9 +45,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: var(--wa-panel, #202c33);
+  background: rgba(15, 23, 42, 0.6);
   min-height: 60px;
   flex-shrink: 0;
+  border-bottom: 1px solid var(--wa-border);
 }
 
 .chat-self-avatar-wrap {
@@ -246,7 +248,8 @@
 .chat-panel {
   display: flex;
   flex-direction: column;
-  background: var(--wa-bg, #0b141a);
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(10px);
   min-height: 0;
   position: relative;
   overflow: hidden;

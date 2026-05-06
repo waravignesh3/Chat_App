@@ -6,7 +6,7 @@
 /* ─── Light Mode Full Overrides ─── */
 body.theme-light .chat-shell,
 body.theme-light .chat-layout {
-  background: var(--wa-bg);
+  background: var(--gradient-primary);
 }
 
 body.theme-light .chat-sidebar {
@@ -36,7 +36,7 @@ body.theme-light .chat-online-dot-small {
 }
 
 body.theme-light .chat-panel {
-  background: var(--wa-bg);
+  background: transparent;
 }
 
 body.theme-light .chat-messages-bg {
@@ -230,7 +230,7 @@ body.theme-light .chat-messages-container {
   width: 100%;
   min-height: 0;
   overflow-y: auto;
-  background: var(--wa-bg, #0F172A);
+  background: var(--gradient-primary);
   animation: fadeIn 0.2s ease both;
 }
 

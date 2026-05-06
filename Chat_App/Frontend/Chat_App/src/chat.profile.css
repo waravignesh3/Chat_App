@@ -17,11 +17,11 @@
 }
 
 .profile-modal-container {
-  background: var(--wa-panel, #1E293B);
+  background: var(--gradient-accent);
   border-radius: var(--wa-radius-xl, 24px);
-  border: 1px solid var(--wa-border, rgba(148,163,184,0.12));
+  border: 1px solid rgba(0, 0, 0, 0.1);
   width: min(90vw, 480px);
-  box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.5));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
   overflow: hidden;
   animation: slideUp 0.25s ease both;
 }
@@ -37,7 +37,7 @@
 .profile-modal-header h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--wa-text, #F1F5F9);
+  color: #000;
   margin: 0;
 }
 
@@ -151,10 +151,10 @@
 }
 .profile-action-btn.cancel:hover { background: rgba(99,102,241,0.15); }
 .profile-action-btn.save {
-  background: var(--wa-teal, #06B6D4);
+  background: var(--gradient-secondary);
   color: #fff;
 }
-.profile-action-btn.save:hover { background: var(--wa-teal-dark, #0891B2); }
+.profile-action-btn.save:hover { filter: brightness(1.1); }
 .profile-action-btn.save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -256,9 +256,9 @@
   align-items: center;
   gap: 4px;
   padding: 14px 8px;
-  background: var(--wa-input-bg, #1E3A5F);
+  background: rgba(15, 23, 42, 0.4);
   border-radius: var(--wa-radius-md, 12px);
-  border: 1px solid var(--wa-border, rgba(99,102,241,0.12));
+  border: 1px solid var(--wa-border);
 }
 .chat-stat-tile strong {
   font-size: 1.3rem;
@@ -428,13 +428,13 @@
   min-width: 120px;
   height: 42px;
   border-radius: var(--wa-radius-md, 12px);
-  background: var(--wa-teal, #06B6D4);
+  background: var(--gradient-secondary);
   color: #fff;
   font-size: 0.88rem;
   font-weight: 600;
   transition: background var(--wa-transition-fast), transform var(--wa-transition-fast);
 }
-.chat-primary-btn:hover { background: var(--wa-teal-dark, #0891B2); transform: translateY(-1px); }
+.chat-primary-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .chat-primary-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .chat-secondary-btn {
