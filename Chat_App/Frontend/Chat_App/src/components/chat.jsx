@@ -2417,7 +2417,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         </div>
       )}
 
-      <section className={`chat-layout ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
+      <section className={`chat-shell-main ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
         <AnimatePresence mode="wait">
           {activeTab === "chats" ? (
             <motion.div 
@@ -2425,8 +2425,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="chat-layout-wrapper"
-              style={{ display: "grid", gridTemplateColumns: "380px 1fr", width: "100%", height: "100%" }}
+              className="chat-layout"
             >
               {/* ── Sidebar ── */}
               <aside className="chat-sidebar">
