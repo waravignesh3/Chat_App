@@ -329,7 +329,7 @@
 }
 
 .chat-panel-back-btn {
-  display: none; /* Hidden by default on desktop */
+  display: flex; /* Visible on all screens */
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -341,6 +341,9 @@
   cursor: pointer;
   transition: all 0.3s ease;
   margin-right: -4px;
+  flex-shrink: 0;
+  padding: 0;
+  outline: none;
 }
 
 .chat-panel-back-btn:hover {
@@ -918,10 +921,6 @@
   .chat-panel {
     flex: 1;
     min-height: 0;
-  }
-
-  .chat-panel-back-btn {
-    display: flex; /* Show back button on mobile */
   }
 
   /* On mobile, show sidebar as full screen when tab = chats and no user selected */
