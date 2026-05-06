@@ -31,13 +31,13 @@
 .status-page-header h3 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--wa-text, #F1F5F9);
+  color: var(--wa-text, var(--wa-text));
   margin: 0;
 }
 
 .status-page-header span {
   font-size: 0.78rem;
-  color: var(--wa-text-muted, #94A3B8);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 /* ─── Body (scrollable) ─── */
@@ -97,13 +97,13 @@
   display: block;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--wa-text, #F1F5F9);
+  color: var(--wa-text, var(--wa-text));
   margin-bottom: 3px;
 }
 
 .status-my-info p {
   font-size: 0.8rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -135,7 +135,7 @@
 
 .status-action-btn.media-btn {
   background: rgba(37,211,102,0.15);
-  color: var(--wa-green, #25D366);
+  color: var(--wa-green, var(--wa-secondary));
 }
 
 .status-action-btn.media-btn:hover {
@@ -144,7 +144,7 @@
 
 .status-action-btn.text-btn {
   background: rgba(0,168,132,0.15);
-  color: var(--wa-teal, #00a884);
+  color: var(--wa-teal, var(--wa-secondary));
 }
 
 .status-action-btn.text-btn:hover {
@@ -172,7 +172,7 @@
   border: none;
   outline: none;
   padding: 14px 16px 10px;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   font-size: 0.95rem;
   line-height: 1.5;
   font-family: inherit;
@@ -180,7 +180,7 @@
 }
 
 .status-text-composer textarea::placeholder {
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 .status-composer-footer {
@@ -193,7 +193,7 @@
 
 .status-char-count {
   font-size: 0.75rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 .status-composer-actions {
@@ -206,7 +206,7 @@
   border-radius: 999px;
   background: transparent;
   border: 1px solid var(--wa-border, rgba(255,255,255,0.12));
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -217,7 +217,7 @@
 .status-post-btn {
   padding: 7px 20px;
   border-radius: 999px;
-  background: var(--wa-green, #25D366);
+  background: var(--wa-green, var(--wa-secondary));
   color: #fff;
   font-size: 0.82rem;
   font-weight: 700;
@@ -245,7 +245,7 @@
   padding: 10px 20px 6px;
   font-size: 0.73rem;
   font-weight: 700;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -275,7 +275,7 @@
 
 .status-contact-card.viewing {
   background: rgba(0,168,132,0.08);
-  border-left: 3px solid var(--wa-teal, #00a884);
+  border-left: 3px solid var(--wa-teal, var(--wa-secondary));
 }
 
 .status-avatar-ring-wrap {
@@ -287,7 +287,7 @@
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 2.5px solid var(--wa-green, #25D366);
+  border: 2.5px solid var(--wa-green, var(--wa-secondary));
   pointer-events: none;
 }
 
@@ -300,7 +300,7 @@
   display: block;
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -309,13 +309,13 @@
 
 .status-contact-info span {
   font-size: 0.75rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 .status-contact-preview {
   width: 100%;
   font-size: 0.78rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   margin: 4px 0 0 68px;
   font-style: italic;
 }
@@ -333,14 +333,14 @@
 
 .status-empty-state p {
   font-size: 0.92rem;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   margin: 0;
   font-weight: 500;
 }
 
 .status-empty-state span {
   font-size: 0.78rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 /* ─── Inline Status Viewer Panel ─── */
@@ -369,12 +369,12 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
 }
 
 .status-viewer-topbar .status-viewer-meta span {
   font-size: 0.75rem;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 .status-viewer-close-btn {
@@ -384,7 +384,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   background: transparent;
   border: none;
   cursor: pointer;
@@ -392,7 +392,7 @@
 }
 .status-viewer-close-btn:hover {
   background: rgba(255,255,255,0.08);
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
 }
 
 .status-viewer-media-wrap {
@@ -414,7 +414,7 @@
 .status-viewer-caption-bar {
   padding: 12px 16px;
   font-size: 0.88rem;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   background: rgba(0,0,0,0.3);
   text-align: center;
 }
@@ -457,7 +457,7 @@
   flex: 1;
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   margin: 0;
   text-align: center;
 }
@@ -469,7 +469,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
   background: transparent;
   border: none;
   cursor: pointer;
@@ -503,7 +503,7 @@
   border: 1.5px solid transparent;
   border-radius: 12px;
   padding: 10px 14px;
-  color: var(--wa-text, #e9edef);
+  color: var(--wa-text, var(--wa-text));
   font-size: 0.9rem;
   outline: none;
   font-family: inherit;
@@ -511,11 +511,11 @@
 }
 
 .status-share-caption-input:focus {
-  border-color: var(--wa-teal, #00a884);
+  border-color: var(--wa-teal, var(--wa-secondary));
 }
 
 .status-share-caption-input::placeholder {
-  color: var(--wa-text-muted, #8696a0);
+  color: var(--wa-text-muted, var(--wa-text-muted));
 }
 
 .status-share-footer {
@@ -530,7 +530,7 @@
   gap: 8px;
   padding: 12px 32px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #25D366, #128C7E);
+  background: linear-gradient(135deg, var(--wa-secondary), #128C7E);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 700;

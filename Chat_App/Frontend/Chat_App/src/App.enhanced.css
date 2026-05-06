@@ -33,18 +33,20 @@
   transition: box-shadow var(--wa-transition-fast);
 }
 
-/* Own bubble (green, right side) */
+/* Own bubble (same bg as other) */
 .chat-bubble.own {
-  background: var(--wa-bubble-own, #6366F1);
-  color: var(--wa-bubble-text, #F1F5F9);
-  border-top-right-radius: 2px;
+  background: var(--wa-input-bg);
+  color: var(--wa-text);
+  border-bottom-right-radius: 2px;
+  border: 1px solid var(--wa-border);
 }
 
-/* Received bubble (dark panel, left side) */
+/* Received bubble (same bg as own) */
 .chat-bubble:not(.own) {
-  background: var(--wa-bubble-other, #1E293B);
-  color: var(--wa-bubble-text, #F1F5F9);
-  border-top-left-radius: 2px;
+  background: var(--wa-input-bg);
+  color: var(--wa-text);
+  border-bottom-left-radius: 2px;
+  border: 1px solid var(--wa-border);
 }
 
 /* Fresh / new message highlight */
@@ -56,26 +58,26 @@
 .chat-bubble.own::after {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: 0;
   right: -8px;
   width: 0;
   height: 0;
   border-style: solid;
   border-width: 8px 0 0 8px;
-  border-color: transparent transparent transparent var(--wa-bubble-own, #6366F1);
+  border-color: transparent transparent transparent var(--wa-input-bg);
 }
 
 /* Bubble tail — received */
 .chat-bubble:not(.own)::after {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: -8px;
   width: 0;
   height: 0;
   border-style: solid;
   border-width: 8px 8px 0 0;
-  border-color: transparent var(--wa-bubble-other, #1E293B) transparent transparent;
+  border-color: transparent var(--wa-input-bg) transparent transparent;
 }
 
 /* Sender name (received bubbles) */
@@ -399,7 +401,10 @@
   field-sizing: content;
 }
 .chat-input-wrap textarea::placeholder { color: var(--wa-text-muted, #8696a0); }
-.chat-input-wrap textarea:focus { background: #30444e; }
+.chat-input-wrap textarea:focus { 
+  background: var(--wa-panel);
+  box-shadow: 0 0 0 2px var(--wa-primary);
+}
 
 /* Send button */
 .chat-send-btn {
@@ -409,15 +414,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wa-teal, #00a884);
+  background: var(--wa-primary);
   color: #fff;
   flex-shrink: 0;
   transition: background var(--wa-transition-fast), transform var(--wa-transition-fast), box-shadow var(--wa-transition-fast);
-  box-shadow: 0 2px 10px rgba(0,168,132,0.35);
+  box-shadow: 0 2px 8px rgba(var(--wa-primary-rgb), 0.3);
 }
 .chat-send-btn:hover {
-  background: var(--wa-teal-dark, #008f6f);
-  transform: scale(1.06);
+  background: var(--wa-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--wa-primary-rgb), 0.4);
 }
 .chat-send-btn:active {
   transform: scale(0.97);
