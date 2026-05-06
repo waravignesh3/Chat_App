@@ -290,6 +290,10 @@ body.theme-light .auth-chat-bubble.own { background: var(--wa-bubble-own); color
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.modern-toggle input[type="checkbox"]::before {
+  display: none !important; /* Remove any legacy dots */
+}
+
 .modern-toggle input[type="checkbox"]::after {
   content: '';
   position: absolute;

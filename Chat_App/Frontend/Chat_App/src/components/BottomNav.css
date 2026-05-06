@@ -6,16 +6,39 @@
 .bottom-nav {
   display: flex;
   align-items: stretch;
-  background: #202c33 !important; /* Solid non-transparent background */
+  background: #202c33; /* Default dark */
   border-top: 1px solid var(--wa-border, rgba(255,255,255,0.1));
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
-  position: relative; /* Change from fixed to relative to avoid overlapping */
+  position: relative;
   z-index: 100;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   overflow: hidden;
   flex-shrink: 0;
   width: 100%;
+}
+
+/* Light Mode Overrides */
+body.theme-light .bottom-nav {
+  background: #ffffff !important;
+  border-top-color: #e9edef;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+body.theme-light .bottom-nav-item {
+  color: #8696a0;
+}
+
+body.theme-light .bottom-nav-item.active {
+  color: #00a884; /* WhatsApp Green for light mode */
+}
+
+body.theme-light .bottom-nav-item.active .bottom-nav-icon-wrap {
+  background: #f0f2f5;
+}
+
+body.theme-light .bottom-nav-indicator {
+  background: #00a884;
 }
 
 /* ─── Sliding Active Indicator Bar ─── */
