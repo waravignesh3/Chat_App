@@ -406,6 +406,7 @@
   box-shadow: 0 0 0 2px var(--wa-primary);
 }
 
+.chat-send-btn {
   background: var(--gradient-secondary);
   color: #fff;
   flex-shrink: 0;
@@ -464,6 +465,7 @@
   animation: slideUp 0.15s ease both;
 }
 
+.emoji-picker {
   background: var(--gradient-accent);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--wa-radius-lg, 18px);
