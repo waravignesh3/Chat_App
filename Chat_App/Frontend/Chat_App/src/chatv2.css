@@ -28,18 +28,31 @@
   flex-direction: column;
 }
 
-/* ─── Sidebar ─── */
 .chat-sidebar {
   display: flex;
   flex-direction: column;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-right: 1px solid var(--glass-border);
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   z-index: var(--wa-z-sidebar, 10);
   box-shadow: 10px 0 30px rgba(0,0,0,0.2);
   animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-user-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 20px;
+}
+
+.chat-feature-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 /* Sidebar Header */
@@ -94,8 +107,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  background: transparent;
+  border: none;
   border-radius: 16px;
   padding: 0 16px;
   height: 44px;
@@ -103,9 +116,8 @@
 }
 
 .chat-search-wrap:focus-within {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--wa-primary);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  background: var(--wa-hover);
+  box-shadow: none;
 }
 
 /* User Card */
@@ -146,6 +158,43 @@
 
 .chat-user-card.active .chat-user-message {
   opacity: 0.9;
+}
+
+/* Online Glow & Moving Border */
+.chat-user-card.online-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1.5px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1);
+  background-size: 200% 100%;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  animation: moveGradient 3s linear infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@keyframes moveGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.chat-user-card.online-glow {
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+}
+
+.typing-text {
+  color: var(--wa-teal, #00a884) !important;
+  font-weight: 500;
+}
+
+.typing-status-mini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Unread Badge */
@@ -198,7 +247,9 @@
 
 .chat-panel.full-height {
   height: 100%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Header fixed, feature-panel scrolls */
 }
 
 /* Chat background pattern */

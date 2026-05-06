@@ -507,7 +507,7 @@ function StatusPage({
         {/* ── My Status Card ── */}
         <motion.div
           whileHover={{ scale: 1.01 }}
-          className={`status-my-card glass-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
+          className={`status-my-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
           onClick={() => user?.statuses?.length > 0 && onViewMyStatus()}
           role={user?.statuses?.length > 0 ? "button" : undefined}
           tabIndex={user?.statuses?.length > 0 ? 0 : undefined}
@@ -609,7 +609,7 @@ function StatusPage({
           <div className="status-section-label">Recent updates</div>
 
           {contactsWithStatus.length === 0 ? (
-            <div className="status-empty-state glass-card">
+            <div className="status-empty-state">
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.18 }}>
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
@@ -625,7 +625,7 @@ function StatusPage({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * idx }}
                   type="button"
-                  className={`status-contact-card glass-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
+                  className={`status-contact-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
                   onClick={() => setViewingStatusUser(viewingStatusUser?.email === u.email ? null : u)}
                 >
                   <div className="status-avatar-ring-wrap">
@@ -951,18 +951,16 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
               <span>App-wide preferences</span>
             </div>
             <div className="chat-settings-form">
-              <label className="chat-toggle-row">
+              <label className="chat-toggle-row modern-toggle">
                 <div>
                   <strong>{theme === "dark" ? "Dark mode" : "Light mode"}</strong>
                   <span>Switch the full messaging interface theme.</span>
                 </div>
-                <button type="button" className="chat-theme-toggle-btn" onClick={toggleTheme}>
-                  {theme === "dark"
-                    ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 .28 0 .57.02.85A7 7 0 0 0 20.15 12c.28 0 .57 0 .85-.02z"/></svg>
-                  }
-                  {theme === "dark" ? "Light mode" : "Dark mode"}
-                </button>
+                <input 
+                  type="checkbox" 
+                  checked={theme === "dark"} 
+                  onChange={toggleTheme} 
+                />
               </label>
               <div className="chat-insight-card">
                 <strong>End-to-end encryption</strong>
@@ -1074,6 +1072,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({}); // { email: true/false }
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [_usersError, setUsersError] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -1475,14 +1474,22 @@ function Chat({ user, setUser, theme, toggleTheme }) {
   // ── Typing indicators ─────────────────────────────────────────────────────────
   useEffect(() => {
     const handleTypingStart = ({ from }) => {
-      if (!selectedUser || from !== selectedUser.email) return;
-      setIsTyping(true);
-      clearTimeout(typingIndicatorTimeoutRef.current);
-      typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
+      setTypingUsers((prev) => ({ ...prev, [from]: true }));
+      if (selectedUser?.email === from) {
+        setIsTyping(true);
+        clearTimeout(typingIndicatorTimeoutRef.current);
+        typingIndicatorTimeoutRef.current = setTimeout(() => setIsTyping(false), 1500);
+      }
     };
     const handleTypingStop = ({ from }) => {
-      if (!selectedUser || from !== selectedUser.email) return;
-      setIsTyping(false);
+      setTypingUsers((prev) => {
+        const next = { ...prev };
+        delete next[from];
+        return next;
+      });
+      if (selectedUser?.email === from) {
+        setIsTyping(false);
+      }
     };
     socketRef.current?.on("typing", handleTypingStart);
     socketRef.current?.on("stop_typing", handleTypingStop);
@@ -1706,7 +1713,9 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   useEffect(() => {
     if (search.trim() || isLoadingUsers || filteredUsers.length === 0) return;
-    if (selectedUser?.email && users.some((entry) => entry.email === selectedUser.email)) return;
+    // If a user is already selected and they are in our filtered list, stay on them
+    if (selectedUser?.email && filteredUsers.some((entry) => entry.email === selectedUser.email)) return;
+    
     const nextUser = filteredUsers[0];
     shouldScrollRef.current = true;
     let nextDraft = "";
@@ -2441,29 +2450,31 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                 ) : filteredUsers.length > 0 ? (
                   filteredUsers.map((entry) => {
                     const isActive = activeSelectedUser?.email === entry.email;
+                    const isUserTyping = typingUsers[entry.email];
                     const unread = unreadMap[entry.email];
                     const hasUnread = !isActive && unread?.count > 0;
                     return (
                       <button
                         key={entry.email}
                         type="button"
-                        className={`chat-user-card ${isActive ? "active" : ""} ${hasUnread ? "unread" : ""}`}
+                        className={`chat-user-card ${isActive ? "active" : ""} ${hasUnread ? "unread" : ""} ${entry.isOnline ? "online-glow" : ""}`}
                         onClick={() => handleSelectUser(entry)}
                       >
                         <div className="chat-avatar-wrap" onClick={(e) => { e.stopPropagation(); handleOpenProfileModal(entry, false); }} title="View profile photo">
                           <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={56} className="chat-avatar" />
-                          {entry.isOnline && <span className="chat-online-dot-small" />}
                         </div>
                         <div className="chat-user-info">
                           <div className="chat-user-info-top">
                             <span className="chat-user-name">{entry.name || entry.email}</span>
                             <span className="chat-user-time">
-                              {hasUnread ? unread.lastTime : (entry.lastMsg?.formattedTime || (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen)))}
+                              {isUserTyping ? "typing..." : (hasUnread ? unread.lastTime : (entry.lastMsg?.formattedTime || (entry.lastSeen === "Online" ? "Online" : formatLastSeen(entry.lastSeen))))}
                             </span>
                           </div>
                           <div className="chat-user-info-bottom">
-                            <span className="chat-user-message">
-                              {hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Hello Hub.")}
+                            <span className={`chat-user-message ${isUserTyping ? "typing-text" : ""}`}>
+                              {isUserTyping 
+                                ? <span className="typing-status-mini"><span className="typing-dots-mini"><span/><span/><span/></span> typing…</span>
+                                : (hasUnread ? unread.lastText : (entry.lastMsg?.text || entry.status?.text || "Hey there! I am using Hello Hub."))}
                             </span>
                             {hasUnread && <span className="chat-unread-badge">{unread.count > 9 ? "9+" : unread.count}</span>}
                           </div>
