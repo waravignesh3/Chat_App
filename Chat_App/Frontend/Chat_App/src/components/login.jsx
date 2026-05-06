@@ -11,6 +11,7 @@ import { parseJsonResponse } from "../utils/http";
 import { useToast } from "./ToastContext";
 import "../App.css";
 import "../App.enhanced.css";
+import "../glassmorphism.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -108,11 +109,11 @@ function Login({ setUser = () => {} }) {
   };
 
   return (
-    <div className="auth-shell">
+    <div className="auth-shell main-gradient-bg animate-fade-in">
       <div className="auth-backdrop auth-backdrop-left" aria-hidden="true" />
       <div className="auth-backdrop auth-backdrop-right" aria-hidden="true" />
 
-      <section className="auth-layout auth-layout-login">
+      <section className="auth-layout auth-layout-login glass-panel animate-slide-up">
 
         {/* ── Branding / Intro Panel ── */}
         <div className="auth-panel auth-intro" aria-hidden="true">
@@ -156,7 +157,7 @@ function Login({ setUser = () => {} }) {
         </div>
 
         {/* ── Form Panel ── */}
-        <div className="auth-panel auth-card">
+        <div className="auth-panel auth-card glass-card">
           <div className="auth-card-header">
             <span className="auth-eyebrow">Login</span>
             <h2>Sign in</h2>

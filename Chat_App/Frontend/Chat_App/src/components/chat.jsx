@@ -20,6 +20,7 @@ import "../chat.unread.css";
 import "../chat-overrides.css";
 import "../chat.status.css";
 import "../status.v3.css";
+import "../glassmorphism.css";
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -122,7 +123,7 @@ const REACTION_EMOJIS = ["❤️","😂","👍","😮","😢","🔥"];
 
 function EmojiPicker({ onSelect }) {
   return (
-    <div className="emoji-picker-popover" role="dialog" aria-label="Emoji picker">
+    <div className="emoji-picker-popover glass-panel" role="dialog" aria-label="Emoji picker">
       <div className="emoji-picker-grid">
         {EMOJI_LIST.map((emoji) => (
           <button key={emoji} type="button" className="emoji-btn" onClick={() => onSelect(emoji)} aria-label={emoji}>
@@ -137,7 +138,7 @@ function EmojiPicker({ onSelect }) {
 // ─── Reaction Picker ──────────────────────────────────────────────────────────
 function ReactionPicker({ onSelect, onClose, isOwn }) {
   return (
-    <div className={`reaction-picker-popover ${isOwn ? "reaction-picker-own" : "reaction-picker-other"}`}>
+    <div className={`reaction-picker-popover glass-panel ${isOwn ? "reaction-picker-own" : "reaction-picker-other"}`}>
       {REACTION_EMOJIS.map((e) => (
         <button key={e} type="button" className="reaction-picker-btn" onClick={() => { onSelect(e); onClose(); }}>
           {e}
@@ -192,7 +193,7 @@ function ProfilePhotoModal({ user, onClose, onPhotoUpdated, targetUser, canEdit 
 
   return (
     <div className="profile-modal-overlay" onClick={onClose}>
-      <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="profile-modal-container glass-panel" onClick={(e) => e.stopPropagation()}>
         <div className="profile-modal-header">
           <h3>{canEdit ? "Update Profile Photo" : `${displayUser?.name || "User"}'s Photo`}</h3>
           <button type="button" className="profile-modal-close-btn" onClick={onClose} aria-label="Close">
@@ -313,7 +314,7 @@ function VoicePlayer({ url }) {
   };
 
   return (
-    <div className="voice-player-container">
+    <div className="voice-player-container glass-panel">
       <audio
         ref={audioRef}
         src={url}
@@ -383,7 +384,7 @@ function getMessageId(message, fallbackIndex = null) {
 function ReplyBanner({ replyingTo, onCancel }) {
   if (!replyingTo) return null;
   return (
-    <div className="chat-reply-banner">
+    <div className="chat-reply-banner glass-panel">
       <div className="chat-reply-banner-bar" />
       <div className="chat-reply-banner-content">
         <span className="chat-reply-banner-name">{replyingTo.senderName || "User"}</span>
@@ -415,7 +416,7 @@ function MessageSearchModal({ messages, user, selectedUser, onClose, onJump }) {
 
   return (
     <div className="msg-search-overlay" onClick={onClose}>
-      <div className="msg-search-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="msg-search-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <div className="msg-search-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <span>Search Messages</span>
@@ -501,7 +502,7 @@ function StatusPage({
 
         {/* ── My Status Card ── */}
         <div
-          className={`status-my-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
+          className={`status-my-card glass-card ${user?.statuses?.length > 0 ? "clickable" : ""}`}
           onClick={() => user?.statuses?.length > 0 && onViewMyStatus()}
           role={user?.statuses?.length > 0 ? "button" : undefined}
           tabIndex={user?.statuses?.length > 0 ? 0 : undefined}
@@ -605,7 +606,7 @@ function StatusPage({
                 <button
                   key={u.email}
                   type="button"
-                  className={`status-contact-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
+                  className={`status-contact-card glass-card ${viewingStatusUser?.email === u.email ? "viewing" : ""}`}
                   onClick={() => setViewingStatusUser(viewingStatusUser?.email === u.email ? null : u)}
                 >
                   <div className="status-avatar-ring-wrap">
@@ -661,7 +662,7 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
             </div>
             <div className="chat-call-list">
               {contacts.length > 0 ? contacts.map((entry) => (
-                <article key={entry.email} className="chat-call-card">
+                <article key={entry.email} className="chat-call-card glass-card">
                   <div className="chat-call-card-main">
                     <Avatar name={entry.name} email={entry.email} photo={entry.photo} size={52} className="chat-avatar" />
                     <div className="chat-call-copy">
@@ -689,7 +690,7 @@ function CallsPanel({ contacts, callHistory, onStartCall }) {
             </div>
             <div className="chat-call-history">
               {callHistory.length > 0 ? callHistory.map((item) => (
-                <article key={item.id} className="chat-history-card">
+                <article key={item.id} className="chat-history-card glass-card">
                   <div className={`chat-history-icon ${item.type}`}>
                     {item.type === "video"
                       ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -730,7 +731,7 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
 
       <div className="chat-feature-panel settings-panel-view">
         <section className="chat-settings-top">
-          <div className="chat-settings-profile-card">
+          <div className="chat-settings-profile-card glass-card">
             {/* Photo change — only accessible from this Settings page */}
             <button type="button" className="chat-settings-avatar-btn" onClick={onOpenProfile} title="Change profile photo">
               <div className="chat-settings-avatar-wrap">
@@ -748,10 +749,10 @@ function SettingsPanel({ user, draft, onDraftChange, onSave, onOpenProfile, onLo
             </div>
           </div>
           <div className="chat-settings-stats">
-            <div className="chat-stat-tile"><strong>{stats.unreadCount}</strong><span>Unread</span></div>
-            <div className="chat-stat-tile"><strong>{stats.statusCount}</strong><span>Status</span></div>
-            <div className="chat-stat-tile"><strong>{stats.blockedCount}</strong><span>Blocked</span></div>
-            <div className="chat-stat-tile"><strong>{stats.pinnedCount}</strong><span>Pinned</span></div>
+            <div className="chat-stat-tile glass-card"><strong>{stats.unreadCount}</strong><span>Unread</span></div>
+            <div className="chat-stat-tile glass-card"><strong>{stats.statusCount}</strong><span>Status</span></div>
+            <div className="chat-stat-tile glass-card"><strong>{stats.blockedCount}</strong><span>Blocked</span></div>
+            <div className="chat-stat-tile glass-card"><strong>{stats.pinnedCount}</strong><span>Pinned</span></div>
           </div>
         </section>
 
@@ -904,7 +905,7 @@ function IncomingCallModal({ call, onAccept, onDecline }) {
   if (!call) return null;
   return (
     <div className="chat-call-overlay incoming">
-      <div className="chat-call-modal">
+      <div className="chat-call-modal glass-panel">
         <div className="chat-call-avatar-wrap pulse-ring">
           <Avatar name={call.target.name} email={call.target.email} photo={call.target.photo} size={92} className="chat-call-avatar" />
         </div>
@@ -956,7 +957,7 @@ function ActiveCallOverlay({ call, localStream, remoteStream, onEnd, toggleMute,
         <audio ref={remoteVideoRef} autoPlay />
       )}
       
-      <div className={`chat-call-modal ${call.type === 'video' ? 'floating-controls' : ''}`}>
+      <div className={`chat-call-modal glass-panel ${call.type === 'video' ? 'floating-controls' : ''}`}>
         {call.type !== "video" && (
           <>
             <div className="chat-call-avatar-wrap">
@@ -1698,10 +1699,25 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   // ── Handlers ────────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    try { await signOut(auth); showToast("Signed out successfully", "info"); }
-    catch { /* ignore */ }
+    try {
+      await signOut(auth);
+      showToast("Signed out successfully", "info");
+    } catch { /* ignore */ }
     finally {
-      setSelectedUser(null); setMessage(""); setMessages([]); setUnreadMap({}); setUser(null);
+      // Clear all state
+      setSelectedUser(null);
+      setMessage("");
+      setMessages([]);
+      setUnreadMap({});
+      setUser(null);
+      
+      // Clear any persistent unread flags in localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes("unread") || key.includes("chatapp-draft")) {
+          localStorage.removeItem(key);
+        }
+      });
+
       navigate("/login", { replace: true });
     }
   };
@@ -2264,7 +2280,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="chat-shell">
+    <div className="chat-shell main-gradient-bg animate-fade-in">
       {showProfileModal && (
         <ProfilePhotoModal
           user={user}
@@ -2302,11 +2318,11 @@ function Chat({ user, setUser, theme, toggleTheme }) {
         </div>
       )}
 
-      <section className={`chat-layout ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
+      <section className={`chat-layout glass-panel animate-slide-up ${activeTab !== "chats" ? "full-page-layout" : ""}`}>
         {activeTab === "chats" ? (
           <>
             {/* ── Sidebar ── */}
-            <aside className="chat-sidebar">
+            <aside className="chat-sidebar" style={{ background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
               <div className="chat-sidebar-header">
                 <div
                   className="chat-self-avatar-wrap"
@@ -2589,7 +2605,7 @@ function Chat({ user, setUser, theme, toggleTheme }) {
                         <EmojiPicker onSelect={handleEmojiSelect} />
                       </div>
                     )}
-                    <div className="chat-input-wrap">
+                    <div className="chat-input-wrap glass-card">
                       {/* Emoji picker button */}
                       <button type="button" className="chat-input-icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={showEmojiPicker ? "#00a884" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
