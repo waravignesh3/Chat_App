@@ -17,14 +17,13 @@
 }
 
 .profile-modal-container {
-  background: var(--wa-gradient-panel);
+  background: var(--wa-panel, #1E293B);
   border-radius: var(--wa-radius-xl, 24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--wa-border, rgba(148,163,184,0.12));
   width: min(90vw, 480px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  box-shadow: var(--wa-shadow-lg, 0 8px 40px rgba(0,0,0,0.5));
   overflow: hidden;
   animation: slideUp 0.25s ease both;
-  backdrop-filter: blur(20px);
 }
 
 .profile-modal-header {
@@ -32,8 +31,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--wa-border);
-  background: var(--wa-gradient-panel);
+  border-bottom: 1px solid var(--wa-border, rgba(148,163,184,0.12));
 }
 
 .profile-modal-header h3 {
@@ -134,8 +132,7 @@
   display: flex;
   gap: 10px;
   padding: 16px 20px;
-  border-top: 1px solid var(--wa-border);
-  background: var(--wa-gradient-panel);
+  border-top: 1px solid var(--wa-border, rgba(148,163,184,0.12));
 }
 
 .profile-action-btn {
@@ -154,11 +151,10 @@
 }
 .profile-action-btn.cancel:hover { background: rgba(99,102,241,0.15); }
 .profile-action-btn.save {
-  background: var(--wa-gradient-primary);
+  background: var(--wa-teal, #06B6D4);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.profile-action-btn.save:hover { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+.profile-action-btn.save:hover { background: var(--wa-teal-dark, #0891B2); }
 .profile-action-btn.save:disabled {
   opacity: 0.5;
   cursor: not-allowed;

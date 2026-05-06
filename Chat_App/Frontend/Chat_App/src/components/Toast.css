@@ -33,16 +33,16 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
-  background: var(--wa-gradient-panel);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 8px 32px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   animation: toastSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #FFFFFF;
   transition: all 0.25s ease;
@@ -134,8 +134,12 @@
 
 /* ─── 🔐 Sign In: Cyan-to-Sky ─── */
 .toast-signin {
-  background: linear-gradient(135deg, #06B6D4 0%, #0EA5E9 100%);
-  border-color: rgba(6, 182, 212, 0.4);
+  background: linear-gradient(135deg, #06B6D4 0%, #0EA5E9 50%, #38BDF8 100%);
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow:
+    0 8px 32px rgba(6, 182, 212, 0.35),
+    0 0 0 1px rgba(6, 182, 212, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .toast-signin .toast-icon {
   background: rgba(255, 255, 255, 0.25);
@@ -149,8 +153,12 @@
 
 /* ─── 🚪 Sign Out: Purple ─── */
 .toast-signout {
-  background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
-  border-color: rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 50%, #A78BFA 100%);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow:
+    0 8px 32px rgba(139, 92, 246, 0.35),
+    0 0 0 1px rgba(139, 92, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .toast-signout .toast-icon {
   background: rgba(255, 255, 255, 0.25);
@@ -164,8 +172,12 @@
 
 /* ─── ➕ Sign Up: Pink-to-Rose ─── */
 .toast-signup {
-  background: linear-gradient(135deg, #EC4899 0%, #FB7185 100%);
-  border-color: rgba(236, 72, 153, 0.4);
+  background: linear-gradient(135deg, #EC4899 0%, #F43F5E 50%, #FB7185 100%);
+  border-color: rgba(236, 72, 153, 0.5);
+  box-shadow:
+    0 8px 32px rgba(236, 72, 153, 0.35),
+    0 0 0 1px rgba(236, 72, 153, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .toast-signup .toast-icon {
   background: rgba(255, 255, 255, 0.25);
@@ -179,8 +191,12 @@
 
 /* ─── ✓ Success: Indigo-to-Violet ─── */
 .toast-success {
-  background: var(--wa-gradient-primary);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.35),
+    0 0 0 1px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .toast-success .toast-icon {
   background: rgba(255, 255, 255, 0.25);

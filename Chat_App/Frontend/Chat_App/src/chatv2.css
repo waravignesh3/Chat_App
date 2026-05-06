@@ -8,8 +8,7 @@
   display: flex;
   flex-direction: column;
   height: 100svh;
-  background: var(--wa-gradient-dark);
-  background-attachment: fixed;
+  background: var(--wa-bg, #0b141a);
   overflow: hidden;
   position: relative;
 }
@@ -21,8 +20,6 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: var(--wa-gradient-glass);
-  backdrop-filter: blur(20px);
 }
 
 .chat-layout.full-page-layout {
@@ -34,12 +31,11 @@
 .chat-sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--wa-gradient-surface);
-  border-right: 1px solid var(--wa-border);
+  background: var(--wa-sidebar, #111b21);
+  border-right: 1px solid var(--wa-border, rgba(255,255,255,0.08));
   min-height: 0;
   overflow: hidden;
   z-index: var(--wa-z-sidebar, 10);
-  box-shadow: 4px 0 24px rgba(0,0,0,0.15);
 }
 
 /* Sidebar Header */
@@ -48,40 +44,43 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: var(--wa-gradient-panel);
-  border-bottom: 1px solid var(--wa-border);
+  background: var(--wa-panel, #202c33);
   min-height: 60px;
   flex-shrink: 0;
 }
 
-/* Main Chat Area */
-.chat-main {
-  display: flex;
-  flex-direction: column;
-  background: var(--wa-gradient-dark);
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
+.chat-self-avatar-wrap {
+  border-radius: 50%;
+  transition: opacity var(--wa-transition-fast);
 }
+.chat-self-avatar-wrap:hover { opacity: 0.85; }
 
-/* Main Chat Header */
-.chat-main-header {
+.chat-sidebar-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: var(--wa-gradient-panel);
-  border-bottom: 1px solid var(--wa-border);
-  min-height: 60px;
-  flex-shrink: 0;
-  z-index: 10;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  gap: 8px;
 }
 
-/* Chat Search */
+/* Icon buttons (sidebar header) */
+.chat-nav-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wa-text-muted, #8696a0);
+  transition: background var(--wa-transition-fast), color var(--wa-transition-fast);
+}
+.chat-nav-icon-btn:hover {
+  background: var(--wa-hover, rgba(255,255,255,0.05));
+  color: var(--wa-text, #e9edef);
+}
+
+/* Search */
 .chat-search-container {
   padding: 8px 12px;
-  background: var(--wa-gradient-surface);
+  background: var(--wa-sidebar, #111b21);
   flex-shrink: 0;
 }
 
@@ -89,75 +88,49 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--wa-input-bg);
-  border: 1px solid var(--wa-border);
+  background: var(--wa-input-bg, #2a3942);
   border-radius: 999px;
   padding: 0 16px;
   height: 38px;
-  transition: all var(--wa-transition-fast);
-}
-.chat-search-wrap:focus-within {
-  background: var(--wa-panel);
-  border-color: var(--wa-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-/* Message List */
-.chat-messages-scroll {
+.chat-search-icon {
+  color: var(--wa-text-muted, #8696a0);
+  flex-shrink: 0;
+}
+
+.chat-search-wrap input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--wa-text, #e9edef);
+  font-size: 0.9rem;
+  outline: none;
+}
+.chat-search-wrap input::placeholder { color: var(--wa-text-muted, #8696a0); }
+
+/* User List */
+.chat-user-list {
   flex: 1;
   overflow-y: auto;
-  padding: 20px clamp(12px, 5vw, 40px);
+  overscroll-behavior: contain;
+}
+
+/* User Card */
+.chat-user-card {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--wa-gradient-dark);
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  gap: 14px;
+  border-radius: 0;
+  transition: background var(--wa-transition-fast);
+  border-bottom: 1px solid var(--wa-border, rgba(255,255,255,0.04));
+  text-align: left;
   position: relative;
 }
-
-/* Composer / Input Area */
-.chat-composer {
-  padding: 10px 16px;
-  background: var(--wa-gradient-panel);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 62px;
-  flex-shrink: 0;
-  border-top: 1px solid var(--wa-border);
-  z-index: 10;
-}
-
-.chat-composer-input-wrap {
-  flex: 1;
-  background: var(--wa-input-bg);
-  border: 1px solid var(--wa-border);
-  border-radius: 22px;
-  padding: 0 16px;
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  transition: all var(--wa-transition-fast);
-}
-.chat-composer-input-wrap:focus-within {
-  background: var(--wa-panel);
-  border-color: var(--wa-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-/* Active User Card Highlight */
-.chat-user-card.active {
-  background: var(--wa-gradient-primary);
-  border-color: transparent;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
-}
-.chat-user-card.active .chat-user-name,
-.chat-user-card.active .chat-user-time,
-.chat-user-card.active .chat-user-message {
-  color: #fff !important;
-}
-.chat-user-card.active .chat-online-dot-small {
-  border-color: var(--wa-primary);
-}
+.chat-user-card:hover { background: var(--wa-hover, rgba(255,255,255,0.05)); }
+.chat-user-card.active { background: var(--wa-active, rgba(0,168,132,0.12)); }
 .chat-user-card.unread .chat-user-name { color: var(--wa-text, #e9edef); font-weight: 600; }
 
 /* Avatar wrap with online dot */
@@ -821,49 +794,4 @@
 @keyframes pulseRing {
   0% { transform: scale(0.8); opacity: 0.8; }
   100% { transform: scale(1.3); opacity: 0; }
-}
-
-/* ─── Emoji Picker ─── */
-.emoji-picker-popover {
-  background: var(--wa-gradient-panel);
-  border: 1px solid var(--wa-border);
-  border-radius: 18px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  backdrop-filter: blur(20px);
-  padding: 12px;
-  animation: fadeIn 0.2s ease both;
-}
-
-.emoji-btn {
-  font-size: 1.4rem;
-  padding: 8px;
-  border-radius: 12px;
-  transition: all var(--wa-transition-fast);
-}
-.emoji-btn:hover {
-  background: var(--wa-gradient-glass);
-  transform: scale(1.2);
-}
-
-/* ─── Reaction Picker ─── */
-.reaction-picker-popover {
-  background: var(--wa-gradient-panel);
-  border: 1px solid var(--wa-border);
-  border-radius: 999px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  backdrop-filter: blur(15px);
-  padding: 6px 10px;
-  display: flex;
-  gap: 4px;
-}
-
-.reaction-picker-btn {
-  font-size: 1.3rem;
-  padding: 6px;
-  border-radius: 50%;
-  transition: all var(--wa-transition-fast);
-}
-.reaction-picker-btn:hover {
-  background: var(--wa-gradient-glass);
-  transform: scale(1.3);
 }
