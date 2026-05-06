@@ -1,122 +1,83 @@
 /* ═══════════════════════════════════════════════════════
-   Hello Hub-INSPIRED DESIGN SYSTEM — index.css
-   Global tokens, resets, typography
+   AURORA NOIR DESIGN SYSTEM — index.css
+   Global tokens, resets, typography, premium animations
 ═══════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* ─── CSS Custom Properties (Design Tokens) ─── */
 :root {
-  /* Modern Dynamic Glassmorphism Colors */
-  --wa-green:        #8B5CF6; /* Vibrant Violet */
-  --wa-green-dark:   #6D28D9; /* Deep Violet */
-  --wa-green-deeper: #4C1D95; /* Darker Violet */
-  --wa-teal:         #06B6D4; /* Cyan */
-  --wa-teal-dark:    #0891B2; /* Deep Cyan */
-  --wa-pink:         #EC4899; /* Pink */
-  --wa-rose:         #F43F5E; /* Rose */
+  /* ─── Aurora Noir (Dark) Mesh Gradients ─── */
+  --gradient-primary:   linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --gradient-secondary: linear-gradient(135deg, #2DD4BF, #22D3EE); /* Teal to Cyan */
+  --gradient-accent:    linear-gradient(135deg, #818CF8, #C084FC); /* Indigo to Purple */
+  --gradient-mesh:      radial-gradient(at 0% 0%, rgba(45, 212, 191, 0.1) 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, rgba(129, 140, 248, 0.1) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.1) 0px, transparent 50%),
+                        radial-gradient(at 0% 100%, rgba(34, 211, 238, 0.1) 0px, transparent 50%);
 
-  /* Dark Mode Surfaces (Highly Modern) */
-  --wa-bg:           #0B0F19; /* Very dark rich blue/black */
-  --wa-panel:        #151B2B; /* Dark elegant panel */
-  --wa-sidebar:      #0D121F; /* Slightly lighter than bg */
-  --wa-input-bg:     #1E2638; /* Input fields */
-  --wa-border:       rgba(255, 255, 255, 0.08);
-  --wa-hover:        rgba(139, 92, 246, 0.15); /* Violet tint hover */
-  --wa-active:       rgba(139, 92, 246, 0.25);
-
-  /* Text */
+  /* ─── Core Semantic Variables ─── */
+  --wa-bg:           #0F172A;
+  --wa-panel:        rgba(30, 41, 59, 0.6);
+  --wa-surface:      rgba(51, 65, 85, 0.4);
+  --wa-sidebar:      #0F172A;
+  --wa-input-bg:     rgba(15, 23, 42, 0.8);
+  --wa-border:       rgba(255, 255, 255, 0.06);
+  
+  --wa-primary:      #2DD4BF;
+  --wa-secondary:    #818CF8;
+  --wa-accent:       #C084FC;
+  
+  --wa-btn-primary:  var(--gradient-secondary);
+  --wa-btn-accent:   var(--gradient-accent);
+  
+  /* ─── Typography (Plus Jakarta Sans) ─── */
+  --wa-font:         'Plus Jakarta Sans', sans-serif;
   --wa-text:         #F8FAFC;
   --wa-text-muted:   #94A3B8;
+  --wa-text-faint:   #64748B;
   
-  /* High Contrast Typography */
-  --wa-text:         #FFFFFF; /* Pure white for maximum readability */
-  --wa-text-muted:   #B6B3D6; /* Light violet-slate for secondary text */
-  --wa-text-faint:   #7A759E; /* Subtle but readable */
-  
-  /* Modern Accent Colors */
-  --wa-teal:         #38BDF8; /* Sky Blue accent instead of basic teal */
-  --wa-teal-dark:    #0284C7;
-  --wa-green:        #34D399; /* Vibrant neon emerald */
-  --wa-red:          #FB7185; /* Soft rose red */
-  
-  /* High-Visibility Chat Bubbles */
-  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%); /* Violet to Sky Blue */
-  --wa-bubble-other: #231F3F; /* Distinctive dark violet-blue */
-  --wa-bubble-text:  #FFFFFF; /* Absolute white text for perfect contrast */
-  
-  /* Modern Depth */
-  --wa-shadow-sm:    0 2px 8px rgba(0,0,0,0.4);
-  --wa-shadow-md:    0 8px 24px rgba(0,0,0,0.5);
-  --wa-shadow-lg:    0 16px 48px rgba(139, 92, 246, 0.15); /* Soft violet glow */
-
-  /* Semantic */
-  --wa-danger:       #EF4444;
+  /* ─── Semantic Colors ─── */
+  --wa-teal:         #2DD4BF;
+  --wa-green:        #10B981;
+  --wa-danger:       #F43F5E;
   --wa-warning:      #F59E0B;
   --wa-info:         #3B82F6;
-  --wa-success:      #10B981;
-
-  /* Radii */
-  --wa-radius-sm:  6px;
-  --wa-radius-md:  12px;
-  --wa-radius-lg:  20px;
-  --wa-radius-xl:  28px;
+  
+  /* ─── Layout Tokens ─── */
+  --wa-radius-sm:  12px;
+  --wa-radius-md:  20px;
+  --wa-radius-lg:  32px;
+  --wa-radius-xl:  48px;
   --wa-radius-full: 9999px;
 
-  /* Typography */
-  --wa-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --wa-font-size-xs:  11px;
-  --wa-font-size-sm:  13px;
-  --wa-font-size-base: 14.5px;
-  --wa-font-size-md:  15px;
-  --wa-font-size-lg:  17px;
-  --wa-font-size-xl:  20px;
+  --wa-shadow-sm:  0 2px 8px rgba(0,0,0,0.2);
+  --wa-shadow-md:  0 12px 40px rgba(0,0,0,0.3);
+  --wa-shadow-lg:  0 30px 80px rgba(0,0,0,0.5);
 
-  /* Spacing */
-  --wa-space-1: 4px;
-  --wa-space-2: 8px;
-  --wa-space-3: 12px;
-  --wa-space-4: 16px;
-  --wa-space-5: 20px;
-  --wa-space-6: 24px;
-
-  /* Transitions */
   --wa-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --wa-transition-base:   0.25s ease;
-  --wa-transition-slow:   0.4s ease;
-
-  /* Z-index scale */
-  --wa-z-base:    1;
-  --wa-z-sidebar: 10;
-  --wa-z-header:  20;
-  --wa-z-overlay: 100;
-  --wa-z-modal:   200;
-  --wa-z-toast:   99999 !important;
+  --wa-transition-base: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── Ultra Modern Light Mode (Lavender Snow) ─── */
+/* ─── Arctic Clean (Light Mode) ─── */
 body.theme-light {
-  --wa-bg:           #F4F4F9; /* Very light lavender-grey */
-  --wa-panel:        #FFFFFF; /* Pure white */
-  --wa-sidebar:      #FAFAFC; /* Subtle separation */
-  --wa-input-bg:     #F0F0F6; /* Input contrast */
-  --wa-border:       rgba(139, 92, 246, 0.1); /* Subtle violet border */
-  --wa-hover:        rgba(139, 92, 246, 0.08); 
-  --wa-active:       rgba(139, 92, 246, 0.15);
+  --wa-bg:           #F8FAFC;
+  --wa-panel:        rgba(255, 255, 255, 0.8);
+  --wa-surface:      rgba(241, 245, 249, 0.7);
+  --wa-sidebar:      #FFFFFF;
+  --wa-input-bg:     #F1F5F9;
+  --wa-border:       rgba(15, 23, 42, 0.06);
   
-  /* High Contrast Typography */
-  --wa-text:         #101828; /* Deepest slate for maximum contrast */
-  --wa-text-muted:   #475467; /* Readable slate */
-  --wa-text-faint:   #98A2B3;
+  --wa-text:         #0F172A;
+  --wa-text-muted:   #475569;
+  --wa-text-faint:   #94A3B8;
   
-  /* Chat Bubbles */
-  --wa-bubble-own:   linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
-  --wa-bubble-other: #FFFFFF;
-  --wa-bubble-text:  #FFFFFF;
-  
-  --wa-shadow-sm:    0 2px 6px rgba(139, 92, 246, 0.05);
-  --wa-shadow-md:    0 8px 20px rgba(139, 92, 246, 0.08);
-  --wa-shadow-lg:    0 16px 40px rgba(139, 92, 246, 0.12);
+  --wa-shadow-sm:  0 2px 8px rgba(15, 23, 42, 0.04);
+  --wa-shadow-md:  0 12px 30px rgba(15, 23, 42, 0.06);
+  --wa-shadow-lg:  0 30px 60px rgba(15, 23, 42, 0.1);
+
+  --gradient-primary: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+  --gradient-mesh:   radial-gradient(at 0% 0%, rgba(45, 212, 191, 0.05) 0px, transparent 50%),
+                     radial-gradient(at 100% 0%, rgba(129, 140, 248, 0.05) 0px, transparent 50%);
 }
 
 /* ─── Global Reset ─── */
@@ -126,30 +87,21 @@ body.theme-light {
   padding: 0;
 }
 
-html {
+html, body {
   height: 100%;
-  font-size: var(--wa-font-size-base);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-body {
+  overflow-x: hidden;
   font-family: var(--wa-font);
   background: var(--wa-bg);
   color: var(--wa-text);
-  height: 100%;
-  overflow-x: hidden;
-  line-height: 1.5;
-  transition: background var(--wa-transition-slow), color var(--wa-transition-slow);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
 #root {
-  width: 100%;
-  height: 100%;
-  min-height: 100svh;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 button {
@@ -157,158 +109,56 @@ button {
   border: none;
   background: none;
   font-family: inherit;
-  font-size: inherit;
   color: inherit;
-  padding: 0;
+  transition: all var(--wa-transition-fast);
 }
 
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
+  outline: none;
 }
 
 a {
   color: var(--wa-teal);
   text-decoration: none;
+  transition: color var(--wa-transition-fast);
 }
 
-a:hover {
-  color: var(--wa-green);
+/* ─── Premium Animations ─── */
+@keyframes meshRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-img {
-  max-width: 100%;
-  display: block;
-}
-
-/* ─── Global Animations ─── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes messagePop {
-  0%   { opacity: 0; transform: scale(0.88) translateY(4px); }
-  60%  { transform: scale(1.02) translateY(-1px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30%           { transform: translateY(-6px); }
-}
-
-@keyframes pulseOnline {
-  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
-  70%  { box-shadow: 0 0 0 6px rgba(37,211,102,0); }
-  100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes freshGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.4); }
-  60%  { box-shadow: 0 0 0 8px rgba(37,211,102,0); }
-  100% { box-shadow: none; }
-}
-
-@keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50%       { background-position: 100% 50%; }
-}
-
-@keyframes floatBlob {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%       { transform: translateY(-18px) scale(1.04); }
-}
-
-@keyframes driftLight {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes iconBob {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-3px); }
-}
-
-/* ─── Utility Classes ─── */
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  border: 0;
-}
-
-.animate-spin {
-  animation: spin 0.8s linear infinite;
-}
-
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ─── Auth Bootstrap ─── */
-.auth-bootstrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100svh;
-  background: var(--wa-bg);
-  color: var(--wa-text-muted);
-  font-size: var(--wa-font-size-md);
-  gap: 12px;
-}
-
-.auth-bootstrap-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid rgba(0,168,132,0.25);
-  border-top-color: var(--wa-teal);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-  flex-shrink: 0;
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 body.theme-light ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.15);
+  background: rgba(15, 23, 42, 0.1);
 }
