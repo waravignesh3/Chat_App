@@ -24,7 +24,7 @@
   max-width: 450px;
   height: 95%;
   max-height: 850px;
-  background: #000;
+  background: var(--wa-bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -169,7 +169,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: var(--wa-bg);
 }
 
 .status-v3-bg-blur {
@@ -245,7 +245,7 @@
 /* ─── Footer ─── */
 .status-v3-footer {
   height: 70px;
-  background: #000;
+  background: var(--wa-panel);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -354,7 +354,7 @@
 
 .status-v3-delete-confirm-inner {
   pointer-events: all;
-  background: rgba(15, 15, 15, 0.96);
+  background: var(--wa-panel);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 75, 75, 0.3);
   border-radius: 20px;
@@ -460,7 +460,7 @@
 .status-v3-viewers-sheet {
   width: 100%;
   max-height: 70%;
-  background: #111b21; /* WhatsApp dark theme color */
+  background: var(--wa-panel);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   display: flex;

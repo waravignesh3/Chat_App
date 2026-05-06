@@ -246,7 +246,7 @@
 
 .chat-bubble-meta time {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--wa-text-faint, rgba(255,255,255,0.6));
   flex-shrink: 0;
 }
 
@@ -254,10 +254,10 @@
 .chat-status-icon {
   display: inline-flex;
   align-items: center;
-  color: rgba(255,255,255,0.5);
+  color: var(--wa-text-faint, rgba(255,255,255,0.6));
   flex-shrink: 0;
 }
-.chat-status-icon.read { color: #06B6D4; }
+.chat-status-icon.read { color: var(--wa-teal, #06B6D4); }
 
 /* ─── Typing Indicator ─── */
 .chat-typing-bubble {

@@ -800,6 +800,31 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("mark_messages_seen", async ({ sender, receiver }) => {
+    try {
+      if (!sender || !receiver) return;
+      const normalizedSender = sender.toLowerCase().trim();
+      const normalizedReceiver = receiver.toLowerCase().trim();
+      
+      // Update all messages from 'sender' to 'receiver' to include 'receiver' in readBy
+      await Message.updateMany(
+        { sender: normalizedSender, receiver: normalizedReceiver, readBy: { $ne: normalizedReceiver } },
+        { $addToSet: { readBy: normalizedReceiver } }
+      );
+
+      // Notify the sender that their messages have been seen by the receiver
+      const targetSocketId = onlineUsers[normalizedSender];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("messages_seen", {
+          by: normalizedReceiver,
+          conversationWith: normalizedReceiver
+        });
+      }
+    } catch (err) {
+      console.error("mark_messages_seen error:", err.message);
+    }
+  });
+
   socket.on("typing", ({ to, from, isTyping }) => {
     const targetSocketId = onlineUsers[to?.toLowerCase().trim()];
     if (targetSocketId) io.to(targetSocketId).emit("typing", { from, isTyping });

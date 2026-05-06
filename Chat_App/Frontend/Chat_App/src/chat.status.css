@@ -561,20 +561,18 @@
 }
 
 /* ─── Light mode overrides ─── */
-body.theme-light .status-page         { background: #f0f2f5; }
-body.theme-light .status-page-header  { background: #fff; border-bottom-color: #e9edef; }
-body.theme-light .status-my-card      { background: #fff; border-bottom-color: #e9edef; }
-body.theme-light .status-my-card:hover { background: #f5f6f6; }
-body.theme-light .status-my-info strong { color: #111b21; }
-body.theme-light .status-my-info p     { color: #54656f; }
-body.theme-light .status-text-composer  { background: #fff; border-color: rgba(37,211,102,0.3); }
-body.theme-light .status-text-composer textarea { color: #111b21; }
-body.theme-light .status-section-label  { color: #8696a0; }
-body.theme-light .status-contact-card:hover { background: #f5f6f6; }
-body.theme-light .status-contact-card.viewing { background: rgba(0,168,132,0.06); }
-body.theme-light .status-contact-info strong { color: #111b21; }
-body.theme-light .status-viewer-panel  { background: #fff; }
-body.theme-light .status-viewer-topbar { border-bottom-color: #e9edef; }
-body.theme-light .status-viewer-topbar .status-viewer-meta strong { color: #111b21; }
-body.theme-light .status-share-modal   { background: #fff; }
-body.theme-light .status-share-caption-input { background: #f0f2f5; color: #111b21; }
+body.theme-light .status-page         { background: var(--wa-bg); }
+/* ─── Light Mode Overrides ─── */
+body.theme-light .status-my-info strong { color: var(--wa-text); }
+body.theme-light .status-my-info span { color: var(--wa-text-muted); }
+
+body.theme-light .status-text-composer textarea { color: var(--wa-text); }
+body.theme-light .status-text-composer::placeholder { color: var(--wa-text-faint); }
+
+body.theme-light .status-contact-info strong { color: var(--wa-text); }
+body.theme-light .status-contact-info span { color: var(--wa-text-muted); }
+
+body.theme-light .status-viewer-topbar .status-viewer-meta strong { color: var(--wa-text); }
+body.theme-light .status-viewer-topbar .status-viewer-meta span { color: var(--wa-text-muted); }
+body.theme-light .status-share-caption-input { background: var(--wa-input-bg); color: var(--wa-text); }
+body.theme-light .status-share-controls { background: var(--wa-panel); border-top-color: var(--wa-border); }

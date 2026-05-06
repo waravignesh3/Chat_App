@@ -158,13 +158,13 @@
 /* ─── Light Theme ─── */
 body.theme-light .bottom-nav {
   background: rgba(255,255,255,0.92);
-  border-top-color: #e9edef;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.12);
+  border-top-color: var(--wa-border);
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
 }
 
-body.theme-light .bottom-nav-item       { color: #8696a0; }
-body.theme-light .bottom-nav-item.active { color: var(--wa-green, #25D366); }
-body.theme-light .bottom-nav-badge      { border-color: #fff; }
+body.theme-light .bottom-nav-item       { color: var(--wa-text-muted); }
+body.theme-light .bottom-nav-item.active { color: var(--wa-green); }
+body.theme-light .bottom-nav-badge      { border-color: var(--wa-panel); }
 
 /* ═══════════════════════════════════════════════════════
    OFFLINE / RECONNECTING BANNER

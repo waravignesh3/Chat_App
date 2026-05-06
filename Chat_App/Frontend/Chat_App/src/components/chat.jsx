@@ -1241,6 +1241,20 @@ function Chat({ user, setUser, theme, toggleTheme }) {
       setReadBy((prev) => new Set([...prev, from]));
     });
 
+    socket.on("messages_seen", ({ by, conversationWith }) => {
+      setMessages((prev) =>
+        prev.map((entry) => {
+          if (entry.sender === userRef.current?.email && entry.receiver === conversationWith) {
+            const currentReadBy = Array.isArray(entry.readBy) ? entry.readBy : [];
+            if (!currentReadBy.includes(by)) {
+              return { ...entry, readBy: [...currentReadBy, by] };
+            }
+          }
+          return entry;
+        })
+      );
+    });
+
     // ── Reaction received — update local state with MongoDB-persisted reactions ──
     socket.on("message_reaction", ({ messageId, reactions: nextReactions }) => {
       if (!messageId) return;
@@ -1514,10 +1528,24 @@ function Chat({ user, setUser, theme, toggleTheme }) {
     return () => { clearTimeout(t); document.removeEventListener("click", handler); };
   }, [reactionPickerFor]);
 
-  // ── Send read receipt when conversation is opened ─────────────────────────────
+  // ── Send read receipt and clear unread counts when conversation is opened ──
   useEffect(() => {
     if (selectedUser?.email && socketRef.current) {
+      // 1. Tell backend to store seen status in MongoDB
+      socketRef.current.emit("mark_messages_seen", { sender: selectedUser.email, receiver: user?.email });
+      // Keep legacy emit for backwards compatibility if needed
       socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
+      
+      // 2. Clear unread badge locally to avoid repeats
+      setUnreadMap((prev) => {
+        if (!prev[selectedUser.email] || prev[selectedUser.email].count === 0) return prev;
+        return {
+          ...prev,
+          [selectedUser.email]: { ...prev[selectedUser.email], count: 0 }
+        };
+      });
+
+      // 3. Update local messages state
       setMessages((prev) =>
         prev.map((entry) =>
           entry.sender === selectedUser.email && entry.receiver === user?.email
@@ -1525,12 +1553,19 @@ function Chat({ user, setUser, theme, toggleTheme }) {
             : entry
         )
       );
+
+      // 4. Scroll to newest message
+      shouldScrollRef.current = true;
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      }, 50);
     }
   }, [selectedUser?.email, user?.email]);
 
   useEffect(() => {
     const syncReadReceipt = () => {
       if (!selectedUser?.email || !socketRef.current || document.visibilityState !== "visible") return;
+      socketRef.current.emit("mark_messages_seen", { sender: selectedUser.email, receiver: user?.email });
       socketRef.current.emit("read_receipt", { to: selectedUser.email, from: user?.email });
     };
     window.addEventListener("focus", syncReadReceipt);
@@ -2006,6 +2041,30 @@ function Chat({ user, setUser, theme, toggleTheme }) {
 
   const handleSaveSettings = async () => {
     if (!user?.email) return;
+
+    // Deep compare draft vs current user data — skip API if nothing changed
+    const currentSettings = {
+      name: user?.name || "",
+      phone: user?.phone || "",
+      bio: user?.bio || "",
+      privacy: {
+        lastSeen: user?.privacy?.lastSeen || "everyone",
+        profilePhoto: user?.privacy?.profilePhoto || "everyone",
+        readReceipts: user?.privacy?.readReceipts !== false,
+        restrictedEmails: user?.privacy?.restrictedEmails || [],
+      },
+      notifications: {
+        messagePreview: user?.notifications?.messagePreview !== false,
+        sound: user?.notifications?.sound !== false,
+        vibrate: user?.notifications?.vibrate !== false,
+        desktopAlerts: user?.notifications?.desktopAlerts !== false,
+      },
+    };
+    if (JSON.stringify(settingsDraft) === JSON.stringify(currentSettings)) {
+      showToast("Nothing changed", "info");
+      return;
+    }
+
     setSettingsSaving(true);
     try {
       const data = await requestJson(`${SERVER_URL}/api/profile/preferences`, {
