@@ -79,7 +79,7 @@
   --wa-z-header:  20;
   --wa-z-overlay: 100;
   --wa-z-modal:   200;
-  --wa-z-toast:   300;
+  --wa-z-toast:   99999;
 }
 
 /* ─── Light Mode Tokens ─── */

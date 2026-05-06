@@ -218,7 +218,7 @@ body.theme-light .chat-messages-container {
 
 /* Toast z-index fix */
 .auth-toast {
-  z-index: var(--wa-z-toast, 300);
+  z-index: var(--wa-z-toast, 99999) !important;
 }
 
 /* ═══════════════════════════════════════════════════════
